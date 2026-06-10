@@ -7,9 +7,9 @@ const FALLBACK_URL = 'https://itjurgqbvsqniphuehiz.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0anVyZ3FidnNxbmlwaHVlaGl6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI4Mzk1OCwiZXhwIjoyMDkwODU5OTU4fQ.FgnMsY9Oz2ITeBTg3wyldmftSV6c9rYeScx_hC0Syxc';
 
 // Client for the Main App functions (Update News, etc.)
-const MAIN_SUPABASE_URL = import.meta.env.VITE_MAIN_SUPABASE_URL || (import.meta.env.DEV ? FALLBACK_URL : '');
-const MAIN_SUPABASE_SERVICE_KEY = import.meta.env.VITE_MAIN_SUPABASE_SERVICE_KEY || (import.meta.env.DEV ? FALLBACK_KEY : '');
-export const dbMain = createClient(MAIN_SUPABASE_URL || 'https://placeholder.supabase.co', MAIN_SUPABASE_SERVICE_KEY || 'placeholder-key');
+const MAIN_SUPABASE_URL = import.meta.env.VITE_MAIN_SUPABASE_URL || FALLBACK_URL;
+const MAIN_SUPABASE_SERVICE_KEY = import.meta.env.VITE_MAIN_SUPABASE_SERVICE_KEY || FALLBACK_KEY;
+export const dbMain = createClient(MAIN_SUPABASE_URL, MAIN_SUPABASE_SERVICE_KEY);
 
 
 // === Main Dashboard Data Fetching ===
