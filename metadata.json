@@ -1,0 +1,5 @@
+{
+  "name": "Ceaznet Admin v3.4",
+  "description": "An admin dashboard to monitor and manage Ceaznet Admin services, including agents and News Updater functions. It provides analytics, logs, and configuration settings in a modern React single-page application.",
+  "requestFramePermissions": []
+}
