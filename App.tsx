@@ -289,6 +289,7 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
 
 
 import { Toaster } from 'react-hot-toast';
+import { createPortal } from 'react-dom';
 import { AutoRefreshProvider } from './components/AutoRefreshContext';
 import { PlatformSettingsProvider, usePlatformSettings } from './components/PlatformSettingsContext';
 import { BroadcastPopup } from './components/BroadcastPopup';
@@ -431,7 +432,7 @@ const App: React.FC = () => {
                         <PlatformSettingsProvider>
                             <PageLayout theme={theme} toggleTheme={toggleTheme} />
                             <BroadcastPopup />
-                            <Toaster position="top-right" />
+                            {createPortal(<Toaster position="top-right" containerStyle={{ zIndex: 999999 }} />, document.body)}
                             <GlobalAlertProvider />
                         </PlatformSettingsProvider>
                     </AutoRefreshProvider>
