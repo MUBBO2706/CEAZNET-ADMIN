@@ -292,6 +292,7 @@ import { Toaster } from 'react-hot-toast';
 import { AutoRefreshProvider } from './components/AutoRefreshContext';
 import { PlatformSettingsProvider, usePlatformSettings } from './components/PlatformSettingsContext';
 import { BroadcastPopup } from './components/BroadcastPopup';
+import { GlobalAlertProvider } from './components/ui';
 
 const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -431,6 +432,7 @@ const App: React.FC = () => {
                             <PageLayout theme={theme} toggleTheme={toggleTheme} />
                             <BroadcastPopup />
                             <Toaster position="top-right" />
+                            <GlobalAlertProvider />
                         </PlatformSettingsProvider>
                     </AutoRefreshProvider>
                 </AdminAuthGuard>

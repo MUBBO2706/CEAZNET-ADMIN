@@ -735,6 +735,80 @@ export const ConfirmationModal: React.FC<{
     );
 };
 
+export const AlertModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title?: string;
+    message: React.ReactNode;
+    buttonText?: string;
+}> = ({ isOpen, onClose, title = "Alert", message, buttonText = "OK" }) => {
+    if (!isOpen) return null;
+
+    return ReactDOM.createPortal(
+        <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center modal-bg"
+            aria-labelledby="alert-modal-title"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div className="modal-content w-full max-w-sm m-4 !rounded-2xl shadow-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                <div className="p-4">
+                    <h3 id="alert-modal-title" className="text-base font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
+                        {title}
+                    </h3>
+                    <div className="text-sm text-slate-600 dark:text-zinc-400 mt-2 whitespace-pre-wrap">
+                        {message}
+                    </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-zinc-800/50 px-4 py-3 flex justify-end gap-2 rounded-b-2xl border-t border-slate-100 dark:border-zinc-800">
+                    <button type="button" onClick={onClose} className="btn btn-primary text-sm dark:bg-indigo-600 dark:hover:bg-indigo-700">{buttonText}</button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+};
+
+export const GlobalAlertProvider: React.FC = () => {
+    const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string; title: string }>({
+        isOpen: false,
+        message: "",
+        title: "Alert"
+    });
+
+    useEffect(() => {
+        const handleCustomAlert = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            setAlertState({
+                isOpen: true,
+                message: customEvent.detail.message,
+                title: customEvent.detail.title || "Alert"
+            });
+        };
+
+        // Override window.alert
+        window.alert = (message?: any) => {
+            const event = new CustomEvent('global-alert', { detail: { message: String(message) } });
+            window.dispatchEvent(event);
+        };
+
+        window.addEventListener('global-alert', handleCustomAlert);
+
+        return () => {
+            window.removeEventListener('global-alert', handleCustomAlert);
+        };
+    }, []);
+
+    return (
+        <AlertModal
+            isOpen={alertState.isOpen}
+            onClose={() => setAlertState(s => ({ ...s, isOpen: false }))}
+            title={alertState.title}
+            message={alertState.message}
+        />
+    );
+};
+
 export const BatchActionToolbar: React.FC<{
     selectedCount: number;
     totalCount?: number;

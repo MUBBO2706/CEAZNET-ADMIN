@@ -557,7 +557,16 @@ END; $$;`}
                                 </p>
                             </div>
                         </div>
-                        <p>To proceed, please type the name of the table (<strong className="font-mono">{modal.tableName}</strong>) in the box below.</p>
+                        <p>To proceed, please type the name of the table (<strong 
+                            className="font-mono cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 px-1 py-0.5 rounded transition-colors text-indigo-600 dark:text-indigo-400"
+                            title="Click to copy"
+                            onClick={() => {
+                                if (modal.tableName) {
+                                    navigator.clipboard.writeText(modal.tableName);
+                                    import('react-hot-toast').then(m => m.toast.success('Table name copied!'));
+                                }
+                            }}
+                        >{modal.tableName}</strong>) in the box below.</p>
                         <input
                             type="text"
                             value={confirmationInput}
@@ -591,7 +600,16 @@ END; $$;`}
                                         </p>
                                     </div>
                                 </div>
-                                <p>To proceed, please type the name of the table (<strong className="font-mono">{modal.tableName}</strong>) in the box below.</p>
+                                <p>To proceed, please type the name of the table (<strong 
+                                    className="font-mono cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 px-1 py-0.5 rounded transition-colors text-indigo-600 dark:text-indigo-400"
+                                    title="Click to copy"
+                                    onClick={() => {
+                                        if (modal.tableName) {
+                                            navigator.clipboard.writeText(modal.tableName);
+                                            import('react-hot-toast').then(m => m.toast.success('Table name copied!'));
+                                        }
+                                    }}
+                                >{modal.tableName}</strong>) in the box below.</p>
                                 <input
                                     type="text"
                                     value={confirmationInput}
