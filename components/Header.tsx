@@ -7,7 +7,7 @@ import type { RecentActivityLog } from '../types';
 import { ExpandedLogDetail } from '../pages/MainDashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { BroadcastTab } from './BroadcastTab';
-import { Megaphone, LayoutList } from 'lucide-react';
+import { Radio, LayoutList } from 'lucide-react';
 import { usePlatformSettings } from './PlatformSettingsContext';
 
 function formatRelativeTime(dateString: string) {
@@ -30,7 +30,7 @@ const getIcon = (method: string) => {
     }
 };
 
-const NotificationBell: React.FC = () => {
+const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHeaderIcon: (id: string | null) => void}> = ({ activeHeaderIcon, setActiveHeaderIcon }) => {
     const [logs, setLogs] = useState<RecentActivityLog[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'activity' | 'broadcast'>('activity');
@@ -166,6 +166,7 @@ const NotificationBell: React.FC = () => {
     }, [isOpen]);
 
     const handleOpen = () => {
+        setActiveHeaderIcon('notification');
         if (!isOpen) {
             setIsOpen(true);
         } else {
@@ -220,7 +221,7 @@ const NotificationBell: React.FC = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={handleOpen}
-                className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                className={`relative p-2 ${activeHeaderIcon === 'notification' ? 'text-indigo-600' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] rounded-full transition-colors`}
                 aria-label="Notifications"
             >
                 <motion.div animate={shakeBell ? { rotate: [0, -20, 20, -10, 10, 0] } : {}} transition={{ duration: 0.5 }}>
@@ -233,7 +234,7 @@ const NotificationBell: React.FC = () => {
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
-                            className="absolute top-1.5 right-1.5 w-[7px] h-[7px] rounded-full bg-red-500 ring-[1.5px] ring-white dark:ring-zinc-900"
+                            className="absolute top-1 right-1 w-[7px] h-[7px] rounded-full bg-red-500 ring-[1.5px] ring-white dark:ring-zinc-900"
                         />
                     )}
                 </AnimatePresence>
@@ -263,7 +264,7 @@ const NotificationBell: React.FC = () => {
                                     onClick={(e) => { e.stopPropagation(); setActiveTab('broadcast'); }}
                                     className={`flex-1 rounded-lg text-[12px] font-semibold py-1.5 transition-all outline-none flex items-center justify-center gap-1.5 ${activeTab === 'broadcast' ? 'bg-indigo-600 text-white shadow-[0_2px_10px_-2px_rgba(79,70,229,0.4)]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
                                 >
-                                    <Megaphone size={14} className={activeTab === 'broadcast' ? 'text-indigo-200' : ''} />
+                                    <Radio size={14} className={activeTab === 'broadcast' ? 'text-indigo-200' : ''} />
                                     Broadcast
                                 </button>
                             </div>
@@ -289,7 +290,7 @@ const NotificationBell: React.FC = () => {
                             {activeTab === 'activity' ? (
                                 <div className="flex flex-col p-0 sleek-scrollbar bg-slate-50/30 dark:bg-zinc-900/20">
                                     {displayLogs.length === 0 ? (
-                                        <div className="p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500 h-40">
+                                        <div className="p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500 h-full min-h-[300px]">
                                             <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mb-2">
                                                 <Bell size={20} className="text-slate-300 dark:text-zinc-600" />
                                             </div>
@@ -408,7 +409,7 @@ const NotificationBell: React.FC = () => {
     );
 };
 
-const SupportInboxIcon: React.FC = () => {
+const SupportInboxIcon: React.FC<{activeHeaderIcon: string | null, setActiveHeaderIcon: (id: string | null) => void}> = ({ activeHeaderIcon, setActiveHeaderIcon }) => {
     const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
 
@@ -446,13 +447,14 @@ const SupportInboxIcon: React.FC = () => {
     }, []);
 
     const handleClick = () => {
+        setActiveHeaderIcon('support');
         navigate('/support-inbox');
     };
 
     return (
         <button
             onClick={handleClick}
-            className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+            className={`relative p-2 ${activeHeaderIcon === 'support' ? 'text-indigo-600' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] rounded-full transition-colors`}
             aria-label="Support Inbox"
             title="Support Inbox"
         >
@@ -480,7 +482,7 @@ const CustomRefreshIcon = ({ size = 18, className = '' }: { size?: number, class
     </svg>
 );
 
-const GlobalRefreshButton: React.FC = () => {
+const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveHeaderIcon: (id: string | null) => void}> = ({ activeHeaderIcon, setActiveHeaderIcon }) => {
     const { refreshRate, setRefreshRate, triggerRefresh, refreshTrigger } = useAutoRefresh();
     const countdown = useCountdown();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -507,6 +509,7 @@ const GlobalRefreshButton: React.FC = () => {
     };
 
     const handleManualRefresh = () => {
+        setActiveHeaderIcon('refresh');
         triggerRefresh();
     };
 
@@ -538,7 +541,7 @@ const GlobalRefreshButton: React.FC = () => {
                 onMouseLeave={handlePressEnd}
                 onTouchStart={handlePressStart}
                 onTouchEnd={handlePressEnd}
-                className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                className={`relative p-2 ${activeHeaderIcon === 'refresh' ? 'text-indigo-600' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] rounded-full transition-colors`}
                 title="Click to refresh, long press for auto-refresh settings"
             >
                 <motion.div animate={isSpinning ? { rotate: 360 } : {}} transition={isSpinning ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}>
@@ -588,10 +591,11 @@ const Header: React.FC<{
     isScrolled?: boolean;
 }> = ({ pageTitle, onMenuClick, isCollapsed, isMobileMenuOpen = false, isScrolled = false }) => {
     const { settings } = usePlatformSettings();
+    const [activeHeaderIcon, setActiveHeaderIcon] = useState<string | null>(null);
     return (
         <header className={`bg-white/80 backdrop-blur-lg px-2 sm:px-3 flex items-center gap-2 sm:gap-3 flex-shrink-0 border-b border-gray-200 fixed top-0 w-full z-50 transition-all duration-300 ease-in-out h-[50px] ${isCollapsed ? 'md:w-[calc(100%-4rem)] md:left-16' : 'md:w-[calc(100%-10rem)] md:left-40'}`}>
             <button 
-                className={`md:hidden p-1.5 -ml-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-link-hover-bg)] transition-colors relative z-50`} 
+                className={`md:hidden p-1.5 -ml-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors relative z-50`} 
                 onClick={onMenuClick} 
                 aria-label={isMobileMenuOpen ? "Close sidebar" : "Open sidebar"}
             >
@@ -635,9 +639,9 @@ const Header: React.FC<{
             <div className="flex-grow" />
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-                <GlobalRefreshButton />
-                <SupportInboxIcon />
-                <NotificationBell />
+                <GlobalRefreshButton activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
+                <SupportInboxIcon activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
+                <NotificationBell activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
             </div>
         </header>
     );

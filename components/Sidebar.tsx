@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                 .sidebar { background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); }
                 .sidebar-header-title { color: var(--sidebar-text-primary); font-weight: 700; font-size: 1.125rem; }
                 .sidebar-link { position: relative; display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: 0.375rem; font-weight: 500; color: var(--sidebar-text-secondary); transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; font-size: 0.8125rem; }
-                .sidebar-link:hover { background-color: var(--sidebar-link-hover-bg); color: var(--sidebar-text-primary); }
+                .sidebar-link:hover { background-color: transparent; color: var(--sidebar-text-primary); }
                 .sidebar-link.active { background-image: linear-gradient(90deg, var(--sidebar-link-hover-bg), transparent); color: var(--sidebar-text-primary); font-weight: 600; }
                 .sidebar-link.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background-color: var(--accent-color); border-radius: 0 4px 4px 0; }
                 .sidebar-nested-link { padding-left: 0.75rem; font-size: 0.75rem; }
@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                     <ChevronsLeft size={20} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                 </button>
                 
-                <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+                <nav className="flex-1 overflow-y-auto px-1 py-3 space-y-0.5">
                     
                     {/* --- DASHBOARD --- */}
                     <div className="pb-1.5">
@@ -214,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                     </div>
                 </nav>
 
-                <div className={`p-3 border-t border-[var(--sidebar-border)]`}>
+                <div className={`px-1 py-3 border-t border-[var(--sidebar-border)]`}>
                     <div className={`grid grid-cols-2 gap-2 items-center justify-items-center ${isCollapsed ? 'md:grid-cols-1' : ''}`}>
                         <div
                             className="sidebar-tooltip-wrapper w-full flex justify-center"

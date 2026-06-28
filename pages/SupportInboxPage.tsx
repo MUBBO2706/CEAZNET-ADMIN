@@ -590,7 +590,7 @@ const SupportInboxPage: React.FC = () => {
                             <LoadingSpinner message="" />
                         </div>
                     ) : filteredConversations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-48 text-zinc-500 px-4 text-center">
+                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-zinc-500 px-4 text-center">
                             <Archive className="w-8 h-8 mb-2 opacity-20" />
                             <p className="text-sm">No conversations found.</p>
                         </div>

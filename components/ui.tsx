@@ -318,17 +318,18 @@ export const CustomDropdown: React.FC<{
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-white dark:bg-zinc-900 pb-1 pt-1`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-white dark:bg-zinc-900 pb-1 pt-1 relative`}
             role="listbox"
             style={{
                 position: 'fixed',
-                top: position.direction === 'down' ? position.top + 4 : 'auto',
-                bottom: position.direction === 'up' ? window.innerHeight - position.top + 4 : 'auto',
+                top: position.direction === 'down' ? position.top + 15 : 'auto',
+                bottom: position.direction === 'up' ? window.innerHeight - position.top + 15 : 'auto',
                 left: position.left,
                 width: position.width,
                 zIndex: 999999
             }}
         >
+            <div className={`absolute left-1/2 -ml-1.5 w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-slate-200 dark:border-zinc-800 rotate-45 ${position.direction === 'down' ? '-top-1.5' : '-bottom-1.5'}`} />
             {options.map((option) => (
                 <button
                     key={option}

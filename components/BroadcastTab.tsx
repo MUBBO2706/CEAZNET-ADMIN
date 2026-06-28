@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Megaphone, Eye, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Radio, Eye, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
 import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, deleteBroadcast, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
@@ -285,7 +285,7 @@ export const BroadcastTab: React.FC = () => {
         <div className="flex flex-col flex-1 h-full bg-white dark:bg-zinc-950 overflow-hidden relative">
             
             {/* Input Composer Section */}
-            <div className="flex flex-col shrink-0 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all duration-300 relative focus-within:shadow-[0_4px_20px_-10px_rgba(79,70,229,0.15)] z-10 px-0 sm:px-4 md:px-8 lg:px-12">
+            <div className="flex flex-col shrink-0 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all duration-300 relative focus-within:shadow-[0_4px_20px_-10px_rgba(79,70,229,0.15)] z-10 px-[4px]">
                 {broadcastType === 'popup' ? (
                         <>
                             <div className="relative">
@@ -293,27 +293,27 @@ export const BroadcastTab: React.FC = () => {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder={history.length > 0 ? "Adjust the broadcast... (e.g. 'Make it shorter')" : "Design a broadcast popup... (e.g. 'Servers down in 15 mins')"}
-                                    className="w-full bg-transparent text-[13px] px-4 py-3 min-h-[64px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
+                                    className="w-full bg-transparent text-[13px] px-[4px] py-3 min-h-[64px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
                                     disabled={isGenerating}
                                 />
                             </div>
 
                             <div className="relative border-t border-slate-100 dark:border-zinc-800/80">
-                                <div className="flex items-center px-4">
+                                <div className="flex items-center px-[4px]">
                                     <Palette size={13} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                     <input
                                         type="text"
                                         value={stylePrompt}
                                         onChange={(e) => setStylePrompt(e.target.value)}
                                         placeholder="Styling instructions (e.g. 'Dark mode, rounded corners, modern')"
-                                        className="w-full bg-transparent text-[12px] px-3 py-2.5 focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
+                                        className="w-full bg-transparent text-[12px] px-[4px] py-2.5 focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
                                         disabled={isGenerating}
                                     />
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-[4px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4 w-full sm:w-auto">
                                 <div className="flex flex-col w-full sm:w-auto flex-1">
                                     <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Banner Variant</label>
@@ -321,7 +321,7 @@ export const BroadcastTab: React.FC = () => {
                                         options={['maintenance', 'development', 'testing', 'alert']}
                                         value={bannerType}
                                         onChange={(v) => setBannerType(v as any)}
-                                        triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-3 !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
+                                        triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-[4px] !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
                                         displayLabels={{
                                             maintenance: 'Maintenance',
                                             development: 'Development',
@@ -353,7 +353,7 @@ export const BroadcastTab: React.FC = () => {
                         </div>
                     )}
                     
-                    <div className="flex justify-between items-center px-4 py-2 border-t border-slate-100 dark:border-zinc-800/80">
+                    <div className="flex justify-between items-center px-[4px] py-2 border-t border-slate-100 dark:border-zinc-800/80">
                         {/* Compact Settings */}
                         {/* Adding full width and overflow handling so it actually scrolls gracefully */}
                         <div className="flex items-center gap-4 opacity-90 transition-opacity overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full min-w-0 pr-2">
@@ -705,7 +705,7 @@ export const BroadcastTab: React.FC = () => {
                     ) : (
                         <div className="flex flex-col items-center justify-center gap-3 opacity-40 grayscale pointer-events-none hover:grayscale-0 hover:opacity-70 transition-all duration-500 cursor-default">
                             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-indigo-500/10">
-                                <Megaphone size={28} className="text-indigo-600 dark:text-indigo-400 drop-shadow-sm -rotate-[15deg]" />
+                                <Radio size={28} className="text-indigo-600 dark:text-indigo-400 drop-shadow-sm -rotate-[15deg]" />
                             </div>
                             <div className="text-center">
                                 <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">Blank Canvas</p>

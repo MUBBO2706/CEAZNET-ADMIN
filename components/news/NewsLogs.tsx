@@ -68,6 +68,24 @@ const NewsLogs: React.FC<{
     const headerRef = useRef<HTMLDivElement>(null);
     const [visibleCount, setVisibleCount] = useState(30);
     const [expandedLog, setExpandedLog] = useState<number | null>(null);
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+    const filteredAndSortedLogs = React.useMemo(() => {
+        let result = [...logs];
+        
+        if (statusFilter !== 'ALL') {
+            result = result.filter(log => log.status === statusFilter);
+        }
+
+        result.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+
+        return result;
+    }, [logs, sortOrder, statusFilter]);
 
     const handleRowScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (headerRef.current) {
@@ -122,10 +140,31 @@ const NewsLogs: React.FC<{
 
     const isAllSelected = logs.length > 0 && selectedLogs.size === logs.length;
     
-    const visibleLogs = logs.slice(0, visibleCount);
+    const visibleLogs = filteredAndSortedLogs.slice(0, visibleCount);
 
     return (
         <PanelCard className="!p-0 flex flex-col [clip-path:inset(0_round_0.5rem)]">
+            <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                        className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
+                    >
+                        Sort by Date: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+                    </button>
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="text-xs font-semibold bg-[var(--subtle-bg)] text-[var(--text-secondary)] border-none rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                        <option value="ALL">All Statuses</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILURE">Failure</option>
+                        <option value="ERROR">Error</option>
+                        <option value="WARNING">Warning</option>
+                    </select>
+                </div>
+            </div>
             <div className="flex flex-col">
                 {/* Header Row */}
                 <div 
@@ -275,7 +314,7 @@ const NewsLogs: React.FC<{
                         )}
                     </div>
                     <div className="text-xs text-[var(--text-secondary)]">
-                        Showing <span className="font-medium text-[var(--text-primary)]">{Math.min(visibleCount, logs.length)}</span> of <span className="font-medium text-[var(--text-primary)]">{logs.length}</span> results
+                        Showing <span className="font-medium text-[var(--text-primary)]">{Math.min(visibleCount, filteredAndSortedLogs.length)}</span> of <span className="font-medium text-[var(--text-primary)]">{filteredAndSortedLogs.length}</span> results
                     </div>
                 </div>
             </div>

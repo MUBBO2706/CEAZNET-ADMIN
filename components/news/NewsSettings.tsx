@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAutoRefresh } from '../AutoRefreshContext';
 import { PanelCard, ConfirmationModal, CustomDropdown } from '../ui';
+import { LoadingSpinner } from '../skeletons';
 import { dbMain, getNewsApiKeys, addNewsApiKey, deleteNewsApiKey, updateNewsApiKey, resetNewsApiKeysStatus, resetAllNewsApiKeysData, getNewsSystemConfigs, updateNewsSystemConfig, addNewsSystemConfig } from '../../services/supabaseService';
 import type { NewsApiKey, NewsSystemConfig } from '../../types';
 import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RefreshCw, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle } from 'lucide-react';
@@ -1377,7 +1378,11 @@ const NewsSettings: React.FC<{ currentConfig?: any; onUpdate?: () => Promise<voi
     }, [fetchData]);
 
     if (loading) {
-        return <div className="p-8 text-center text-[var(--text-secondary)]">Loading Settings...</div>;
+        return (
+            <div className="flex items-center justify-center h-full min-h-[300px] w-full">
+                <LoadingSpinner message="Loading Settings..." />
+            </div>
+        );
     }
 
     const gnewsKeys = keys.filter(k => k.provider === 'gnews');
@@ -1386,24 +1391,18 @@ const NewsSettings: React.FC<{ currentConfig?: any; onUpdate?: () => Promise<voi
 
     return (
         <div className="space-y-6">
-            <div className="flex border-b border-[var(--border-color)]">
+            <div className="inline-flex p-1 bg-slate-100 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700/50">
                 <button
                     onClick={() => setActiveTab('configuration')}
-                    className={`px-4 py-2.5 text-sm font-semibold transition-colors relative ${activeTab === 'configuration' ? 'text-indigo-600 dark:text-indigo-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                    className={`px-4 py-1.5 text-sm font-semibold transition-all rounded-md ${activeTab === 'configuration' ? 'bg-white dark:bg-zinc-900 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
                 >
                     System & Keys Config
-                    {activeTab === 'configuration' && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full" />
-                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('analytics')}
-                    className={`px-4 py-2.5 text-sm font-semibold transition-colors relative ${activeTab === 'analytics' ? 'text-indigo-600 dark:text-indigo-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                    className={`px-4 py-1.5 text-sm font-semibold transition-all rounded-md ${activeTab === 'analytics' ? 'bg-white dark:bg-zinc-900 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
                 >
                     API Key Analytics
-                    {activeTab === 'analytics' && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full" />
-                    )}
                 </button>
             </div>
 

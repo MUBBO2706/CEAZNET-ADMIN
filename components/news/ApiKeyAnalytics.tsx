@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAutoRefresh } from '../AutoRefreshContext';
 import { PanelCard, StatCard, InfoPopover } from '../ui';
+import { LoadingSpinner } from '../skeletons';
 import { getAllApiKeyUsageAnalytics } from '../../services/supabaseService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Rectangle, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { CustomTooltip } from '../charts';
@@ -115,7 +116,11 @@ export const ApiKeyAnalytics: React.FC = () => {
     }, [auditLogs]);
 
     if (loading && auditLogs.length === 0) {
-        return <div className="p-8 text-center text-[var(--text-secondary)]">Loading Analytics...</div>;
+        return (
+            <div className="flex items-center justify-center h-full min-h-[300px] w-full">
+                <LoadingSpinner message="Loading Analytics..." />
+            </div>
+        );
     }
 
     if (auditLogs.length === 0 && !loading) {
