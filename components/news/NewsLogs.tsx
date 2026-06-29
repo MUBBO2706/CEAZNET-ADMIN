@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { PanelCard, timeAgo } from '../ui';
+import { PanelCard, timeAgo, CustomDropdown } from '../ui';
 import type { NewsLog } from '../../types';
 import { ChevronRight, Trash2, CheckSquare, Square, Terminal } from 'lucide-react';
 
@@ -145,24 +145,25 @@ const NewsLogs: React.FC<{
     return (
         <PanelCard className="!p-0 flex flex-col [clip-path:inset(0_round_0.5rem)]">
             <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <button 
-                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                        className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
-                    >
-                        Sort by Date: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
-                    </button>
-                    <select 
+                <button 
+                    onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
+                >
+                    Sort by Date: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+                </button>
+                <div className="w-fit">
+                    <CustomDropdown 
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="text-xs font-semibold bg-[var(--subtle-bg)] text-[var(--text-secondary)] border-none rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                        <option value="ALL">All Statuses</option>
-                        <option value="SUCCESS">Success</option>
-                        <option value="FAILURE">Failure</option>
-                        <option value="ERROR">Error</option>
-                        <option value="WARNING">Warning</option>
-                    </select>
+                        onChange={setStatusFilter}
+                        options={['ALL', 'SUCCESS', 'FAILURE', 'ERROR', 'WARNING']}
+                        displayLabels={{
+                            'ALL': 'All Statuses',
+                            'SUCCESS': 'Success',
+                            'FAILURE': 'Failure',
+                            'ERROR': 'Error',
+                            'WARNING': 'Warning'
+                        }}
+                    />
                 </div>
             </div>
             <div className="flex flex-col">

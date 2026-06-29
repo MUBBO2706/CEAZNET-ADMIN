@@ -233,7 +233,7 @@ export const CustomDropdown: React.FC<{
         const rect = triggerEl.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const panelHeight = Math.min(options.length * 40 + 8, 240); // Estimate row heights for wrapping list
+        const panelHeight = Math.min(options.length * 40 + 8, 240);
         
         let direction: 'up' | 'down' = 'down';
         let top = rect.bottom;
@@ -243,8 +243,8 @@ export const CustomDropdown: React.FC<{
             top = rect.top;
         }
         
-        // Calculate dynamic width: comfortable 320px for descriptive items, but never overflow the viewport
-        const panelWidth = Math.min(Math.max(rect.width, 320), window.innerWidth - 32);
+        // Use trigger width directly as requested for modal width
+        const panelWidth = rect.width;
         
         // Ensure left position does not overflow viewport margins
         let left = rect.left;
@@ -318,7 +318,7 @@ export const CustomDropdown: React.FC<{
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-white dark:bg-zinc-900 pb-1 pt-1 relative`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] pb-1 pt-1 relative`}
             role="listbox"
             style={{
                 position: 'fixed',
@@ -329,14 +329,14 @@ export const CustomDropdown: React.FC<{
                 zIndex: 999999
             }}
         >
-            <div className={`absolute left-1/2 -ml-1.5 w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-slate-200 dark:border-zinc-800 rotate-45 ${position.direction === 'down' ? '-top-1.5' : '-bottom-1.5'}`} />
+            <div className={`absolute left-[50%] -ml-1.5 w-3 h-3 bg-[var(--card-bg)] border-l border-t border-[var(--border-color)] rotate-45 ${position.direction === 'down' ? '-top-1.5' : '-bottom-1.5'}`} />
             {options.map((option) => (
                 <button
                     key={option}
                     type="button"
                     role="option"
                     aria-selected={value === option}
-                    className={`custom-dropdown-option hover:bg-slate-100 dark:hover:bg-zinc-800 ${value === option ? 'active text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-zinc-800/50' : 'text-slate-700 dark:text-zinc-300'}`}
+                    className={`custom-dropdown-option ${value === option ? 'active text-[var(--accent-color)] bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'}`}
                     onClick={(e) => {
                         e.stopPropagation();
                         handleSelect(option);
@@ -353,28 +353,32 @@ export const CustomDropdown: React.FC<{
             <style>{`
                 .custom-dropdown-wrapper {
                     position: relative;
-                    width: 100%;
+                    width: fit-content;
                 }
                 .custom-dropdown-trigger {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    width: 100%;
+                    width: fit-content;
+                    min-width: 120px;
                     text-align: left;
                     background-color: var(--card-bg);
-                    border: 1px solid #d1d5db;
+                    border: 1px solid var(--border-color);
                     transition: all 0.2s ease-in-out;
                     border-radius: 0.5rem;
                     color: var(--text-primary);
                     cursor: pointer;
+                    padding: 0.375rem 0.75rem;
+                    font-size: 0.75rem;
                 }
                 .custom-dropdown-trigger:focus {
                     outline: none;
                     border-color: var(--accent-color);
-                    box-shadow: 0 0 0 3px var(--accent-glow);
+                    box-shadow: 0 0 0 2px var(--accent-glow);
                 }
                 .custom-dropdown-trigger .chevron {
                     transition: transform 0.2s ease;
+                    margin-left: 0.5rem;
                 }
                 .custom-dropdown-trigger[aria-expanded="true"] .chevron {
                     transform: rotate(180deg);
@@ -392,6 +396,7 @@ export const CustomDropdown: React.FC<{
                     transform: scale(0.98);
                     pointer-events: none;
                     visibility: hidden;
+                    background-color: var(--card-bg);
                 }
                 .custom-dropdown-panel.open {
                     opacity: 1;
@@ -404,7 +409,7 @@ export const CustomDropdown: React.FC<{
                     width: 100%;
                     text-align: left;
                     padding: 0.5rem 0.75rem;
-                    font-size: 11px;
+                    font-size: 0.75rem;
                     line-height: 1.4;
                     color: var(--text-primary);
                     cursor: pointer;
@@ -413,7 +418,7 @@ export const CustomDropdown: React.FC<{
                     word-break: break-word;
                 }
                 .custom-dropdown-option:hover, .custom-dropdown-option.active {
-                    background-color: #f3f4f6; /* gray-100 */
+                    background-color: var(--subtle-bg);
                 }
                 .custom-dropdown-option.active {
                     font-weight: 600;
