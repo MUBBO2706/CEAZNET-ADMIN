@@ -555,15 +555,15 @@ const ApiKeyManager: React.FC<{
     const exhaustedKeys = keys.filter(k => k.status === 'exhausted').length;
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col w-full space-y-3">
             {!isBulkMode && (
-                <div className="mb-3">
+                <div>
                     <h2 className="text-xl font-bold text-[var(--text-primary)]">{title}</h2>
                     <p className="text-xs text-[var(--text-secondary)]">{description}</p>
                 </div>
             )}
 
-            <PanelCard className="overflow-visible !p-0 w-full min-w-0">
+            <PanelCard className="overflow-visible !p-0 w-full min-w-0 flex flex-col justify-between">
                 <div className="flex justify-between items-center gap-4 p-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-md">
@@ -656,7 +656,7 @@ const ApiKeyManager: React.FC<{
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col api-key-manager-wrapper">
+                    <div className="flex flex-col flex-1 api-key-manager-wrapper justify-between h-full">
                         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-secondary)] bg-[var(--subtle-bg)] px-4 py-3 border-b border-[var(--border-color)]">
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-4">
                                 <div className="flex items-center gap-1.5">
@@ -688,8 +688,8 @@ const ApiKeyManager: React.FC<{
                             </button>
                         </div>
 
-                        <div className="w-full overflow-hidden">
-                            <div className="flex flex-col">
+                        <div className="w-full overflow-hidden flex-1 flex flex-col">
+                            <div className="flex flex-col flex-1">
                                 <div className="relative border-b border-[var(--border-color)]">
                                     <div 
                                         ref={headerRef}
@@ -729,37 +729,39 @@ const ApiKeyManager: React.FC<{
                                             );
                                         })}
                                     </div>
-                                    <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[120px] bg-gradient-to-l from-[var(--subtle-bg)] dark:from-black from-50% to-transparent pr-4 z-10 pointer-events-none">
+                                    <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[120px] bg-gradient-to-l from-[var(--subtle-bg)] via-[var(--subtle-bg)] dark:from-black dark:via-black to-transparent from-60% pr-4 z-10 pointer-events-none">
                                         <div className="text-right text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)]">Actions</div>
                                     </div>
                                 </div>
                                 
-                                {keys.length > 0 ? (
-                                    keys.map((keyObj, index) => (
-                                        <ApiKeyRow 
-                                            key={keyObj.id} 
-                                            apiKeyObj={keyObj}
-                                            columns={dynamicColumns}
-                                            isLast={index === keys.length - 1}
-                                            onDelete={() => setKeyToDelete(keyObj)}
-                                            onUpdate={(newKey) => handleUpdateKey(keyObj.id, newKey)}
-                                            onResetStatus={() => handleUpdateKey(keyObj.id, { status: 'active', failure_count: 0 })}
-                                            onScroll={handleRowScroll}
-                                            focusedColumn={focusedColumn}
-                                        />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 bg-[var(--card-bg)]">
-                                        <div className="w-10 h-10 bg-[var(--subtle-bg)] rounded-full flex items-center justify-center mx-auto mb-2 text-[var(--text-secondary)]">
-                                            <KeyRound size={20} />
+                                <div className="flex-1">
+                                    {keys.length > 0 ? (
+                                        keys.map((keyObj, index) => (
+                                            <ApiKeyRow 
+                                                key={keyObj.id} 
+                                                apiKeyObj={keyObj}
+                                                columns={dynamicColumns}
+                                                isLast={index === keys.length - 1}
+                                                onDelete={() => setKeyToDelete(keyObj)}
+                                                onUpdate={(newKey) => handleUpdateKey(keyObj.id, newKey)}
+                                                onResetStatus={() => handleUpdateKey(keyObj.id, { status: 'active', failure_count: 0 })}
+                                                onScroll={handleRowScroll}
+                                                focusedColumn={focusedColumn}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 bg-[var(--card-bg)] flex-1 flex flex-col justify-center items-center">
+                                            <div className="w-10 h-10 bg-[var(--subtle-bg)] rounded-full flex items-center justify-center mx-auto mb-2 text-[var(--text-secondary)]">
+                                                <KeyRound size={20} />
+                                            </div>
+                                            <p className="text-xs text-[var(--text-secondary)]">No API keys configured.</p>
                                         </div>
-                                        <p className="text-xs text-[var(--text-secondary)]">No API keys configured.</p>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-[var(--border-color)] flex flex-row justify-between gap-2 sm:gap-3 bg-[var(--card-bg)]">
+                        <div className="p-4 border-t border-[var(--border-color)] flex flex-row justify-between gap-2 sm:gap-3 bg-[var(--card-bg)] mt-auto">
                             <div className="flex gap-2">
                                 <button 
                                     onClick={handleResetExhausted} 
@@ -896,13 +898,13 @@ const AiModelConfigManager: React.FC<{
                         <p>No configurations found.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {configs.filter(c => c.config_key !== 'is_news_updating' && c.config_key !== 'last_run_trigger').map(config => {
                             const isEditing = editingId === config.id;
                             const displayValue = typeof config.config_value === 'string' ? config.config_value : JSON.stringify(config.config_value);
                             
                             return (
-                                <div key={config.id} className={`group relative bg-[var(--card-bg)] border rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between ${isEditing ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
+                                <div key={config.id} className={`group relative bg-[var(--card-bg)] border rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full ${isEditing ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
                                     <div className="mb-2">
                                         <div className="flex items-start justify-between gap-2 mb-1">
                                             <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">
@@ -1098,8 +1100,8 @@ const AudioSettingsManager: React.FC = () => {
                 <p className="text-xs text-[var(--text-secondary)]">Manage notification sounds</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative ${editingNotif ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${editingNotif ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
                     <div className="flex items-start gap-2 sm:gap-3 flex-1">
                         <div className={`mt-[2px] p-1.5 sm:p-2 rounded-lg transition-colors shrink-0 ${notifEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-[var(--subtle-bg)] text-[var(--text-secondary)]'}`}>
                             {notifEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -1170,7 +1172,7 @@ const AudioSettingsManager: React.FC = () => {
                     </div>
                 </div>
 
-                <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative ${editingCompletion ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
+                <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${editingCompletion ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
                     <div className="flex items-start gap-2 sm:gap-3 flex-1">
                         <div className={`mt-[2px] p-1.5 sm:p-2 rounded-lg transition-colors shrink-0 ${completionEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-[var(--subtle-bg)] text-[var(--text-secondary)]'}`}>
                             {completionEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -1266,7 +1268,7 @@ const SystemStatusManager: React.FC<{
                 <p className="text-xs text-[var(--text-secondary)]">Current operational state</p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* News Update Status */}
                 <div className="group relative bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-indigo-500/30 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200">
                     <div className="mb-2 flex items-center justify-between">
@@ -1407,18 +1409,14 @@ const NewsSettings: React.FC<{ currentConfig?: any; onUpdate?: () => Promise<voi
             </div>
 
             {activeTab === 'configuration' && (
-                <div className="space-y-8 animate-in fade-in duration-300">
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        <div className="xl:col-span-2">
-                            <AiModelConfigManager configs={configs} onRefresh={fetchData} />
-                        </div>
-                        <div className="flex flex-col gap-8">
-                            <AudioSettingsManager />
-                            <SystemStatusManager configs={configs} />
-                        </div>
+                <div className="space-y-8 animate-in fade-in duration-300 w-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch w-full">
+                        <AiModelConfigManager configs={configs} onRefresh={fetchData} />
+                        <AudioSettingsManager />
                     </div>
+                    <SystemStatusManager configs={configs} />
                     
-                    <div className="max-w-[100rem] mx-auto grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 md:items-start">
+                    <div className="w-full flex flex-col gap-8">
                         <ApiKeyManager
                             title="GNews API Keys"
                             description="Keys for fetching news articles from GNews. The system will cycle through them."

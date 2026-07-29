@@ -758,11 +758,14 @@ const SupportInboxPage: React.FC = () => {
                                                 <div className="flex flex-col flex-1 justify-center">
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200">
-                                                                {isAdmin ? 'Support Team' : (userProfiles[msg.sender_id]?.full_name || 'User')} 
-                                                                <span className="text-xs font-normal text-zinc-500 ml-1">{"<"}{isAdmin ? settings.support_email : (userProfiles[msg.sender_id]?.email || 'user@clientapp.com')}{">"}</span>
+                                                            <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">
+                                                                {isAdmin ? (userProfiles[activeConv?.user_id || '']?.full_name || 'User') : (userProfiles[msg.sender_id]?.full_name || 'User')}
                                                             </span>
-                                                            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                                            <span className="text-[11px] font-medium text-zinc-500 mt-0.5 flex items-center gap-1.5">
+                                                                <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold">{isAdmin ? 'To:' : 'From:'}</span>
+                                                                <span>{"<"}{isAdmin ? (userProfiles[activeConv?.user_id || '']?.email || 'user@clientapp.com') : (userProfiles[msg.sender_id]?.email || 'user@clientapp.com')}{">"}</span>
+                                                            </span>
+                                                            <span className="text-[10px] font-medium text-zinc-400 mt-0.5">
                                                                 {new Date(msg.created_at).toLocaleDateString()} {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         </div>
@@ -802,6 +805,10 @@ const SupportInboxPage: React.FC = () => {
                                     >
                                         <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isAdmin ? 'items-end' : 'items-start'}`}>
                                             <div className="flex items-center gap-2 mb-1 px-1">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                                                    <span>{isAdmin ? 'To:' : 'From:'}</span>
+                                                    <span className="text-zinc-500 dark:text-zinc-400">{userProfiles[activeConv?.user_id || '']?.full_name || 'User'}</span>
+                                                </span>
                                                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
@@ -937,7 +944,7 @@ const SupportInboxPage: React.FC = () => {
                                             />
                                         </div>
                                         <div className="flex flex-row justify-between items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-100 dark:border-zinc-800">
-                                            <div className="relative shrink-0 w-[110px] sm:w-[130px]">
+                                            <div className="relative min-w-0 flex-1 max-w-[150px]">
                                                 <CustomDropdown
                                                     options={KNOWN_MODELS}
                                                     value={selectedAiModel}
@@ -952,7 +959,7 @@ const SupportInboxPage: React.FC = () => {
                                                     whileTap={!isGeneratingAi && replyText.trim() ? { scale: 0.96 } : {}}
                                                     onClick={handleGenerateAiReply}
                                                     disabled={isGeneratingAi}
-                                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-3 transition-all text-white rounded-full font-medium text-[12px] h-[32px] w-[110px] sm:w-[120px] shrink-0 border shadow-sm ${
+                                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-3 transition-all text-white rounded-full font-medium text-[12px] h-[32px] w-fit min-w-[100px] shrink-0 border shadow-sm ${
                                                         isGeneratingAi 
                                                             ? 'bg-slate-900 border-transparent text-white cursor-wait shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
                                                             : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 hover:shadow-md border-transparent disabled:opacity-70 disabled:shadow-none'
@@ -1051,7 +1058,7 @@ const SupportInboxPage: React.FC = () => {
                                                                 className="flex flex-row items-center gap-1.5 z-10"
                                                             >
                                                                 <Send className="w-3.5 h-3.5" />
-                                                                <span>Send Reply</span>
+                                                                <span>Send</span>
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
@@ -1092,20 +1099,24 @@ const SupportInboxPage: React.FC = () => {
                                         <div className="flex items-center justify-between w-full px-1 pb-1">
                                             <div className="text-[11px] font-medium text-zinc-500 hidden sm:block">Reply Settings</div>
                                             <div className="text-[11px] font-medium text-zinc-500 block sm:hidden">AI Model</div>
-                                            <div className="relative z-20 flex items-center gap-2">
-                                                <CustomDropdown
-                                                    options={['ai', 'direct']}
-                                                    value={sendMode}
-                                                    onChange={(val) => setSendMode(val as 'ai' | 'direct')}
-                                                    displayLabels={{'ai': 'With AI', 'direct': 'Direct'}}
-                                                    triggerClassName="!h-[24px] !p-1 !px-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg !text-[10px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm min-w-[70px] flex items-center justify-between gap-1"
-                                                />
-                                                <CustomDropdown
-                                                    options={KNOWN_MODELS}
-                                                    value={selectedAiModel}
-                                                    onChange={setSelectedAiModel}
-                                                    triggerClassName="!h-[24px] !p-1 !px-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg !text-[9px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm max-w-[120px] flex items-center justify-between gap-1 truncate"
-                                                />
+                                            <div className="relative z-20 flex items-center gap-2 min-w-0 flex-1 justify-end">
+                                                <div className="shrink-0">
+                                                    <CustomDropdown
+                                                        options={['ai', 'direct']}
+                                                        value={sendMode}
+                                                        onChange={(val) => setSendMode(val as 'ai' | 'direct')}
+                                                        displayLabels={{'ai': 'With AI', 'direct': 'Direct'}}
+                                                        triggerClassName="!h-[24px] !p-1 !px-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg !text-[10px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm min-w-[70px] flex items-center justify-between gap-1"
+                                                    />
+                                                </div>
+                                                <div className="min-w-0 max-w-[130px]">
+                                                    <CustomDropdown
+                                                        options={KNOWN_MODELS}
+                                                        value={selectedAiModel}
+                                                        onChange={setSelectedAiModel}
+                                                        triggerClassName="!h-[24px] !p-1 !px-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg !text-[9px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm w-full flex items-center justify-between gap-1 truncate"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-end gap-1.5 sm:gap-2 w-full">

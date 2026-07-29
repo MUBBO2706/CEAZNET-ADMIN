@@ -390,21 +390,23 @@ END; $$;`}
                                                     onClick={() => setSelectedTable(table.name)}
                                                 >
                                                     <div
-                                                        className={`flex-grow text-left flex items-center gap-2 text-xs font-medium ${
+                                                        className={`flex-grow min-w-0 text-left flex items-center justify-between gap-1.5 text-xs font-medium ${
                                                             selectedTable === table.name 
                                                                 ? 'text-indigo-600 dark:text-indigo-400' 
                                                                 : 'text-[var(--sidebar-text-secondary)] group-hover:text-[var(--sidebar-text-primary)]'
                                                         }`}
                                                         title={`Last Used: ${lastUsedDate}`}
                                                     >
-                                                        <Table size={12} className="shrink-0" />
-                                                        <span className="truncate font-mono">{table.name}</span>
+                                                        <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                                            <Table size={12} className="shrink-0" />
+                                                            <span className="truncate font-mono">{table.name}</span>
+                                                        </div>
                                                         {isNeverUsed ? (
-                                                            <span className="ml-1 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-sm border border-amber-200 dark:border-amber-800/50">
+                                                            <span className="ml-1 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-sm border border-amber-200 dark:border-amber-800/50 whitespace-nowrap shrink-0">
                                                                 Never Used
                                                             </span>
                                                         ) : (
-                                                            <span className="ml-1 text-[9px] opacity-60 font-mono">
+                                                            <span className="ml-1 text-[9px] opacity-60 font-mono whitespace-nowrap shrink-0">
                                                                 {timeAgo}
                                                             </span>
                                                         )}

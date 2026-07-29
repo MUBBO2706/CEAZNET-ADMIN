@@ -135,7 +135,7 @@ const FunctionHealthCard: React.FC<{ func: EdgeFunctionStats }> = ({ func }) => 
                     </div>
                     <div>
                         <div className="font-bold text-sm text-[var(--text-primary)] truncate max-w-[150px] sm:max-w-[200px]">{func.function_name}</div>
-                        <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mt-1">
+                        <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mt-1 whitespace-nowrap shrink-0">
                             <Clock size={12} /> {func.last_run ? timeAgo(func.last_run) : 'Never'}
                         </div>
                     </div>
