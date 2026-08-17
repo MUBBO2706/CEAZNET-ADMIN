@@ -7,7 +7,7 @@ import { resetTableSequence, resetTableData, fetchTableDetails, fetchAllTables, 
 import { fetchDatabaseAnalytics } from '../services/supabaseService';
 import type { TableDetails, DatabaseAnalyticsStats } from '../types';
 import TableDetailsView from '../components/settings/TableDetailsView';
-import { Database, AlertTriangle, RefreshCw, Trash2, Table, MoreVertical, Info } from 'lucide-react';
+import { Database, AlertTriangle, RotateCw, Trash2, Table, MoreVertical, Info } from 'lucide-react';
 import ReactDOM from 'react-dom';
 import DatabaseAnalyticsCard from '../components/settings/DatabaseAnalyticsCard';
 import PlatformSettingsView from '../components/settings/PlatformSettingsView';
@@ -501,7 +501,7 @@ END; $$;`}
                                     onClick={() => { handleResetSequenceClick(activePopover.tableName); setActivePopover(null); }}
                                     className="popover-item warning"
                                 >
-                                    <RefreshCw size={14} /> Reset ID Sequence
+                                    <RotateCw size={14} /> Reset ID Sequence
                                 </button>
                             );
                         })()}

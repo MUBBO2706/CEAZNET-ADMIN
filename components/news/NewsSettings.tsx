@@ -6,7 +6,7 @@ import { PanelCard, ConfirmationModal, CustomDropdown } from '../ui';
 import { LoadingSpinner } from '../skeletons';
 import { dbMain, getNewsApiKeys, addNewsApiKey, deleteNewsApiKey, updateNewsApiKey, resetNewsApiKeysStatus, resetAllNewsApiKeysData, getNewsSystemConfigs, updateNewsSystemConfig, addNewsSystemConfig } from '../../services/supabaseService';
 import type { NewsApiKey, NewsSystemConfig } from '../../types';
-import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RefreshCw, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle } from 'lucide-react';
+import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RotateCw, Loader, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle } from 'lucide-react';
 import CodeEditor from '../ui/CodeEditor';
 import { JsonNode, updateNestedValue, deleteNestedValue, getNestedValue } from '../data/JsonEditor';
 
@@ -768,7 +768,7 @@ const ApiKeyManager: React.FC<{
                                     className="btn btn-secondary text-xs flex items-center gap-1.5"
                                     disabled={exhaustedKeys === 0 || isResetting}
                                 >
-                                    <RefreshCw size={14} className={isResetting ? "animate-spin" : ""} />
+                                    {isResetting ? <Loader size={14} className="animate-spin" /> : <RotateCw size={14} />}
                                     <span className="hidden sm:inline">Reset Exhausted</span>
                                 </button>
                             </div>
@@ -947,7 +947,7 @@ const AiModelConfigManager: React.FC<{
                                                         />
                                                     </div>
                                                     <button onClick={() => handleSave(config.id)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
-                                                        {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                                                        {isSaving ? <Loader size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
                                                     </button>
                                                     <button onClick={() => setEditingId(null)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded border border-[var(--border-color)] transition-colors" title="Cancel">
                                                         <X size={12} strokeWidth={3} />

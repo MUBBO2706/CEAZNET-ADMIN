@@ -4,7 +4,7 @@ import { PanelCard, ConfirmationModal, CustomDropdown, timeAgo } from '../ui';
 import { LoadingSpinner } from '../skeletons';
 import { fetchNewsArticles, deleteNewsArticle, createNewsArticle, updateNewsArticle } from '../../services/supabaseService';
 import type { NewsArticle } from '../../types';
-import { Search, Trash2, ExternalLink, Tag, Loader2, Eye, Heart, Edit, Plus, X, Save, Image as ImageIcon, Globe, Link as LinkIcon, Check, Clock, FileText, ChevronRight } from 'lucide-react';
+import { Search, Trash2, ExternalLink, Tag, Loader, Eye, Heart, Edit, Plus, X, Save, Image as ImageIcon, Globe, Link as LinkIcon, Check, Clock, FileText, ChevronRight } from 'lucide-react';
 import ReactDOM from 'react-dom';
 
 // --- Article Create/Edit Modal ---
@@ -170,7 +170,7 @@ const ArticleModal: React.FC<{
                     <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-[var(--border-color)]">
                         <button type="button" onClick={onClose} className="btn btn-secondary text-sm px-4 py-2">Cancel</button>
                         <button type="submit" className="btn btn-primary flex items-center gap-2 text-sm px-4 py-2 shadow-sm" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>}
+                            {isSaving ? <Loader className="animate-spin" size={16}/> : <Save size={16}/>}
                             {isSaving ? 'Saving...' : 'Save Article'}
                         </button>
                     </div>

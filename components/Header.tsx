@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAutoRefresh, useCountdown } from './AutoRefreshContext';
-import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, MessageSquare, RefreshCw } from 'lucide-react';
+import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, MessageSquare, RotateCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dbMain, fetchLiveActivityLogs } from '../services/supabaseService';
 import type { RecentActivityLog } from '../types';

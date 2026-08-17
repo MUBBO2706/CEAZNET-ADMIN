@@ -15,7 +15,7 @@ import ActivityLogViewer from './ActivityLogViewer';
 // --- Row Details View (Updated Component) ---
 import { JsonNode, updateNestedValue, deleteNestedValue, getNestedValue } from '../data/JsonEditor';
 import CodeEditor from '../ui/CodeEditor';
-import { Save, Edit2, Loader2, RotateCcw } from 'lucide-react';
+import { Save, Edit2, Loader, RotateCcw } from 'lucide-react';
 
 const ExpandableText: React.FC<{ text: string }> = ({ text }) => {
     const [expanded, setExpanded] = useState(false);
@@ -246,7 +246,7 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
                                 <span className="hidden sm:inline">Cancel</span>
                             </button>
                             <button onClick={handleSave} className="btn btn-primary px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm" disabled={isSaving}>
-                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                {isSaving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
                                 <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                         </div>

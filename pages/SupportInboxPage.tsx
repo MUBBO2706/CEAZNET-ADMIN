@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { dbMain, fetchUsersData } from '../services/supabaseService';
 import { UserProfile, UserStats } from '../types';
@@ -9,14 +9,16 @@ import {
     updateConversationStatus,
     markMessagesAsRead,
     searchConversations,
+    deleteConversation,
     SupportConversation,
     SupportMessage
 } from '../services/supportInboxService';
-import { Mail, ArrowUp, MessageSquare, CheckCircle, Clock, Send, Archive, RefreshCw, AlertCircle, X, Search, ChevronLeft, User, Check, CheckCheck, Paperclip, Bold, Italic, List, ImageIcon, FileText, Download, Reply, Forward, Braces, MoreHorizontal, MoreVertical, Sparkles } from 'lucide-react';
+import { uploadSupportAttachment, UploadedAttachment } from '../services/attachmentUploadService';
+import { Mail, ArrowUp, MessageSquare, CheckCircle, Clock, Send, Archive, Loader, RotateCw, AlertCircle, X, Search, ChevronLeft, User, Check, CheckCheck, Paperclip, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, List, ListOrdered, Quote, Code, Link2, RemoveFormatting, ImageIcon, FileText, Download, Reply, Forward, Braces, MoreHorizontal, MoreVertical, Sparkles, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { MessageAttachment } from '../components/MessageAttachment';
+import { MessageAttachment, FullScreenAttachmentPreview } from '../components/MessageAttachment';
 import { generateSupportReply } from '../services/aiReplyService';
 import { CustomDropdown } from '../components/ui';
 import { LoadingSpinner } from '../components/skeletons';
@@ -35,6 +37,168 @@ const SparkleStarIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+const CustomAiSparkleIcon = ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className || "w-5 h-5"} xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z" fill="#3b82f6" />
+    </svg>
+);
+
+interface PendingAttachmentData {
+    id: string;
+    file: File;
+    previewUrl: string;
+    isImage: boolean;
+    name: string;
+    size: number;
+    uploading: boolean;
+    uploadedData?: UploadedAttachment;
+    error?: string;
+}
+
+const PendingAttachmentsList: React.FC<{
+    attachments: PendingAttachmentData[];
+    onRemove: (id: string) => void;
+    formatSize: (bytes: number) => string;
+    onPreview?: (attachment: PendingAttachmentData) => void;
+}> = ({ attachments, onRemove, formatSize, onPreview }) => {
+    if (!attachments || attachments.length === 0) return null;
+
+    return (
+        <div className="flex items-center gap-1.5 py-1 overflow-x-auto max-w-full pb-1.5 -mb-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <AnimatePresence>
+                {attachments.map((attachment) => {
+                    if (attachment.uploading) {
+                        return (
+                            <motion.div
+                                key={attachment.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/60 rounded-xl shadow-xs shrink-0 whitespace-nowrap"
+                            >
+                                <Loader size={13} className="animate-spin text-indigo-500 shrink-0" />
+                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Uploading...</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemove(attachment.id);
+                                    }}
+                                    className="w-4 h-4 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors ml-0.5 shrink-0"
+                                    title="Cancel upload"
+                                >
+                                    <X size={11} />
+                                </button>
+                            </motion.div>
+                        );
+                    }
+
+                    if (attachment.error) {
+                        return (
+                            <motion.div
+                                key={attachment.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl shadow-xs shrink-0 text-xs whitespace-nowrap"
+                            >
+                                <AlertCircle size={13} className="shrink-0" />
+                                <span className="font-medium truncate max-w-[120px]">{attachment.name} (Failed)</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemove(attachment.id);
+                                    }}
+                                    className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-200/50 transition-colors ml-0.5 shrink-0"
+                                    title="Remove"
+                                >
+                                    <X size={11} />
+                                </button>
+                            </motion.div>
+                        );
+                    }
+
+                    return (
+                        <motion.div
+                            key={attachment.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={() => onPreview && onPreview(attachment)}
+                            className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-zinc-100/90 hover:bg-zinc-200/80 dark:bg-zinc-800/90 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700/60 rounded-xl shadow-xs shrink-0 whitespace-nowrap max-w-[260px] sm:max-w-[300px] cursor-pointer transition-colors group"
+                            title="Click to preview attachment"
+                        >
+                            {attachment.isImage ? (
+                                <div className="w-7 h-7 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-900 shrink-0 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center relative">
+                                    <img src={attachment.previewUrl} alt={attachment.name} className="w-full h-full object-cover" />
+                                </div>
+                            ) : (
+                                <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-500/20">
+                                    <FileText className="w-4 h-4" />
+                                </div>
+                            )}
+                            <div className="min-w-0 flex items-center gap-1.5">
+                                <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[110px] sm:max-w-[150px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                    {attachment.name}
+                                </span>
+                                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium shrink-0">
+                                    {formatSize(attachment.size)}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(attachment.id);
+                                }}
+                                className="w-4 h-4 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors ml-0.5 shrink-0"
+                                title="Remove attachment"
+                            >
+                                <X size={11} />
+                            </button>
+                        </motion.div>
+                    );
+                })}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+function htmlToMarkdown(html: string): string {
+    if (!html) return '';
+    if (!/<[a-z][\s\S]*>/i.test(html)) return html.trim();
+
+    let text = html;
+    text = text.replace(/<div><br><\/div>/gi, '\n');
+    text = text.replace(/<div>/gi, '\n');
+    text = text.replace(/<\/div>/gi, '');
+    text = text.replace(/<p>/gi, '');
+    text = text.replace(/<\/p>/gi, '\n\n');
+    text = text.replace(/<b>(.*?)<\/b>/gi, '**$1**');
+    text = text.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
+    text = text.replace(/<i>(.*?)<\/i>/gi, '*$1*');
+    text = text.replace(/<em>(.*?)<\/em>/gi, '*$1*');
+    text = text.replace(/<u>(.*?)<\/u>/gi, '_$1_');
+    text = text.replace(/<s>(.*?)<\/s>/gi, '~$1~');
+    text = text.replace(/<strike>(.*?)<\/strike>/gi, '~$1~');
+    text = text.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n');
+    text = text.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n');
+    text = text.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n');
+    text = text.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n');
+    text = text.replace(/<pre>(.*?)<\/pre>/gi, '```\n$1\n```');
+    text = text.replace(/<ul>(.*?)<\/ul>/gi, '$1');
+    text = text.replace(/<ol>(.*?)<\/ol>/gi, '$1');
+    text = text.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+    text = text.replace(/<br\s*\/?>/gi, '\n');
+    text = text.replace(/<a [^>]*href="(.*?)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+    text = text.replace(/&nbsp;/g, ' ');
+    text = text.replace(/&lt;/g, '<');
+    text = text.replace(/&gt;/g, '>');
+    text = text.replace(/&amp;/g, '&');
+    return text.trim();
+}
+
 const KNOWN_MODELS = [
     'gemini-3.1-flash-lite',
     'gemini-2.5-flash-lite',
@@ -46,6 +210,263 @@ const KNOWN_MODELS = [
     'gemini-3-flash',
     'gemini-3-pro'
 ];
+
+interface ParsedAttachment {
+    url: string;
+    name: string;
+    type: string;
+    isImage: boolean;
+}
+
+function parseSupportAttachments(rawUrl?: string | null, rawName?: string | null, rawType?: string | null): ParsedAttachment[] {
+    if (!rawUrl || !rawUrl.trim()) return [];
+
+    let urls: string[] = [];
+    if (rawUrl.trim().startsWith('[') && rawUrl.trim().endsWith(']')) {
+        try {
+            urls = JSON.parse(rawUrl);
+        } catch {
+            urls = rawUrl.split(',').map(s => s.trim());
+        }
+    } else {
+        urls = rawUrl.split(',').map(s => s.trim());
+    }
+
+    let names: string[] = [];
+    if (rawName && rawName.trim()) {
+        if (rawName.trim().startsWith('[') && rawName.trim().endsWith(']')) {
+            try {
+                names = JSON.parse(rawName);
+            } catch {
+                names = rawName.split(',').map(s => s.trim());
+            }
+        } else {
+            names = rawName.split(',').map(s => s.trim());
+        }
+    }
+
+    let types: string[] = [];
+    if (rawType && rawType.trim()) {
+        if (rawType.trim().startsWith('[') && rawType.trim().endsWith(']')) {
+            try {
+                types = JSON.parse(rawType);
+            } catch {
+                types = rawType.split(',').map(s => s.trim());
+            }
+        } else {
+            types = rawType.split(',').map(s => s.trim());
+        }
+    }
+
+    return urls.filter(Boolean).map((u, idx) => {
+        const itemType = types[idx] || (types.length === 1 ? types[0] : '') || '';
+        const itemName = names[idx] || (names.length === 1 && urls.length === 1 ? names[0] : '') || (u.startsWith('tg://') ? `attachment_${idx + 1}` : u.split('/').pop() || `file_${idx + 1}`);
+        const isImg = itemType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(itemName) || /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(u);
+        return {
+            url: u,
+            name: itemName,
+            type: itemType,
+            isImage: isImg
+        };
+    });
+}
+
+const MessageItem = React.memo(({ 
+    msg, 
+    userProfiles, 
+    activeConv, 
+    settings 
+}: { 
+    msg: SupportMessage; 
+    userProfiles: Record<string, UserProfile>; 
+    activeConv: SupportConversation | undefined; 
+    settings: any; 
+}) => {
+    const isAdmin = msg.sender_type === 'admin';
+    const isMail = activeConv?.type === 'mail';
+    const attachmentsList = parseSupportAttachments(msg.attachment_url, msg.attachment_name, msg.attachment_type);
+
+    if (isMail) {
+        return (
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`w-full pb-4 mb-4 border-b border-zinc-100 dark:border-zinc-800/60 last:border-0 last:mb-0 last:pb-0 ${isAdmin ? 'pl-4 border-l-2 border-l-indigo-500' : 'pl-4 border-l-2 border-l-zinc-200 dark:border-l-zinc-700'}`}
+            >
+                <div className="flex items-start gap-3 p-0 mb-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${isAdmin ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-zinc-200 text-zinc-600 dark:bg-black dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'}`}>
+                        {!isAdmin && userProfiles[msg.sender_id]?.avatar_url ? (
+                            <img src={userProfiles[msg.sender_id].avatar_url} alt="User Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        ) : isAdmin ? (
+                            <img src={settings?.platform_logo_url} alt="Support Team" referrerPolicy="no-referrer" className="w-full h-full object-contain p-1" />
+                        ) : (
+                            <User className="w-5 h-5" />
+                        )}
+                    </div>
+                    <div className="flex flex-col flex-1 justify-center">
+                        <div className="flex justify-between items-start">
+                            <div className="flex flex-col">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">
+                                        {isAdmin ? 'Ceaznet Support' : (userProfiles[msg.sender_id]?.full_name || 'User')}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-zinc-400">
+                                        - {new Date(msg.created_at).toLocaleDateString()} {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                                <span className="text-[11px] font-medium text-zinc-500 mt-0.5 flex items-center gap-1.5">
+                                    <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold">{isAdmin ? 'To:' : 'From:'}</span>
+                                    <span>{"<"}{isAdmin ? (userProfiles[activeConv?.user_id || '']?.email || 'user@clientapp.com') : (userProfiles[msg.sender_id]?.email || 'user@clientapp.com')}{">"}</span>
+                                </span>
+                            </div>
+                            <button className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-md transition-colors" title="More options (coming soon)">
+                                <MoreVertical className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-3 text-[13px] sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed markdown-body [&_p]:whitespace-pre-wrap [&_li]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.message}
+                    </ReactMarkdown>
+                </div>
+                {attachmentsList.length > 0 && (
+                    <div className={`mt-3 ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-2 max-w-lg w-full' : 'flex flex-wrap gap-2 items-center'}`}>
+                        {attachmentsList.map((att, idx) => (
+                            <MessageAttachment 
+                                key={idx}
+                                url={att.url} 
+                                name={att.name} 
+                                isImage={att.isImage} 
+                                imageClassName="max-w-xs max-h-64 object-contain"
+                                linkClassName="inline-flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors border border-zinc-200 dark:border-zinc-700"
+                                isAdmin={false}
+                            />
+                        ))}
+                    </div>
+                )}
+            </motion.div>
+        );
+    }
+    
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}
+        >
+            <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isAdmin ? 'items-end' : 'items-start'}`}>
+                <div className="flex items-center gap-2 mb-1 px-1">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                        <span>{isAdmin ? 'To:' : 'From:'}</span>
+                        <span className="text-zinc-500 dark:text-zinc-400">{userProfiles[activeConv?.user_id || '']?.full_name || 'User'}</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+                <div 
+                    className={`px-3 py-2 sm:px-4 sm:py-2.5 shadow-sm ${
+                        isAdmin 
+                            ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm' 
+                            : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 rounded-2xl rounded-tl-sm'
+                    } text-[13px] sm:text-sm`}
+                >
+                    <div className="break-words markdown-body [&_p]:whitespace-pre-wrap [&_li]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {msg.message}
+                        </ReactMarkdown>
+                    </div>
+                    {attachmentsList.length > 0 && (
+                        <div className={`mt-2 pt-2 border-t border-white/20 dark:border-zinc-700 w-full ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-1.5 min-w-[240px] sm:min-w-[280px]' : 'flex flex-wrap gap-1.5 items-center'}`}>
+                            {attachmentsList.map((att, idx) => (
+                                <MessageAttachment 
+                                    key={idx}
+                                    url={att.url} 
+                                    name={att.name} 
+                                    isImage={att.isImage} 
+                                    imageClassName="max-w-[200px] sm:max-w-[250px] rounded-lg max-h-48 object-cover"
+                                    linkClassName={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium ${isAdmin ? 'bg-white/10 hover:bg-white/20' : 'bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600'}`}
+                                    isAdmin={isAdmin}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+                {isAdmin && (
+                   <div className="flex justify-end mt-1 px-1">
+                      {msg.is_read ? (
+                         <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium tracking-wide flex items-center gap-1">
+                             <CheckCheck className="w-3.5 h-3.5" />
+                             Seen {msg.read_at ? new Date(msg.read_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                         </span>
+                      ) : (
+                         <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium flex items-center gap-1">
+                             <Check className="w-3.5 h-3.5" /> Sent
+                         </span>
+                      )}
+                   </div>
+                )}
+            </div>
+        </motion.div>
+    );
+}, (prevProps, nextProps) => {
+    return (
+        prevProps.msg.id === nextProps.msg.id &&
+        prevProps.msg.is_read === nextProps.msg.is_read &&
+        prevProps.msg.read_at === nextProps.msg.read_at &&
+        prevProps.msg.message === nextProps.msg.message &&
+        prevProps.activeConv?.id === nextProps.activeConv?.id &&
+        prevProps.settings?.platform_logo_url === nextProps.settings?.platform_logo_url &&
+        JSON.stringify(prevProps.userProfiles[prevProps.msg.sender_id]) === JSON.stringify(nextProps.userProfiles[nextProps.msg.sender_id])
+    );
+});
+
+const FastTextarea = React.memo(({ 
+    value, 
+    onChange, 
+    onKeyDown, 
+    placeholder, 
+    className, 
+    style, 
+    textareaRef 
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+    placeholder: string;
+    className: string;
+    style?: React.CSSProperties;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+}) => {
+    const [localVal, setLocalVal] = useState(value);
+    
+    useEffect(() => {
+        setLocalVal(value);
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const val = e.target.value;
+        setLocalVal(val);
+        onChange(val);
+    };
+
+    const linesCount = localVal.split('\n').length;
+    const computedRows = Math.min(5, Math.max(1, linesCount));
+
+    return (
+        <textarea
+            ref={textareaRef}
+            value={localVal}
+            onChange={handleChange}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            className={className}
+            rows={computedRows}
+            style={style}
+        />
+    );
+});
 
 const SupportInboxPage: React.FC = () => {
     const navigate = useNavigate();
@@ -67,6 +488,15 @@ const SupportInboxPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
     const [replyText, setReplyText] = useState("");
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const setReplyTextDebounced = useCallback((val: string) => {
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+        debounceTimeoutRef.current = setTimeout(() => {
+            setReplyText(val);
+        }, 150);
+    }, []);
     const [filterType, setFilterType] = useState<'all' | 'chat' | 'mail'>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'pending'>('open');
     const [searchTerm, setSearchTerm] = useState("");
@@ -85,6 +515,8 @@ const SupportInboxPage: React.FC = () => {
     });
     const [conversationMeta, setConversationMeta] = useState<Record<string, { unreadCount: number, latestMessageSnippet: string }>>({});
     const [isSearchingDB, setIsSearchingDB] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingConv, setIsDeletingConv] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('support-ai-model', selectedAiModel);
@@ -127,6 +559,239 @@ const SupportInboxPage: React.FC = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const typingChannelRef = useRef<any>(null);
     const typingCooldownRef = useRef<boolean>(false);
+    const mailTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const richEditorRef = useRef<HTMLDivElement>(null);
+    const mailFileInputRef = useRef<HTMLInputElement>(null);
+    const mailImageInputRef = useRef<HTMLInputElement>(null);
+
+    const [pendingAttachments, setPendingAttachments] = useState<PendingAttachmentData[]>([]);
+    const [previewAttachment, setPreviewAttachment] = useState<PendingAttachmentData | null>(null);
+
+    const formatAttachmentSize = (bytes: number): string => {
+        if (!bytes || bytes <= 0) return '0 B';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const handleMultipleAttachmentSelect = (files: File[]) => {
+        if (!files || files.length === 0) return;
+
+        const newItems: PendingAttachmentData[] = files.map(file => ({
+            id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            file,
+            previewUrl: URL.createObjectURL(file),
+            isImage: file.type.startsWith('image/'),
+            name: file.name,
+            size: file.size,
+            uploading: true
+        }));
+
+        setPendingAttachments(prev => [...prev, ...newItems]);
+
+        // Brief visual uploading feedback (~450ms) on selection; real Telegram upload happens when message is sent
+        setTimeout(() => {
+            setPendingAttachments(prev => prev.map(p => {
+                const isMatch = newItems.some(n => n.id === p.id);
+                if (isMatch) {
+                    return { ...p, uploading: false };
+                }
+                return p;
+            }));
+        }, 450);
+    };
+
+    const handleRemovePendingAttachment = (id?: string) => {
+        if (!id) {
+            pendingAttachments.forEach(att => {
+                if (att.previewUrl && att.previewUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(att.previewUrl);
+                }
+            });
+            setPendingAttachments([]);
+        } else {
+            const item = pendingAttachments.find(p => p.id === id);
+            if (item?.previewUrl && item.previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(item.previewUrl);
+            }
+            setPendingAttachments(prev => prev.filter(p => p.id !== id));
+        }
+        if (mailFileInputRef.current) mailFileInputRef.current.value = '';
+        if (mailImageInputRef.current) mailImageInputRef.current.value = '';
+    };
+
+    const [activeFormats, setActiveFormats] = useState<{
+        bold?: boolean;
+        italic?: boolean;
+        underline?: boolean;
+        strikethrough?: boolean;
+        h3?: boolean;
+        unorderedList?: boolean;
+        orderedList?: boolean;
+        quote?: boolean;
+        code?: boolean;
+    }>({});
+
+    const checkActiveFormats = useCallback(() => {
+        if (!richEditorRef.current) return;
+        try {
+            const isBold = document.queryCommandState('bold');
+            const isItalic = document.queryCommandState('italic');
+            const isUnderline = document.queryCommandState('underline');
+            const isStrikethrough = document.queryCommandState('strikeThrough');
+            const isUnorderedList = document.queryCommandState('insertUnorderedList');
+            const isOrderedList = document.queryCommandState('insertOrderedList');
+
+            const sel = window.getSelection();
+            let isH3 = false;
+            let isQuote = false;
+            let isCode = false;
+
+            if (sel && sel.rangeCount > 0) {
+                let node: Node | null = sel.getRangeAt(0).startContainer;
+                while (node && node !== richEditorRef.current) {
+                    if (node.nodeName === 'H3') isH3 = true;
+                    if (node.nodeName === 'BLOCKQUOTE') isQuote = true;
+                    if (node.nodeName === 'PRE') isCode = true;
+                    node = node.parentNode;
+                }
+            }
+
+            setActiveFormats({
+                bold: isBold,
+                italic: isItalic,
+                underline: isUnderline,
+                strikethrough: isStrikethrough,
+                unorderedList: isUnorderedList,
+                orderedList: isOrderedList,
+                h3: isH3,
+                quote: isQuote,
+                code: isCode,
+            });
+        } catch (e) {
+            // ignore selection state errors
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleSelectionChange = () => {
+            if (document.activeElement === richEditorRef.current || richEditorRef.current?.contains(document.activeElement)) {
+                checkActiveFormats();
+            } else {
+                setActiveFormats({});
+            }
+        };
+        document.addEventListener('selectionchange', handleSelectionChange);
+        return () => {
+            document.removeEventListener('selectionchange', handleSelectionChange);
+        };
+    }, [checkActiveFormats]);
+
+    const getFormatBtnClass = (isActive: boolean) =>
+        `p-1.5 rounded transition-all select-none shrink-0 ${
+            isActive
+                ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-300 dark:border-indigo-700 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border border-transparent'
+        }`;
+
+    const applyRichFormat = (type: 'bold' | 'italic' | 'underline' | 'strikethrough' | 'h3' | 'unorderedList' | 'orderedList' | 'quote' | 'code' | 'link' | 'clear' | 'template') => {
+        if (richEditorRef.current) {
+            richEditorRef.current.focus();
+        }
+        if (type === 'h3') {
+            document.execCommand('formatBlock', false, '<h3>');
+        } else if (type === 'quote') {
+            document.execCommand('formatBlock', false, '<blockquote>');
+        } else if (type === 'code') {
+            document.execCommand('formatBlock', false, '<pre>');
+        } else if (type === 'unorderedList') {
+            document.execCommand('insertUnorderedList', false);
+        } else if (type === 'orderedList') {
+            document.execCommand('insertOrderedList', false);
+        } else if (type === 'link') {
+            const url = prompt('Enter website URL:', 'https://');
+            if (url) {
+                document.execCommand('createLink', false, url);
+            }
+        } else if (type === 'clear') {
+            document.execCommand('removeFormat', false);
+        } else if (type === 'bold') {
+            document.execCommand('bold', false);
+        } else if (type === 'italic') {
+            document.execCommand('italic', false);
+        } else if (type === 'underline') {
+            document.execCommand('underline', false);
+        } else if (type === 'strikethrough') {
+            document.execCommand('strikeThrough', false);
+        } else if (type === 'template') {
+            const templateHtml = `<p>Hello,</p><p>Thank you for reaching out to <strong>Ceaznet Support</strong>. We are currently reviewing your request and will get back to you with an update shortly.</p><p>Best regards,<br/><strong>Ceaznet Support Team</strong></p>`;
+            document.execCommand('insertHTML', false, templateHtml);
+        }
+
+        if (richEditorRef.current) {
+            setReplyText(richEditorRef.current.innerText || richEditorRef.current.innerHTML);
+        }
+        setTimeout(checkActiveFormats, 10);
+    };
+
+    const applyFormatting = (type: 'template') => {
+        if (type === 'template') {
+            const templateText = "Hello,\n\nThank you for reaching out to Ceaznet Support. We are currently reviewing your request and will get back to you with an update shortly.\n\nBest regards,\nCeaznet Support Team";
+            setReplyText(templateText);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isImageOnly = false) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+            const filePath = `attachments/${fileName}`;
+
+            let publicUrl = '';
+            try {
+                const { data, error } = await dbMain.storage.from('support-attachments').upload(filePath, file);
+                if (!error && data) {
+                    const { data: urlData } = dbMain.storage.from('support-attachments').getPublicUrl(filePath);
+                    publicUrl = urlData.publicUrl;
+                }
+            } catch (storageErr) {
+                console.warn("Storage bucket error, falling back to data URL", storageErr);
+            }
+
+            if (!publicUrl) {
+                publicUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            if (richEditorRef.current) {
+                richEditorRef.current.focus();
+                if (isImageOnly || file.type.startsWith('image/')) {
+                    const imgHtml = `<p><img src="${publicUrl}" alt="${file.name}" style="max-width:280px; max-height:200px; border-radius:8px; display:block; margin:8px 0;" /></p>`;
+                    document.execCommand('insertHTML', false, imgHtml);
+                } else {
+                    const linkHtml = `<p>📎 <a href="${publicUrl}" target="_blank" rel="noopener noreferrer">${file.name}</a></p>`;
+                    document.execCommand('insertHTML', false, linkHtml);
+                }
+                setReplyText(richEditorRef.current.innerText || richEditorRef.current.innerHTML);
+            } else {
+                const tag = isImageOnly || file.type.startsWith('image/')
+                    ? `\n![${file.name}](${publicUrl})\n`
+                    : `\n[📎 ${file.name}](${publicUrl})\n`;
+                setReplyText(prev => prev + tag);
+            }
+        } catch (err) {
+            console.error("File upload error", err);
+            alert("Could not attach file.");
+        } finally {
+            e.target.value = '';
+        }
+    };
 
     // Initial load
     useEffect(() => {
@@ -393,19 +1058,78 @@ const SupportInboxPage: React.FC = () => {
     };
 
     const handleSendReply = async () => {
-        if (!replyText.trim() || !selectedConvId) return;
+        let rawContent = replyText;
+        if (richEditorRef.current && richEditorRef.current.innerHTML.trim()) {
+            rawContent = richEditorRef.current.innerHTML;
+        } else if (mailTextareaRef.current && mailTextareaRef.current.value.trim()) {
+            rawContent = mailTextareaRef.current.value;
+        }
+        const contentToSend = htmlToMarkdown(rawContent);
+        const isAnyUploading = pendingAttachments.some(p => p.uploading);
+
+        if ((!contentToSend.trim() && pendingAttachments.length === 0) || !selectedConvId) return;
+        if (isAnyUploading) return;
         
         setIsSending(true);
         try {
             const { data } = await dbMain.auth.getUser();
             const adminId = data?.user?.id || null; 
-            const newMsg = await sendAdminMessage(selectedConvId, adminId, replyText);
+
+            let uploadedAttachmentPayload: {
+                attachment_url?: string;
+                attachment_name?: string;
+                attachment_type?: string;
+            } | undefined = undefined;
+
+            if (pendingAttachments.length > 0) {
+                // Upload all pending files to Telegram Bot API now
+                const uploadPromises = pendingAttachments.map(att => uploadSupportAttachment(att.file));
+                const uploadResults = await Promise.all(uploadPromises);
+
+                const urls = uploadResults.map(r => r.attachment_url).filter(Boolean);
+                const names = uploadResults.map(r => r.attachment_name).filter(Boolean);
+                const types = uploadResults.map(r => r.attachment_type).filter(Boolean);
+
+                if (urls.length > 0) {
+                    uploadedAttachmentPayload = {
+                        attachment_url: urls.join(','),
+                        attachment_name: names.join(','),
+                        attachment_type: types.join(',')
+                    };
+                }
+            }
+
+            // Determine message text fallback if only attachments were attached
+            let msgText = contentToSend.trim();
+            if (!msgText && pendingAttachments.length > 0) {
+                if (pendingAttachments.length === 1) {
+                    msgText = pendingAttachments[0].isImage ? 'Photo' : pendingAttachments[0].name;
+                } else {
+                    msgText = `${pendingAttachments.length} Attachments`;
+                }
+            }
+
+            // Insert single message record into database
+            const newMsg = await sendAdminMessage(
+                selectedConvId, 
+                adminId, 
+                msgText,
+                uploadedAttachmentPayload
+            );
+
             setReplyText("");
             setLastGeneratedText("");
+            if (richEditorRef.current) {
+                richEditorRef.current.innerHTML = "";
+            }
+            if (mailTextareaRef.current) {
+                mailTextareaRef.current.value = "";
+            }
+            handleRemovePendingAttachment();
             
             if (newMsg) {
                 setMessages(prev => {
-                    if(prev.find(m => m.id === newMsg.id)) return prev;
+                    if (prev.find(m => m.id === newMsg.id)) return prev;
                     return [...prev, newMsg];
                 });
                 setTimeout(() => scrollToBottom(), 100);
@@ -419,21 +1143,40 @@ const SupportInboxPage: React.FC = () => {
     };
 
     const handleGenerateAiReply = async () => {
-        if (messages.length === 0) return;
+        if (!selectedConvId) return;
+        const currentChatMessages = messages.filter(m => m.conversation_id === selectedConvId);
+        if (currentChatMessages.length === 0) return;
+
         setIsGeneratingAi(true);
         try {
-            const prompt = replyText.trim() 
-                ? `Refine this message to make it more professional but keep the core meaning: ${replyText}`
-                : "Provide a friendly but direct and professional response.";
-            const generated = await generateSupportReply(messages, prompt, selectedAiModel);
+            const currentText = (richEditorRef.current?.innerText || mailTextareaRef.current?.value || replyText).trim();
+            const activeConversation = conversations.find(c => c.id === selectedConvId);
+            const subjectContext = activeConversation?.subject ? `[Ticket Subject: "${activeConversation.subject}"] ` : "";
+            
+            const prompt = currentText 
+                ? `${subjectContext}Refine this draft reply to be highly professional, polite, and well-structured using clean Markdown formatting: ${currentText}`
+                : `${subjectContext}Generate a polite, empathetic, and helpful response formatted nicely with Markdown to assist the user.`;
+            
+            const generated = await generateSupportReply(currentChatMessages, prompt, selectedAiModel);
             setReplyText(generated);
             setLastGeneratedText(generated);
             setSendMode('direct');
+            if (richEditorRef.current) {
+                const formattedHtml = generated
+                    .replace(/\n\n/g, '<p></p>')
+                    .replace(/\n/g, '<br/>')
+                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                    .replace(/\*(.*?)\*/g, '<i>$1</i>');
+                richEditorRef.current.innerHTML = formattedHtml;
+            }
+            if (mailTextareaRef.current) {
+                mailTextareaRef.current.value = generated;
+            }
         } catch(err: any) {
              console.error("AI Generation Error", err);
              alert(`Failed to generate response: ${err.message}`);
         } finally {
-            setIsGeneratingAi(false);
+             setIsGeneratingAi(false);
         }
     };
 
@@ -444,6 +1187,24 @@ const SupportInboxPage: React.FC = () => {
             await updateConversationStatus(selectedConvId, status);
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const handleDeleteConversation = async () => {
+        if (!selectedConvId) return;
+        setIsDeletingConv(true);
+        try {
+            await deleteConversation(selectedConvId);
+            setConversations(prev => prev.filter(c => c.id !== selectedConvId));
+            setSelectedConvId(null);
+            setShowDeleteConfirm(false);
+            setToastMessage("Conversation and Telegram attachments deleted.");
+            setTimeout(() => setToastMessage(null), 3000);
+        } catch (error: any) {
+            console.error("Error deleting conversation:", error);
+            alert(`Failed to delete conversation: ${error.message || 'Unknown error'}`);
+        } finally {
+            setIsDeletingConv(false);
         }
     };
 
@@ -542,9 +1303,7 @@ const SupportInboxPage: React.FC = () => {
                                     />
                                     {isSearchingDB && (
                                         <div className="mr-2">
-                                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                                                <RefreshCw className="w-3.5 h-3.5 text-indigo-500" />
-                                            </motion.div>
+                                            <Loader className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
                                         </div>
                                     )}
                                     <button 
@@ -723,6 +1482,13 @@ const SupportInboxPage: React.FC = () => {
                                         <AlertCircle className="w-4 h-4" /> <span className="hidden sm:inline">Re-open</span>
                                     </button>
                                 )}
+                                <button 
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="w-8 h-8 sm:w-auto sm:px-3 sm:py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                                    title="Delete Conversation & Telegram Attachments"
+                                >
+                                    <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">Delete</span>
+                                </button>
                             </div>
                         </div>
 
@@ -731,131 +1497,15 @@ const SupportInboxPage: React.FC = () => {
                             {messages.length === 0 && (
                                 <div className="text-center text-zinc-400 text-sm py-10">No messages yet.</div>
                             )}
-                            {messages.map((msg, index) => {
-                                const isAdmin = msg.sender_type === 'admin';
-                                const isMail = activeConv.type === 'mail';
-                                const hasAttachment = !!msg.attachment_url;
-                                const isImage = hasAttachment && msg.attachment_type?.startsWith('image/');
-                                
-                                if (isMail) {
-                                    return (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            key={msg.id} 
-                                            className={`w-full pb-4 mb-4 border-b border-zinc-100 dark:border-zinc-800/60 last:border-0 last:mb-0 last:pb-0 ${isAdmin ? 'pl-4 border-l-2 border-l-indigo-500' : 'pl-4 border-l-2 border-l-zinc-200 dark:border-l-zinc-700'}`}
-                                        >
-                                            <div className="flex items-start gap-3 p-0 mb-2">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${isAdmin ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-zinc-200 text-zinc-600 dark:bg-black dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'}`}>
-                                                    {!isAdmin && userProfiles[msg.sender_id]?.avatar_url ? (
-                                                        <img src={userProfiles[msg.sender_id].avatar_url} alt="User Avatar" className="w-full h-full object-cover" />
-                                                    ) : isAdmin ? (
-                                                        <img src={settings.platform_logo_url} alt="Support Team" className="w-full h-full object-contain p-1" />
-                                                    ) : (
-                                                        <User className="w-5 h-5" />
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col flex-1 justify-center">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">
-                                                                {isAdmin ? (userProfiles[activeConv?.user_id || '']?.full_name || 'User') : (userProfiles[msg.sender_id]?.full_name || 'User')}
-                                                            </span>
-                                                            <span className="text-[11px] font-medium text-zinc-500 mt-0.5 flex items-center gap-1.5">
-                                                                <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold">{isAdmin ? 'To:' : 'From:'}</span>
-                                                                <span>{"<"}{isAdmin ? (userProfiles[activeConv?.user_id || '']?.email || 'user@clientapp.com') : (userProfiles[msg.sender_id]?.email || 'user@clientapp.com')}{">"}</span>
-                                                            </span>
-                                                            <span className="text-[10px] font-medium text-zinc-400 mt-0.5">
-                                                                {new Date(msg.created_at).toLocaleDateString()} {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                        </div>
-                                                        <button className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-md transition-colors" title="More options (coming soon)">
-                                                            <MoreVertical className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="pl-[52px] text-[13px] sm:text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed markdown-body">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {msg.message}
-                                                </ReactMarkdown>
-                                            </div>
-                                            {hasAttachment && msg.attachment_url && (
-                                                <div className="pl-[52px] mt-3">
-                                                    <MessageAttachment 
-                                                        url={msg.attachment_url} 
-                                                        name={msg.attachment_name} 
-                                                        isImage={!!isImage} 
-                                                        imageClassName="max-w-xs max-h-64 object-contain"
-                                                        linkClassName="inline-flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors border border-zinc-200 dark:border-zinc-700"
-                                                        isAdmin={false}
-                                                    />
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    );
-                                }
-                                
-                                return (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        key={msg.id} 
-                                        className={`flex gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${isAdmin ? 'items-end' : 'items-start'}`}>
-                                            <div className="flex items-center gap-2 mb-1 px-1">
-                                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-                                                    <span>{isAdmin ? 'To:' : 'From:'}</span>
-                                                    <span className="text-zinc-500 dark:text-zinc-400">{userProfiles[activeConv?.user_id || '']?.full_name || 'User'}</span>
-                                                </span>
-                                                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            <div 
-                                                className={`px-3 py-2 sm:px-4 sm:py-2.5 shadow-sm ${
-                                                    isAdmin 
-                                                        ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm' 
-                                                        : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 rounded-2xl rounded-tl-sm'
-                                                } text-[13px] sm:text-sm`}
-                                            >
-                                                <div className="whitespace-pre-wrap break-words markdown-body">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                        {msg.message}
-                                                    </ReactMarkdown>
-                                                </div>
-                                                {hasAttachment && msg.attachment_url && (
-                                                    <div className="mt-2 pt-2 border-t border-white/20 dark:border-zinc-700 w-full">
-                                                        <MessageAttachment 
-                                                            url={msg.attachment_url} 
-                                                            name={msg.attachment_name} 
-                                                            isImage={!!isImage} 
-                                                            imageClassName="max-w-[200px] sm:max-w-[250px] rounded-lg max-h-48 object-cover"
-                                                            linkClassName={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium w-full ${isAdmin ? 'bg-white/10 hover:bg-white/20' : 'bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600'}`}
-                                                            isAdmin={isAdmin}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {isAdmin && (
-                                               <div className="flex justify-end mt-1 px-1">
-                                                  {msg.is_read ? (
-                                                     <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium tracking-wide flex items-center gap-1">
-                                                         <CheckCheck className="w-3.5 h-3.5" />
-                                                         Seen {msg.read_at ? new Date(msg.read_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
-                                                     </span>
-                                                  ) : (
-                                                     <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium flex items-center gap-1">
-                                                         <Check className="w-3.5 h-3.5" /> Sent
-                                                     </span>
-                                                  )}
-                                               </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
+                            {messages.map((msg) => (
+                                <MessageItem 
+                                    key={msg.id}
+                                    msg={msg}
+                                    userProfiles={userProfiles}
+                                    activeConv={activeConv}
+                                    settings={settings}
+                                />
+                            ))}
                             
                             {isUserTyping && (
                                 <motion.div 
@@ -898,51 +1548,118 @@ const SupportInboxPage: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="max-w-4xl mx-auto border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
-                                            <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
-                                                <button className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors" title="Bold">
-                                                    <Bold className="w-4 h-4" />
-                                                </button>
-                                            <button className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors" title="Italic">
-                                                <Italic className="w-4 h-4" />
-                                            </button>
-                                            <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
-                                            <button className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors" title="List">
-                                                <List className="w-4 h-4" />
-                                            </button>
-                                            <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
-                                            <button className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium" title="Attach file">
-                                                <Paperclip className="w-4 h-4" /> <span className="hidden sm:inline">Attach</span>
-                                            </button>
-                                            <button className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium" title="Insert Image">
-                                                <ImageIcon className="w-4 h-4" /> <span className="hidden sm:inline">Image</span>
-                                            </button>
-                                            <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
-                                            <button className="hidden sm:flex p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors" title="Use Template">
-                                                <Braces className="w-4 h-4" />
-                                            </button>
-                                            <div className="flex-1"></div>
-                                            <button 
-                                                onClick={() => {
-                                                    setShowMailComposer(false);
-                                                    setReplyText('');
-                                                }}
-                                                className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors"
-                                                title="Close"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                        <div className="p-1">
-                                            <textarea 
-                                                value={replyText}
-                                                onChange={(e) => {
-                                                    setReplyText(e.target.value);
-                                                    handleTyping();
-                                                }}
-                                                placeholder="Write your response... You can drag & drop files here too."
-                                                className="w-full bg-transparent border-none focus:ring-0 resize-y px-3 py-3 text-[16px] sm:text-sm text-zinc-900 dark:text-white min-h-[120px] outline-none"
-                                            />
-                                        </div>
+                                            <div className="flex items-center justify-between w-full min-w-0 px-2.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
+                                                <div className="flex-1 flex items-center gap-0.5 sm:gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 min-w-0">
+                                                    <button onClick={() => applyRichFormat('bold')} className={getFormatBtnClass(!!activeFormats.bold)} title="Bold (Ctrl+B)">
+                                                        <Bold className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('italic')} className={getFormatBtnClass(!!activeFormats.italic)} title="Italic (Ctrl+I)">
+                                                        <Italic className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('underline')} className={getFormatBtnClass(!!activeFormats.underline)} title="Underline (Ctrl+U)">
+                                                        <Underline className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('strikethrough')} className={getFormatBtnClass(!!activeFormats.strikethrough)} title="Strikethrough">
+                                                        <Strikethrough className="w-4 h-4" />
+                                                    </button>
+
+                                                    <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-0.5 shrink-0"></div>
+
+                                                    <button onClick={() => applyRichFormat('h3')} className={getFormatBtnClass(!!activeFormats.h3)} title="Heading">
+                                                        <Heading1 className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('unorderedList')} className={getFormatBtnClass(!!activeFormats.unorderedList)} title="Bullet List">
+                                                        <List className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('orderedList')} className={getFormatBtnClass(!!activeFormats.orderedList)} title="Numbered List">
+                                                        <ListOrdered className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('quote')} className={getFormatBtnClass(!!activeFormats.quote)} title="Quote">
+                                                        <Quote className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('code')} className={getFormatBtnClass(!!activeFormats.code)} title="Code Block">
+                                                        <Code className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('link')} className={getFormatBtnClass(false)} title="Insert Link">
+                                                        <Link2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('clear')} className={getFormatBtnClass(false)} title="Clear Formatting">
+                                                        <RemoveFormatting className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 sm:pl-2 ml-1">
+                                                    <button onClick={() => mailFileInputRef.current?.click()} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Attach file">
+                                                        <Paperclip className="w-4 h-4" /> <span className="hidden md:inline">Attach</span>
+                                                    </button>
+                                                    <button onClick={() => mailImageInputRef.current?.click()} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Insert Image">
+                                                        <ImageIcon className="w-4 h-4" /> <span className="hidden md:inline">Image</span>
+                                                    </button>
+                                                    <button onClick={() => applyRichFormat('template')} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Use Template">
+                                                        <Braces className="w-4 h-4" /> <span className="hidden md:inline">Template</span>
+                                                    </button>
+
+                                                    <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-0.5 sm:mx-1 shrink-0"></div>
+
+                                                    <button 
+                                                        onClick={() => {
+                                                            setShowMailComposer(false);
+                                                            setReplyText('');
+                                                            if (richEditorRef.current) richEditorRef.current.innerHTML = '';
+                                                        }}
+                                                        className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors shrink-0"
+                                                        title="Close"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="p-3 relative min-h-[130px]">
+                                                <div 
+                                                    ref={richEditorRef}
+                                                    contentEditable
+                                                    onInput={() => {
+                                                        if (richEditorRef.current) {
+                                                            setReplyTextDebounced(richEditorRef.current.innerText || richEditorRef.current.innerHTML);
+                                                        }
+                                                        handleTyping();
+                                                        checkActiveFormats();
+                                                    }}
+                                                    onKeyUp={checkActiveFormats}
+                                                    onMouseUp={checkActiveFormats}
+                                                    onClick={checkActiveFormats}
+                                                    onFocus={checkActiveFormats}
+                                                    onBlur={() => {
+                                                        setTimeout(() => {
+                                                            if (!richEditorRef.current?.contains(document.activeElement)) {
+                                                                setActiveFormats({});
+                                                            }
+                                                        }, 150);
+                                                    }}
+                                                    className="w-full bg-transparent border-none focus:outline-none min-h-[110px] max-h-[350px] overflow-y-auto text-[15px] sm:text-sm text-zinc-900 dark:text-white leading-relaxed
+                                                    [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through [&_h3]:text-base [&_h3]:font-bold [&_h3]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-indigo-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-zinc-600 [&_pre]:bg-zinc-100 [&_pre]:dark:bg-zinc-800 [&_pre]:p-2 [&_pre]:rounded [&_pre]:font-mono [&_a]:text-indigo-600 [&_a]:underline"
+                                                />
+                                                {(!replyText || !replyText.trim()) && (
+                                                    <div 
+                                                        onClick={() => richEditorRef.current?.focus()}
+                                                        className="absolute top-3 left-3 text-zinc-400 dark:text-zinc-500 pointer-events-none text-sm select-none"
+                                                    >
+                                                        Write your response... Selected text will format live visually.
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {pendingAttachments.length > 0 && (
+                                                <div className="px-3 pb-2">
+                                                    <PendingAttachmentsList 
+                                                        attachments={pendingAttachments} 
+                                                        onRemove={handleRemovePendingAttachment} 
+                                                        formatSize={formatAttachmentSize} 
+                                                        onPreview={setPreviewAttachment}
+                                                    />
+                                                </div>
+                                            )}
+
                                         <div className="flex flex-row justify-between items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-100 dark:border-zinc-800">
                                             <div className="relative min-w-0 flex-1 max-w-[150px]">
                                                 <CustomDropdown
@@ -955,14 +1672,15 @@ const SupportInboxPage: React.FC = () => {
                                             <div className="flex flex-row items-center gap-2 shrink-0">
                                                 <motion.button 
                                                     layout
-                                                    whileHover={!isGeneratingAi && replyText.trim() ? { scale: 1.02, filter: "brightness(1.1)" } : {}}
+                                                    whileHover={!isGeneratingAi && replyText.trim() ? { scale: 1.02 } : {}}
                                                     whileTap={!isGeneratingAi && replyText.trim() ? { scale: 0.96 } : {}}
                                                     onClick={handleGenerateAiReply}
                                                     disabled={isGeneratingAi}
-                                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-3 transition-all text-white rounded-full font-medium text-[12px] h-[32px] w-fit min-w-[100px] shrink-0 border shadow-sm ${
+                                                    title="Generate response with AI"
+                                                    className={`relative overflow-hidden flex items-center justify-center transition-all rounded-full font-medium text-[12px] h-[32px] w-[32px] p-0 shrink-0 border ${
                                                         isGeneratingAi 
-                                                            ? 'bg-slate-900 border-transparent text-white cursor-wait shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
-                                                            : 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 hover:shadow-md border-transparent disabled:opacity-70 disabled:shadow-none'
+                                                            ? 'bg-zinc-900 border-transparent text-white cursor-wait shadow-sm scale-[0.98]' 
+                                                            : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 shadow-sm'
                                                     }`}
                                                 >
                                                     <AnimatePresence mode="wait">
@@ -976,9 +1694,9 @@ const SupportInboxPage: React.FC = () => {
                                                                 className="flex flex-row items-center justify-center z-10 w-full"
                                                             >
                                                                 <div className="flex gap-1 items-center justify-center h-3 drop-shadow-md mix-blend-normal">
-                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0 }} className="w-1 h-1 bg-white rounded-full" />
-                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} className="w-1 h-1 bg-white rounded-full" />
-                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} className="w-1 h-1 bg-white rounded-full" />
+                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0 }} className="w-1 h-1 bg-zinc-700 dark:bg-white rounded-full" />
+                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} className="w-1 h-1 bg-zinc-700 dark:bg-white rounded-full" />
+                                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} className="w-1 h-1 bg-zinc-700 dark:bg-white rounded-full" />
                                                                 </div>
                                                             </motion.div>
                                                         ) : (
@@ -988,10 +1706,9 @@ const SupportInboxPage: React.FC = () => {
                                                                 animate={{ opacity: 1 }}
                                                                 exit={{ opacity: 0 }}
                                                                 transition={{ duration: 0.15 }}
-                                                                className="flex flex-row items-center gap-1 z-10"
+                                                                className="flex flex-row items-center justify-center z-10"
                                                             >
-                                                                <Sparkles className="w-3.5 h-3.5" />
-                                                                <span>With AI</span>
+                                                                <CustomAiSparkleIcon className="w-5 h-5" />
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
@@ -1025,8 +1742,8 @@ const SupportInboxPage: React.FC = () => {
                                                 </motion.button>
                                                 <button 
                                                     onClick={handleSendReply}
-                                                    disabled={!replyText.trim() || isSending}
-                                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-3 transition-all text-white rounded-full font-medium text-[12px] h-[32px] w-[110px] sm:w-[120px] shrink-0 border shadow-sm ${
+                                                    disabled={(!replyText.trim() && pendingAttachments.length === 0) || isSending || pendingAttachments.some(p => p.uploading)}
+                                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-3.5 sm:px-4 transition-all text-white rounded-full font-medium text-[12px] h-[32px] w-auto min-w-[70px] shrink-0 border shadow-sm ${
                                                         isSending 
                                                             ? 'bg-slate-900 border-transparent text-white cursor-wait shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
                                                             : 'bg-indigo-600 hover:bg-indigo-700 border-transparent disabled:opacity-50 disabled:cursor-not-allowed'
@@ -1120,42 +1837,58 @@ const SupportInboxPage: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="flex items-end gap-1.5 sm:gap-2 w-full">
-                                            <div className="flex items-center gap-1 shrink-0">
-                                                <button className="h-[44px] w-[44px] sm:h-[52px] sm:w-[52px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center shrink-0" title="Attach file">
-                                                    <Paperclip className="w-[20px] h-[20px] sm:w-5 sm:h-5" />
+                                            <div className="flex items-center gap-0.5 shrink-0">
+                                                <button onClick={() => mailFileInputRef.current?.click()} className="h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center shrink-0" title="Attach file">
+                                                    <Paperclip className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
                                                 </button>
-                                                <button className="hidden sm:flex h-[44px] w-[44px] sm:h-[52px] sm:w-[52px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 items-center justify-center shrink-0" title="Use Template">
-                                                    <Braces className="w-[20px] h-[20px] sm:w-5 sm:h-5" />
+                                                <button onClick={() => mailImageInputRef.current?.click()} className="h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center shrink-0" title="Attach image">
+                                                    <ImageIcon className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
+                                                </button>
+                                                <button onClick={() => applyFormatting('template')} className="hidden sm:flex h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 items-center justify-center shrink-0" title="Use Template">
+                                                    <Braces className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
                                                 </button>
                                             </div>
-                                            <div className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus-within:border-indigo-500 dark:focus-within:border-indigo-500 rounded-[22px] sm:rounded-2xl overflow-hidden transition-all duration-200 shadow-sm focus-within:shadow-md relative">
-                                                <textarea 
-                                                    value={replyText}
-                                                    onChange={(e) => {
-                                                        setReplyText(e.target.value);
-                                                        handleTyping();
-                                                    }}
-                                                    onKeyDown={handleKeyDown}
-                                                    placeholder="Reply in chat..."
-                                                    className="w-full bg-transparent border-none focus:ring-0 resize-none px-4 py-[11px] sm:px-4 sm:py-[15px] text-[16px] sm:text-sm text-zinc-900 dark:text-white min-h-[44px] sm:min-h-[52px] scrollbar-hide outline-none block m-0"
-                                                    rows={Math.min(5, Math.max(1, replyText.split('\n').length))}
-                                                    style={{ lineHeight: '22px' }}
-                                                />
+                                            <div className="flex-1 min-w-0">
+                                                {pendingAttachments.length > 0 && (
+                                                    <div className="mb-1.5">
+                                                        <PendingAttachmentsList 
+                                                            attachments={pendingAttachments} 
+                                                            onRemove={handleRemovePendingAttachment} 
+                                                            formatSize={formatAttachmentSize} 
+                                                            onPreview={setPreviewAttachment}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus-within:border-indigo-500 dark:focus-within:border-indigo-500 rounded-[22px] sm:rounded-2xl overflow-hidden transition-all duration-200 shadow-sm focus-within:shadow-md relative">
+                                                    <FastTextarea 
+                                                        value={replyText}
+                                                        onChange={(val) => {
+                                                            setReplyTextDebounced(val);
+                                                            handleTyping();
+                                                        }}
+                                                        onKeyDown={handleKeyDown}
+                                                        placeholder={pendingAttachments.length > 0 ? "Add a message (optional)..." : "Reply in chat..."}
+                                                        className="w-full bg-transparent border-none focus:ring-0 resize-none px-4 py-[11px] sm:px-4 sm:py-[15px] text-[16px] sm:text-sm text-zinc-900 dark:text-white min-h-[44px] sm:min-h-[52px] scrollbar-hide outline-none block m-0"
+                                                        style={{ lineHeight: '22px' }}
+                                                        textareaRef={mailTextareaRef}
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="relative shrink-0">
                                                 <button 
                                                     onClick={() => {
-                                                        if (sendMode === 'direct' || (lastGeneratedText && replyText === lastGeneratedText)) {
+                                                        const hasAttachment = pendingAttachments.length > 0;
+                                                        if (sendMode === 'direct' || (lastGeneratedText && replyText === lastGeneratedText) || hasAttachment) {
                                                             handleSendReply();
                                                         } else {
                                                             handleGenerateAiReply();
                                                         }
                                                     }}
-                                                    disabled={isGeneratingAi || isSending || (sendMode === 'direct' && !replyText.trim())}
+                                                    disabled={isGeneratingAi || isSending || (sendMode === 'direct' && !replyText.trim() && pendingAttachments.length === 0) || pendingAttachments.some(p => p.uploading)}
                                                     className={`h-[44px] w-[44px] sm:h-[52px] sm:w-[52px] rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm relative overflow-hidden ${
                                                         isGeneratingAi || isSending
                                                             ? 'bg-slate-900 border-transparent text-white cursor-wait shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
-                                                            : sendMode === 'direct'
+                                                            : sendMode === 'direct' || pendingAttachments.length > 0
                                                                 ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed border-transparent'
                                                                 : 'bg-white dark:bg-zinc-900 border border-zinc-900 dark:border-white text-zinc-900 dark:text-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed'
                                                     }`}
@@ -1245,6 +1978,95 @@ const SupportInboxPage: React.FC = () => {
                     </>
                 ) : null}
             </div>
+
+            {/* Hidden file input for general attachments */}
+            <input
+                type="file"
+                multiple
+                ref={mailFileInputRef}
+                className="hidden"
+                onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                        handleMultipleAttachmentSelect(files);
+                        e.target.value = '';
+                    }
+                }}
+            />
+
+            {/* Hidden file input for images */}
+            <input
+                type="file"
+                multiple
+                ref={mailImageInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                        handleMultipleAttachmentSelect(files);
+                        e.target.value = '';
+                    }
+                }}
+            />
+
+            {/* Full-screen Attachment Preview Overlay */}
+            <FullScreenAttachmentPreview
+                isOpen={!!previewAttachment}
+                onClose={() => setPreviewAttachment(null)}
+                url={previewAttachment?.previewUrl || null}
+                name={previewAttachment?.name}
+                isImage={previewAttachment?.isImage}
+                sizeFormatted={previewAttachment ? formatAttachmentSize(previewAttachment.size) : undefined}
+            />
+
+            {/* Delete Conversation Confirmation Modal */}
+            <AnimatePresence>
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4"
+                        >
+                            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+                                    <Trash2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Delete Conversation?</h3>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">This action cannot be undone.</p>
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                                Are you sure you want to delete this conversation? All messages and associated attachments stored on Telegram will be permanently deleted.
+                            </p>
+
+                            <div className="flex items-center justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={isDeletingConv}
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isDeletingConv}
+                                    onClick={handleDeleteConversation}
+                                    className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl shadow-sm transition-colors flex items-center gap-2"
+                                >
+                                    {isDeletingConv && <Loader size={14} className="animate-spin" />}
+                                    {isDeletingConv ? 'Deleting...' : 'Delete Permanently'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

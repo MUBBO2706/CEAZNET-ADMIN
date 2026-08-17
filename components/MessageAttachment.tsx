@@ -1,6 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, FileText, Download, Maximize2, X } from 'lucide-react';
+import { FileText, Download, Maximize2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+
+export interface FullScreenPreviewProps {
+    isOpen: boolean;
+    onClose: () => void;
+    url: string | null;
+    name?: string;
+    isImage?: boolean;
+    sizeFormatted?: string;
+}
+
+export const FullScreenAttachmentPreview: React.FC<FullScreenPreviewProps> = ({
+    isOpen,
+    onClose,
+    url,
+    name,
+    isImage = true,
+    sizeFormatted
+}) => {
+    // Handle Escape key to close
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
+    if (!isOpen || !url) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={onClose}
+                className="fixed inset-0 z-[9999] bg-black/90 sm:bg-black/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 select-none overflow-hidden"
+            >
+                {/* Top Left Title info pill with shadow */}
+                {name && (
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 max-w-[55vw] sm:max-w-[40vw] flex items-center gap-2 px-3.5 py-2 bg-zinc-900/90 rounded-full border border-white/15 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-md text-white text-xs sm:text-sm font-medium truncate pointer-events-none"
+                    >
+                        <span className="truncate">{name}</span>
+                        {sizeFormatted && (
+                            <span className="text-[11px] text-zinc-400 font-normal shrink-0">({sizeFormatted})</span>
+                        )}
+                    </div>
+                )}
+
+                {/* Top Right Floating Action Controls with Shadow */}
+                <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 flex items-center gap-2.5"
+                >
+                    <a
+                        href={url}
+                        download={name || 'attachment'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3.5 py-2 bg-zinc-900/90 hover:bg-zinc-800 text-white rounded-full border border-white/15 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-md transition-all hover:scale-105 active:scale-95 text-xs font-medium cursor-pointer"
+                        title="Download file"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Download</span>
+                    </a>
+                    <button
+                        onClick={onClose}
+                        className="p-2 sm:p-2.5 bg-zinc-900/90 hover:bg-zinc-800 text-white rounded-full border border-white/15 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                        title="Close preview (Esc)"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Center Content */}
+                {isImage ? (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-w-[95vw] max-h-[85vh] sm:max-w-[90vw] sm:max-h-[90vh] flex items-center justify-center p-2"
+                    >
+                        <img
+                            src={url}
+                            alt={name || 'Attachment Preview'}
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10"
+                        />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-6 sm:p-8 bg-zinc-900/95 border border-zinc-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center gap-4 text-center max-w-sm w-full backdrop-blur-md"
+                    >
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner">
+                            <FileText className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1 w-full">
+                            <h4 className="text-sm font-semibold text-white truncate px-2">{name || 'Document'}</h4>
+                            {sizeFormatted && <p className="text-xs text-zinc-400">{sizeFormatted}</p>}
+                        </div>
+                        <a
+                            href={url}
+                            download={name || 'attachment'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span>Download Document</span>
+                        </a>
+                    </motion.div>
+                )}
+            </motion.div>
+        </AnimatePresence>
+    );
+};
 
 interface MessageAttachmentProps {
     url: string;
@@ -98,52 +226,10 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
         );
     }
 
-    const renderPreviewModal = () => (
-        <AnimatePresence>
-            {isPreviewOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-sm"
-                     onClick={() => setIsPreviewOpen(false)}>
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        className="relative max-w-5xl w-full max-h-[90vh] bg-zinc-950 rounded-2xl overflow-hidden flex flex-col border border-zinc-800/60"
-                    >
-                        <div className="p-3 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/80 backdrop-blur-md absolute top-0 left-0 right-0 z-10 w-full">
-                            <h3 className="text-zinc-200 font-medium text-sm truncate pr-4">{name || 'Image Preview'}</h3>
-                            <div className="flex items-center gap-1.5">
-                                <a 
-                                    href={realUrl!} 
-                                    download={name || 'attachment'} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-md transition-colors flex items-center gap-1.5 text-xs font-medium"
-                                >
-                                    <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Download</span>
-                                </a>
-                                <button 
-                                    onClick={() => setIsPreviewOpen(false)}
-                                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-auto flex items-center justify-center p-4 pt-16 pb-4">
-                            <img src={realUrl!} alt={name || 'Attachment'} className="max-w-full max-h-[80vh] object-contain rounded drop-shadow-md" />
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>
-    );
-
     if (isImage) {
         const containerClasses = isAdmin 
-            ? "inline-flex items-center gap-2 p-1.5 pr-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg cursor-pointer transition-all max-w-[200px] sm:max-w-[240px] overflow-hidden group shadow-sm hover:shadow" 
-            : "inline-flex items-center gap-2 p-1.5 pr-3 bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700/80 rounded-lg cursor-pointer transition-all max-w-[200px] sm:max-w-[240px] overflow-hidden group shadow-sm hover:shadow";
+            ? "inline-flex items-center gap-2 p-1.5 pr-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg cursor-pointer transition-all w-full overflow-hidden group shadow-sm hover:shadow" 
+            : "inline-flex items-center gap-2 p-1.5 pr-2.5 bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700/80 rounded-lg cursor-pointer transition-all w-full overflow-hidden group shadow-sm hover:shadow";
 
         const textMainClasses = isAdmin 
             ? "text-[11px] sm:text-xs font-semibold text-white truncate" 
@@ -170,7 +256,13 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
                         <span className={textSubClasses}>CLICK TO VIEW</span>
                     </div>
                 </div>
-                {renderPreviewModal()}
+                <FullScreenAttachmentPreview
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    url={realUrl}
+                    name={name || 'Image'}
+                    isImage={true}
+                />
             </>
         );
     }
@@ -180,11 +272,13 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
             href={realUrl} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className={(linkClassName || "inline-flex items-center") + " !px-2.5 !py-1.5 !gap-1.5 !text-[11px] !rounded-md"}
+            className={(linkClassName || "inline-flex items-center") + " !px-2.5 !py-1.5 !gap-1.5 !text-[11px] !rounded-md w-full justify-between"}
         >
-            <FileText className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate max-w-[140px]">{name || 'Download'}</span>
-            <Download className="w-3 h-3 opacity-70 shrink-0 ml-0.5" />
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{name || 'Download'}</span>
+            </div>
+            <Download className="w-3 h-3 opacity-70 shrink-0 ml-1" />
         </a>
     );
 };

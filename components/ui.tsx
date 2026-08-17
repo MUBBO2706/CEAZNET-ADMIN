@@ -222,18 +222,24 @@ export const CustomDropdown: React.FC<{
     const dropdownRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 0, direction: 'down' as 'up' | 'down' });
+    const [position, setPosition] = useState({ 
+        top: 0, 
+        left: 0, 
+        width: 0, 
+        minWidth: 0,
+        direction: 'down' as 'up' | 'down' 
+    });
 
     const handleSelect = (option: string) => {
         onChange(option);
         setIsOpen(false);
     };
 
-    const getDropdownPosition = (triggerEl: HTMLButtonElement) => {
+    const calculatePosition = (triggerEl: HTMLButtonElement, lockedWidth?: number) => {
         const rect = triggerEl.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const panelHeight = Math.min(options.length * 40 + 8, 240);
+        const panelHeight = Math.min(options.length * 36 + 12, 240);
         
         let direction: 'up' | 'down' = 'down';
         let top = rect.bottom;
@@ -242,30 +248,66 @@ export const CustomDropdown: React.FC<{
             direction = 'up';
             top = rect.top;
         }
-        
-        // Use trigger width directly as requested for modal width
-        const panelWidth = rect.width;
-        
-        // Ensure left position does not overflow viewport margins
-        let left = rect.left;
-        if (left + panelWidth > window.innerWidth - 16) {
-            left = Math.max(16, window.innerWidth - panelWidth - 16);
+
+        let panelWidth = lockedWidth || 0;
+
+        if (!panelWidth) {
+            // Find longest label string among options
+            let maxCharLength = 0;
+            options.forEach((opt) => {
+                const label = displayLabels?.[opt] || opt;
+                if (label.length > maxCharLength) {
+                    maxCharLength = label.length;
+                }
+            });
+
+            // Account for font size ~12px (~7.5px per char), padding (28px), scrollbar space if > 6 items (16px)
+            const hasScrollbar = options.length > 6;
+            const contentNeededWidth = Math.ceil(maxCharLength * 7.5 + 28 + (hasScrollbar ? 16 : 0));
+            
+            // Width fits longest option content, or at least the trigger width
+            const desiredWidth = Math.max(rect.width, contentNeededWidth);
+            
+            // Maximum allowed width ensures dropdown never overflows screen boundaries (12px margin on left & right)
+            const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
+            
+            // Clip width to max screen width if content is longer than screen width
+            panelWidth = Math.min(desiredWidth, maxAllowedScreenWidth);
         }
-        
+
+        const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
+        const minWidth = Math.min(rect.width, maxAllowedScreenWidth);
+
+        // Adjust left position so panel never overflows screen edges
+        let left = rect.left;
+        if (left + panelWidth > window.innerWidth - 12) {
+            left = Math.max(12, window.innerWidth - panelWidth - 12);
+        }
+        if (left < 12) {
+            left = 12;
+        }
+
         return {
             top,
             left,
             width: panelWidth,
+            minWidth,
             direction
         };
     };
 
     const toggleOpen = () => {
         if (!isOpen && triggerRef.current) {
-            setPosition(getDropdownPosition(triggerRef.current));
+            setPosition(calculatePosition(triggerRef.current));
         }
         setIsOpen(!isOpen);
     };
+
+    useEffect(() => {
+        if (isOpen && triggerRef.current) {
+            setPosition(calculatePosition(triggerRef.current));
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -278,9 +320,14 @@ export const CustomDropdown: React.FC<{
             }
         };
         
-        const handleScrollOrResize = () => {
+        const handleScrollOrResize = (event: Event) => {
+            // Ignore scroll events originating inside the dropdown panel itself to prevent width flickering/shrinking
+            if (panelRef.current && (event.target === panelRef.current || panelRef.current.contains(event.target as Node))) {
+                return;
+            }
             if (isOpen && triggerRef.current) {
-                setPosition(getDropdownPosition(triggerRef.current));
+                // Keep the exact locked width when repositioning during window scroll/resize
+                setPosition((prev) => calculatePosition(triggerRef.current!, prev.width));
             }
         };
 
@@ -294,7 +341,6 @@ export const CustomDropdown: React.FC<{
             }
         };
 
-        // Use capture phase for scroll to catch any scrollable container
         document.addEventListener('mousedown', handleClickOutside);
         window.addEventListener('scroll', handleScrollOrResize, true);
         window.addEventListener('resize', handleScrollOrResize);
@@ -318,33 +364,38 @@ export const CustomDropdown: React.FC<{
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] pb-1 pt-1 relative`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative`}
             role="listbox"
             style={{
                 position: 'fixed',
-                top: position.direction === 'down' ? position.top + 15 : 'auto',
-                bottom: position.direction === 'up' ? window.innerHeight - position.top + 15 : 'auto',
+                top: position.direction === 'down' ? position.top + 4 : 'auto',
+                bottom: position.direction === 'up' ? window.innerHeight - position.top + 4 : 'auto',
                 left: position.left,
-                width: position.width,
+                width: position.width ? `${position.width}px` : 'auto',
+                minWidth: position.minWidth ? `${position.minWidth}px` : undefined,
+                maxWidth: 'calc(100vw - 24px)',
                 zIndex: 999999
             }}
         >
-            <div className={`absolute left-[50%] -ml-1.5 w-3 h-3 bg-[var(--card-bg)] border-l border-t border-[var(--border-color)] rotate-45 ${position.direction === 'down' ? '-top-1.5' : '-bottom-1.5'}`} />
-            {options.map((option) => (
-                <button
-                    key={option}
-                    type="button"
-                    role="option"
-                    aria-selected={value === option}
-                    className={`custom-dropdown-option ${value === option ? 'active text-[var(--accent-color)] bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'}`}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelect(option);
-                    }}
-                >
-                    {displayLabels?.[option] || option}
-                </button>
-            ))}
+            {options.map((option) => {
+                const label = displayLabels?.[option] || option;
+                return (
+                    <button
+                        key={option}
+                        type="button"
+                        role="option"
+                        aria-selected={value === option}
+                        className={`custom-dropdown-option ${value === option ? 'active text-[var(--accent-color)] bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelect(option);
+                        }}
+                        title={label}
+                    >
+                        <span className="truncate block w-full text-left">{label}</span>
+                    </button>
+                );
+            })}
         </div>
     );
 
@@ -353,14 +404,16 @@ export const CustomDropdown: React.FC<{
             <style>{`
                 .custom-dropdown-wrapper {
                     position: relative;
-                    width: fit-content;
+                    max-width: 100%;
+                    min-width: 0;
                 }
                 .custom-dropdown-trigger {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    width: fit-content;
-                    min-width: 120px;
+                    width: 100%;
+                    max-width: 100%;
+                    min-width: 0;
                     text-align: left;
                     background-color: var(--card-bg);
                     border: 1px solid var(--border-color);
@@ -370,6 +423,7 @@ export const CustomDropdown: React.FC<{
                     cursor: pointer;
                     padding: 0.375rem 0.75rem;
                     font-size: 0.75rem;
+                    overflow: hidden;
                 }
                 .custom-dropdown-trigger:focus {
                     outline: none;
@@ -378,7 +432,8 @@ export const CustomDropdown: React.FC<{
                 }
                 .custom-dropdown-trigger .chevron {
                     transition: transform 0.2s ease;
-                    margin-left: 0.5rem;
+                    flex-shrink: 0;
+                    margin-left: 0.375rem;
                 }
                 .custom-dropdown-trigger[aria-expanded="true"] .chevron {
                     transform: rotate(180deg);
@@ -386,9 +441,9 @@ export const CustomDropdown: React.FC<{
                 .custom-dropdown-panel {
                     border: 1px solid var(--border-color);
                     border-radius: 0.5rem;
-                    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
                     overflow-y: auto;
-                    overflow-x: hidden;
+                    overflow-x: auto;
                     max-height: 240px;
                     transition: opacity 0.15s ease-out, transform 0.15s ease-out, visibility 0.15s;
                     transform-origin: top;
@@ -414,8 +469,7 @@ export const CustomDropdown: React.FC<{
                     color: var(--text-primary);
                     cursor: pointer;
                     transition: background-color 0.15s ease;
-                    white-space: normal;
-                    word-break: break-word;
+                    white-space: nowrap;
                 }
                 .custom-dropdown-option:hover, .custom-dropdown-option.active {
                     background-color: var(--subtle-bg);
@@ -425,17 +479,18 @@ export const CustomDropdown: React.FC<{
                     color: var(--accent-color);
                 }
             `}</style>
-            <div ref={dropdownRef} className={`custom-dropdown-wrapper ${className}`}>
+            <div ref={dropdownRef} className={`custom-dropdown-wrapper min-w-0 max-w-full ${className}`}>
                 <button
                     ref={triggerRef}
                     type="button"
-                    className={`custom-dropdown-trigger ${triggerClassName}`}
+                    className={`custom-dropdown-trigger min-w-0 max-w-full ${triggerClassName}`}
                     aria-haspopup="listbox"
                     aria-expanded={isOpen}
                     onClick={toggleOpen}
+                    title={typeof displayValue === 'string' ? displayValue : undefined}
                 >
-                    <span className="capitalize truncate min-w-0">{displayValue}</span>
-                    <ChevronDown size={16} className="text-slate-500 chevron" />
+                    <span className="capitalize truncate min-w-0 flex-1 text-left">{displayValue}</span>
+                    <ChevronDown size={14} className="text-slate-400 dark:text-zinc-500 chevron shrink-0" />
                 </button>
                 {isOpen && ReactDOM.createPortal(panelContent, document.body)}
             </div>

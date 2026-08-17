@@ -5,7 +5,7 @@ import { PanelCard, CustomDropdown, DateRangeFilter, ConfirmationModal, BatchAct
 import { UsersPageSkeleton } from '../components/skeletons';
 import { fetchUsersData, deleteUser, deleteUsersBatch, updateUserSettings, updateUserProfile } from '../services/supabaseService';
 import type { UserStats, UserSettings } from '../types';
-import { Search, Trash2, CheckSquare, Square, Edit, Save, X, Loader2, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Search, Trash2, CheckSquare, Square, Edit, Save, X, Loader, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
 
 const stringToColor = (str: string): string => {
@@ -535,7 +535,7 @@ const UserEditModal: React.FC<{
                         Cancel
                     </button>
                     <button onClick={handleSave} className="px-3 py-1.5 text-[11px] font-bold text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 min-w-[90px] flex items-center justify-center shadow-sm hover:shadow active:scale-95" disabled={isSaving}>
-                        {isSaving ? <Loader2 className="animate-spin" size={12}/> : 'Save Changes'}
+                        {isSaving ? <Loader className="animate-spin" size={12}/> : 'Save Changes'}
                     </button>
                 </div>
             </div>

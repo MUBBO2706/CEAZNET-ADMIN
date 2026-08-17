@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PanelCard, timeAgo, InfoPopover } from '../ui';
 import { fetchDatabaseAnalytics, fetchEdgeFunctionStats } from '../../services/supabaseService';
 import type { DatabaseAnalyticsStats, EdgeFunctionStats } from '../../types';
-import { Database, Activity, ArrowUp, ArrowDown, RefreshCw, Server, Zap, CheckCircle, AlertTriangle, Clock, Layers } from 'lucide-react';
+import { Database, Activity, ArrowUp, ArrowDown, RotateCw, Loader, Server, Zap, CheckCircle, AlertTriangle, Clock, Layers } from 'lucide-react';
 import { LoadingSpinner } from '../skeletons';
 import { useAutoRefresh } from '../AutoRefreshContext';
 
@@ -213,7 +213,7 @@ const DatabaseAnalyticsCard: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <InfoPopover info="Aggregate metrics of database operation volume and health." />
                                     <button onClick={() => loadData()} className="p-2 rounded-md hover:bg-[var(--subtle-bg)] dark:hover:bg-[#111] text-[var(--text-secondary)] transition-colors" title="Refresh Data">
-                                        <RefreshCw size={16} className={isLoading ? "animate-spin text-indigo-500" : ""} />
+                                        {isLoading ? <Loader size={16} className="animate-spin text-indigo-500" /> : <RotateCw size={16} />}
                                     </button>
                                 </div>
                             </div>
@@ -221,7 +221,7 @@ const DatabaseAnalyticsCard: React.FC = () => {
                         <div className="p-3 sm:p-4 bg-[var(--subtle-bg)] dark:bg-black grid grid-cols-2 gap-3 sm:gap-4">
                             <StatItem label="Total Rows" value={totalRows} icon={<Database size={16} />} colorClass="text-indigo-500" bgClass="bg-indigo-50/50 dark:bg-[#111] border-indigo-100 dark:border-indigo-900/30" />
                             <StatItem label="Total Inserts" value={totalInserts} icon={<ArrowUp size={16} />} colorClass="text-emerald-500" bgClass="bg-emerald-50/50 dark:bg-[#111] border-emerald-100 dark:border-emerald-900/30" />
-                            <StatItem label="Total Updates" value={totalUpdates} icon={<RefreshCw size={16} />} colorClass="text-amber-500" bgClass="bg-amber-50/50 dark:bg-[#111] border-amber-100 dark:border-amber-900/30" />
+                            <StatItem label="Total Updates" value={totalUpdates} icon={<RotateCw size={16} />} colorClass="text-amber-500" bgClass="bg-amber-50/50 dark:bg-[#111] border-amber-100 dark:border-amber-900/30" />
                             <StatItem label="Total Deletes" value={totalDeletes} icon={<ArrowDown size={16} />} colorClass="text-red-500" bgClass="bg-red-50/50 dark:bg-[#111] border-red-100 dark:border-red-900/30" />
                         </div>
                     </PanelCard>

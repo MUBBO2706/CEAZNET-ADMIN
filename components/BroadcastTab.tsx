@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Radio, Eye, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
 import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, deleteBroadcast, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
@@ -535,7 +535,7 @@ export const BroadcastTab: React.FC = () => {
                                     disabled={isSending}
                                     className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-[11px] transition-colors disabled:opacity-50 h-[28px]"
                                 >
-                                    {isSending ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
+                                    {isSending ? <Loader size={14} className="animate-spin" /> : <Check size={14} />}
                                     Save Banner
                                 </motion.button>
                             </div>
@@ -589,7 +589,7 @@ export const BroadcastTab: React.FC = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     className="flex items-center gap-2 pl-3 pr-4 py-2.5 bg-emerald-600/80 text-white rounded-2xl font-bold text-[12px] shadow-sm backdrop-blur-sm"
                                 >
-                                    <RefreshCw size={14} className="animate-spin" />
+                                    <Loader size={14} className="animate-spin" />
                                     Deploying...
                                 </motion.div>
                             )}
@@ -854,7 +854,7 @@ export const BroadcastTab: React.FC = () => {
                                                     }}
                                                     className="px-4 py-2 flex items-center justify-center gap-1.5 flex-[4] sm:flex-none sm:w-auto bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 rounded-lg text-[12px] font-bold transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30"
                                                 >
-                                                    <RefreshCw size={14} />
+                                                    <RotateCw size={14} />
                                                     Reuse Design
                                                 </button>
                                             </div>

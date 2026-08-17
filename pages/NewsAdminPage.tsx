@@ -5,7 +5,7 @@ import { ConfirmationModal, BatchActionToolbar } from '../components/ui';
 import { NewsAdminPageSkeleton } from '../components/skeletons';
 import { fetchNewsAdminData, fetchNewsEngagementData, deleteNewsLog, deleteNewsLogsBatch, runNewsUpdateEdgeFunction, checkRecentNewsUpdateLog, fetchNewsUpdateStatus, setNewsUpdateStatus, upsertNewsSystemConfig, dbMain } from '../services/supabaseService';
 import type { NewsLog, NewsConfig, ArticleEngagementData } from '../types';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap, Loader } from 'lucide-react';
 import NewsAnalytics from '../components/news/NewsAnalytics';
 import NewsLogs from '../components/news/NewsLogs';
 import NewsSettings from '../components/news/NewsSettings';
