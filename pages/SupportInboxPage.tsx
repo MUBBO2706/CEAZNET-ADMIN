@@ -566,6 +566,38 @@ const SupportInboxPage: React.FC = () => {
 
     const [pendingAttachments, setPendingAttachments] = useState<PendingAttachmentData[]>([]);
     const [previewAttachment, setPreviewAttachment] = useState<PendingAttachmentData | null>(null);
+    const [isAttachmentExpanded, setIsAttachmentExpanded] = useState(false);
+    const attachmentClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleAttachmentClick = (type: 'file' | 'image') => {
+        if (!isAttachmentExpanded) {
+            setIsAttachmentExpanded(true);
+            return;
+        }
+
+        if (attachmentClickTimeoutRef.current) {
+            clearTimeout(attachmentClickTimeoutRef.current);
+            attachmentClickTimeoutRef.current = null;
+            setIsAttachmentExpanded(false);
+        } else {
+            attachmentClickTimeoutRef.current = setTimeout(() => {
+                attachmentClickTimeoutRef.current = null;
+                if (type === 'file') {
+                    mailFileInputRef.current?.click();
+                } else {
+                    mailImageInputRef.current?.click();
+                }
+            }, 250);
+        }
+    };
+
+    const handleAttachmentDoubleClick = () => {
+        if (attachmentClickTimeoutRef.current) {
+            clearTimeout(attachmentClickTimeoutRef.current);
+            attachmentClickTimeoutRef.current = null;
+        }
+        setIsAttachmentExpanded(false);
+    };
 
     const formatAttachmentSize = (bytes: number): string => {
         if (!bytes || bytes <= 0) return '0 B';
@@ -690,8 +722,8 @@ const SupportInboxPage: React.FC = () => {
     const getFormatBtnClass = (isActive: boolean) =>
         `p-1.5 rounded transition-all select-none shrink-0 ${
             isActive
-                ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-300 dark:border-indigo-700 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border border-transparent'
+                ? 'text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'text-zinc-400 hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200'
         }`;
 
     const applyRichFormat = (type: 'bold' | 'italic' | 'underline' | 'strikethrough' | 'h3' | 'unorderedList' | 'orderedList' | 'quote' | 'code' | 'link' | 'clear' | 'template') => {
@@ -1550,54 +1582,70 @@ const SupportInboxPage: React.FC = () => {
                                         <div className="max-w-4xl mx-auto border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
                                             <div className="flex items-center justify-between w-full min-w-0 px-2.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
                                                 <div className="flex-1 flex items-center gap-0.5 sm:gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-0.5 min-w-0">
-                                                    <button onClick={() => applyRichFormat('bold')} className={getFormatBtnClass(!!activeFormats.bold)} title="Bold (Ctrl+B)">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('bold')} className={getFormatBtnClass(!!activeFormats.bold)} title="Bold (Ctrl+B)">
                                                         <Bold className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('italic')} className={getFormatBtnClass(!!activeFormats.italic)} title="Italic (Ctrl+I)">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('italic')} className={getFormatBtnClass(!!activeFormats.italic)} title="Italic (Ctrl+I)">
                                                         <Italic className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('underline')} className={getFormatBtnClass(!!activeFormats.underline)} title="Underline (Ctrl+U)">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('underline')} className={getFormatBtnClass(!!activeFormats.underline)} title="Underline (Ctrl+U)">
                                                         <Underline className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('strikethrough')} className={getFormatBtnClass(!!activeFormats.strikethrough)} title="Strikethrough">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('strikethrough')} className={getFormatBtnClass(!!activeFormats.strikethrough)} title="Strikethrough">
                                                         <Strikethrough className="w-4 h-4" />
                                                     </button>
-
+ 
                                                     <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-0.5 shrink-0"></div>
-
-                                                    <button onClick={() => applyRichFormat('h3')} className={getFormatBtnClass(!!activeFormats.h3)} title="Heading">
+ 
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('h3')} className={getFormatBtnClass(!!activeFormats.h3)} title="Heading">
                                                         <Heading1 className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('unorderedList')} className={getFormatBtnClass(!!activeFormats.unorderedList)} title="Bullet List">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('unorderedList')} className={getFormatBtnClass(!!activeFormats.unorderedList)} title="Bullet List">
                                                         <List className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('orderedList')} className={getFormatBtnClass(!!activeFormats.orderedList)} title="Numbered List">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('orderedList')} className={getFormatBtnClass(!!activeFormats.orderedList)} title="Numbered List">
                                                         <ListOrdered className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('quote')} className={getFormatBtnClass(!!activeFormats.quote)} title="Quote">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('quote')} className={getFormatBtnClass(!!activeFormats.quote)} title="Quote">
                                                         <Quote className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('code')} className={getFormatBtnClass(!!activeFormats.code)} title="Code Block">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('code')} className={getFormatBtnClass(!!activeFormats.code)} title="Code Block">
                                                         <Code className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('link')} className={getFormatBtnClass(false)} title="Insert Link">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('link')} className={getFormatBtnClass(false)} title="Insert Link">
                                                         <Link2 className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => applyRichFormat('clear')} className={getFormatBtnClass(false)} title="Clear Formatting">
+                                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => applyRichFormat('clear')} className={getFormatBtnClass(false)} title="Clear Formatting">
                                                         <RemoveFormatting className="w-4 h-4" />
                                                     </button>
                                                 </div>
 
                                                 <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 sm:pl-2 ml-1">
-                                                    <button onClick={() => mailFileInputRef.current?.click()} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Attach file">
+                                                    <button 
+                                                        onClick={() => handleAttachmentClick('file')}
+                                                        onDoubleClick={handleAttachmentDoubleClick}
+                                                        className={`p-1.5 text-zinc-400 hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400 rounded transition-all flex items-center gap-1 text-xs font-medium shrink-0 ${isAttachmentExpanded ? 'text-indigo-500 font-bold' : ''}`}
+                                                        title={isAttachmentExpanded ? "Attach File (Double click to collapse)" : "Attach File"}
+                                                    >
                                                         <Paperclip className="w-4 h-4" /> <span className="hidden md:inline">Attach</span>
                                                     </button>
-                                                    <button onClick={() => mailImageInputRef.current?.click()} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Insert Image">
-                                                        <ImageIcon className="w-4 h-4" /> <span className="hidden md:inline">Image</span>
-                                                    </button>
-                                                    <button onClick={() => applyRichFormat('template')} className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 text-xs font-medium shrink-0" title="Use Template">
-                                                        <Braces className="w-4 h-4" /> <span className="hidden md:inline">Template</span>
-                                                    </button>
+
+                                                    <AnimatePresence>
+                                                        {isAttachmentExpanded && (
+                                                            <motion.button 
+                                                                initial={{ opacity: 0, width: 0, scale: 0.8 }}
+                                                                animate={{ opacity: 1, width: 'auto', scale: 1 }}
+                                                                exit={{ opacity: 0, width: 0, scale: 0.8 }}
+                                                                transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                                                onClick={() => handleAttachmentClick('image')}
+                                                                onDoubleClick={handleAttachmentDoubleClick}
+                                                                className="p-1.5 text-zinc-400 hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400 rounded transition-all flex items-center gap-1 text-xs font-medium shrink-0 overflow-hidden" 
+                                                                title="Insert Image (Double click to collapse)"
+                                                            >
+                                                                <ImageIcon className="w-4 h-4 text-emerald-500" /> <span className="hidden md:inline">Image</span>
+                                                            </motion.button>
+                                                        )}
+                                                    </AnimatePresence>
 
                                                     <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-0.5 sm:mx-1 shrink-0"></div>
 
@@ -1661,13 +1709,22 @@ const SupportInboxPage: React.FC = () => {
                                             )}
 
                                         <div className="flex flex-row justify-between items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-100 dark:border-zinc-800">
-                                            <div className="relative min-w-0 flex-1 max-w-[150px]">
-                                                <CustomDropdown
-                                                    options={KNOWN_MODELS}
-                                                    value={selectedAiModel}
-                                                    onChange={setSelectedAiModel}
-                                                    triggerClassName="!h-[24px] !p-1 !px-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md !text-[10px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-shadow shadow-sm truncate"
-                                                />
+                                            <div className="flex items-center gap-2 relative min-w-0 flex-1 max-w-[280px]">
+                                                <div className="w-[120px] shrink-0">
+                                                    <CustomDropdown
+                                                        options={KNOWN_MODELS}
+                                                        value={selectedAiModel}
+                                                        onChange={setSelectedAiModel}
+                                                        triggerClassName="!h-[24px] !p-1 !px-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md !text-[10px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-shadow shadow-sm truncate"
+                                                    />
+                                                </div>
+                                                <button 
+                                                    onClick={() => applyRichFormat('template')} 
+                                                    className="text-zinc-500 hover:text-indigo-500 dark:text-zinc-400 dark:hover:text-indigo-400 text-xs font-semibold transition-colors flex items-center gap-1 whitespace-nowrap select-none"
+                                                    title="Use Template"
+                                                >
+                                                    <Braces className="w-4 h-4" /> <span className="hidden sm:inline">Template</span>
+                                                </button>
                                             </div>
                                             <div className="flex flex-row items-center gap-2 shrink-0">
                                                 <motion.button 
@@ -1814,8 +1871,15 @@ const SupportInboxPage: React.FC = () => {
                                 ) : (
                                     <div className="flex flex-col items-end gap-1.5 sm:gap-2 max-w-4xl mx-auto relative w-full">
                                         <div className="flex items-center justify-between w-full px-1 pb-1">
-                                            <div className="text-[11px] font-medium text-zinc-500 hidden sm:block">Reply Settings</div>
-                                            <div className="text-[11px] font-medium text-zinc-500 block sm:hidden">AI Model</div>
+                                            <div className="flex items-center gap-1.5">
+                                                <button 
+                                                    onClick={() => applyFormatting('template')} 
+                                                    className="text-zinc-500 hover:text-indigo-500 dark:text-zinc-400 dark:hover:text-indigo-400 text-xs font-semibold transition-colors flex items-center gap-1 whitespace-nowrap select-none"
+                                                    title="Use Template"
+                                                >
+                                                    <Braces className="w-4 h-4" /> <span className="hidden sm:inline">Template</span>
+                                                </button>
+                                            </div>
                                             <div className="relative z-20 flex items-center gap-2 min-w-0 flex-1 justify-end">
                                                 <div className="shrink-0">
                                                     <CustomDropdown
@@ -1838,15 +1902,30 @@ const SupportInboxPage: React.FC = () => {
                                         </div>
                                         <div className="flex items-end gap-1.5 sm:gap-2 w-full">
                                             <div className="flex items-center gap-0.5 shrink-0">
-                                                <button onClick={() => mailFileInputRef.current?.click()} className="h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center shrink-0" title="Attach file">
+                                                <button 
+                                                    onClick={() => handleAttachmentClick('file')} 
+                                                    onDoubleClick={handleAttachmentDoubleClick}
+                                                    className={`h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400 transition-all rounded-[16px] sm:rounded-2xl flex items-center justify-center shrink-0 ${isAttachmentExpanded ? 'text-indigo-500 font-bold' : ''}`} 
+                                                    title={isAttachmentExpanded ? "Attach File (Double click to collapse)" : "Attach File"}
+                                                >
                                                     <Paperclip className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
                                                 </button>
-                                                <button onClick={() => mailImageInputRef.current?.click()} className="h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center shrink-0" title="Attach image">
-                                                    <ImageIcon className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
-                                                </button>
-                                                <button onClick={() => applyFormatting('template')} className="hidden sm:flex h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors rounded-[16px] sm:rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 items-center justify-center shrink-0" title="Use Template">
-                                                    <Braces className="w-[19px] h-[19px] sm:w-5 sm:h-5" />
-                                                </button>
+                                                <AnimatePresence>
+                                                    {isAttachmentExpanded && (
+                                                        <motion.button 
+                                                            initial={{ opacity: 0, width: 0, scale: 0.8 }}
+                                                            animate={{ opacity: 1, width: 'auto', scale: 1 }}
+                                                            exit={{ opacity: 0, width: 0, scale: 0.8 }}
+                                                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                                            onClick={() => handleAttachmentClick('image')} 
+                                                            onDoubleClick={handleAttachmentDoubleClick}
+                                                            className="h-[40px] w-[40px] sm:h-[48px] sm:w-[48px] text-zinc-400 hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400 transition-all rounded-[16px] sm:rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" 
+                                                            title="Attach Image (Double click to collapse)"
+                                                        >
+                                                            <ImageIcon className="w-[19px] h-[19px] sm:w-5 sm:h-5 text-emerald-500" />
+                                                        </motion.button>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 {pendingAttachments.length > 0 && (

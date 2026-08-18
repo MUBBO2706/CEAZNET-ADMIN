@@ -208,12 +208,16 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
         }
 
         return (
-            <div className={`inline-flex items-center gap-2 p-1.5 pr-3 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg animate-pulse ${isAdmin ? 'bg-white/10 border border-white/10' : 'border border-zinc-200 dark:border-zinc-700/80'}`}>
-                <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-700/50 rounded shrink-0"></div>
-                <div className="flex flex-col gap-1 w-[100px] py-0.5">
-                    <div className="h-2.5 bg-zinc-200 dark:bg-zinc-700/50 rounded w-full"></div>
-                    <div className="h-2 bg-zinc-200 dark:bg-zinc-700/50 rounded w-2/3"></div>
+            <div className={`inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-md animate-pulse ${
+                isAdmin 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'
+            } !p-1 !pl-1.5 !pr-2.5 w-full`}>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <div className="w-5 h-5 rounded-[3px] bg-zinc-200 dark:bg-zinc-700/50 shrink-0 border border-zinc-300 dark:border-zinc-700/50"></div>
+                    <div className="h-2.5 w-[70px] bg-zinc-200 dark:bg-zinc-700/50 rounded"></div>
                 </div>
+                <div className="w-3 h-3 bg-zinc-200 dark:bg-zinc-700/50 rounded shrink-0 ml-1"></div>
             </div>
         );
     }
@@ -227,34 +231,27 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
     }
 
     if (isImage) {
-        const containerClasses = isAdmin 
-            ? "inline-flex items-center gap-2 p-1.5 pr-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg cursor-pointer transition-all w-full overflow-hidden group shadow-sm hover:shadow" 
-            : "inline-flex items-center gap-2 p-1.5 pr-2.5 bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700/80 rounded-lg cursor-pointer transition-all w-full overflow-hidden group shadow-sm hover:shadow";
-
-        const textMainClasses = isAdmin 
-            ? "text-[11px] sm:text-xs font-semibold text-white truncate" 
-            : "text-[11px] sm:text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate";
-
-        const textSubClasses = isAdmin 
-            ? "text-[9px] text-white/70 mt-0.5 leading-none" 
-            : "text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none";
+        const baseClasses = linkClassName 
+            ? `${linkClassName} cursor-pointer w-full justify-between` 
+            : `inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium w-full cursor-pointer transition-all ${
+                isAdmin 
+                    ? 'bg-white/10 hover:bg-white/20 text-white' 
+                    : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
+            }`;
 
         return (
             <>
                 <div 
                     onClick={() => setIsPreviewOpen(true)}
-                    className={containerClasses}
+                    className={`${baseClasses} !p-1 !pl-1.5 !pr-2.5 flex items-center gap-1.5 group`}
                 >
-                    <div className="w-8 h-8 rounded bg-zinc-200 dark:bg-zinc-900 shrink-0 relative flex items-center justify-center overflow-hidden">
-                        <img src={realUrl} alt={name || 'Attachment'} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                            <Maximize2 className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <div className="w-5 h-5 rounded-[3px] bg-zinc-200 dark:bg-zinc-900 shrink-0 relative flex items-center justify-center overflow-hidden border border-zinc-300 dark:border-zinc-700">
+                            <img src={realUrl} alt={name || 'Attachment'} className="w-full h-full object-cover" />
                         </div>
+                        <span className="truncate text-[11px] font-medium leading-none">{name || 'Image'}</span>
                     </div>
-                    <div className="flex flex-col overflow-hidden min-w-0 py-0.5">
-                        <span className={textMainClasses}>{name || 'Image'}</span>
-                        <span className={textSubClasses}>CLICK TO VIEW</span>
-                    </div>
+                    <Maximize2 className="w-3 h-3 opacity-60 shrink-0 ml-1 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <FullScreenAttachmentPreview
                     isOpen={isPreviewOpen}
