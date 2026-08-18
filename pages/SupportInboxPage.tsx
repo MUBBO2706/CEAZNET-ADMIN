@@ -331,7 +331,7 @@ const MessageItem = React.memo(({
                     </ReactMarkdown>
                 </div>
                 {attachmentsList.length > 0 && (
-                    <div className={`mt-3 ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-2 max-w-lg w-full' : 'flex flex-wrap gap-2 items-center'}`}>
+                    <div className={`mt-3 ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-2 max-w-lg w-full' : 'flex flex-col gap-2 w-full max-w-xs'}`}>
                         {attachmentsList.map((att, idx) => (
                             <MessageAttachment 
                                 key={idx}
@@ -378,7 +378,7 @@ const MessageItem = React.memo(({
                         </ReactMarkdown>
                     </div>
                     {attachmentsList.length > 0 && (
-                        <div className={`mt-2 pt-2 border-t border-white/20 dark:border-zinc-700 w-full ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-1.5 min-w-[240px] sm:min-w-[280px]' : 'flex flex-wrap gap-1.5 items-center'}`}>
+                        <div className={`mt-2 pt-2 border-t border-white/20 dark:border-zinc-700 w-full ${attachmentsList.length > 1 ? 'grid grid-cols-2 gap-1.5 min-w-[240px] sm:min-w-[280px]' : 'flex flex-col gap-1.5 w-full max-w-[200px] sm:max-w-[250px]'}`}>
                             {attachmentsList.map((att, idx) => (
                                 <MessageAttachment 
                                     key={idx}

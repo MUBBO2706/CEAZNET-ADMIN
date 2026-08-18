@@ -199,10 +199,12 @@ export const MessageAttachment: React.FC<MessageAttachmentProps> = ({
     if (isLoading) {
         if (!isImage) {
             return (
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md animate-pulse ${isAdmin ? 'bg-white/10' : 'bg-zinc-100 dark:bg-zinc-700/80'}`}>
-                    <div className="w-3.5 h-3.5 bg-zinc-200 dark:bg-zinc-600 rounded shrink-0"></div>
-                    <div className="h-2.5 w-[60px] bg-zinc-200 dark:bg-zinc-600 rounded"></div>
-                    <div className="w-3 h-3 bg-zinc-200 dark:bg-zinc-600 rounded shrink-0 ml-0.5"></div>
+                <div className={`inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-md animate-pulse w-full ${isAdmin ? 'bg-white/10' : 'bg-zinc-100 dark:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700/80'} !px-2.5 !py-1.5`}>
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <div className="w-3.5 h-3.5 bg-zinc-200 dark:bg-zinc-600 rounded shrink-0"></div>
+                        <div className="h-2.5 w-[70px] bg-zinc-200 dark:bg-zinc-600 rounded"></div>
+                    </div>
+                    <div className="w-3 h-3 bg-zinc-200 dark:bg-zinc-600 rounded shrink-0 ml-1"></div>
                 </div>
             );
         }
