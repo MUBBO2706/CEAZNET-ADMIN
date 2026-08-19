@@ -18,6 +18,7 @@ import { Mail, ArrowUp, MessageSquare, CheckCircle, Clock, Send, Archive, Loader
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { MessageAttachment, FullScreenAttachmentPreview } from '../components/MessageAttachment';
 import { generateSupportReply } from '../services/aiReplyService';
 import { CustomDropdown } from '../components/ui';
@@ -42,6 +43,70 @@ const CustomAiSparkleIcon = ({ className }: { className?: string }) => (
         <path d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z" fill="#3b82f6" />
     </svg>
 );
+
+// Clean plain-text preview helper for sidebar and preview lists
+const stripHtmlAndMarkdown = (text: string): string => {
+    if (!text) return '';
+    return text
+        .replace(/<br\s*[\/]?>/gi, ' ')
+        .replace(/<\/(p|div|li|h[1-6])>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/[*_~`#]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+// Formatter for rich message bodies containing HTML and markdown
+const formatMessageBody = (text: string): string => {
+    if (!text) return '';
+    
+    let formatted = text;
+
+    // 1. Decode standard HTML entities
+    formatted = formatted
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'");
+
+    // 2. Convert <div> tags to newlines, <p> tags to double newlines
+    formatted = formatted
+        .replace(/<div[^>]*>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '\n\n')
+        .replace(/<\/p>/gi, '\n\n');
+
+    // 3. Pre-process list items written with HTML breaks: e.g. <br>*   Could you confirm...<br>
+    formatted = formatted.replace(/(?:<br\s*[\/]?>\s*)+([*+-]|\d+\.)\s+/gi, '\n$1 ');
+
+    // 4. Convert multiple <br><br> to double newlines (paragraphs)
+    formatted = formatted.replace(/(?:<br\s*[\/]?>\s*){2,}/gi, '\n\n');
+
+    // 5. Convert single <br> to single newline
+    formatted = formatted.replace(/<br\s*[\/]?>/gi, '\n');
+
+    // 6. Clean up list item indentation so "*   text" becomes "* text"
+    formatted = formatted.replace(/^([ \t]*[*+-]|\d+\.)[ \t]{2,}/gm, '$1 ');
+
+    // 7. Ensure clean blank line before list blocks for standard CommonMark parsing
+    formatted = formatted.replace(/([^\n])\n([*+-]|\d+\.) /g, '$1\n\n$2 ');
+
+    // 8. Remove any trailing <br> or messy tags from list lines
+    formatted = formatted.replace(/([*+-]|\d+\..*?)<br\s*[\/]?>/gi, '$1');
+
+    // 9. Normalize excessive newlines
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    return formatted.trim();
+};
 
 interface PendingAttachmentData {
     id: string;
@@ -325,9 +390,9 @@ const MessageItem = React.memo(({
                         </div>
                     </div>
                 </div>
-                <div className="mt-3 text-[13px] sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed markdown-body [&_p]:whitespace-pre-wrap [&_li]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.message}
+                <div className="mt-3 text-[13px] sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed markdown-body [&_p]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap [&_li_p]:inline [&_li_p]:m-0 [&_li]:leading-normal">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {formatMessageBody(msg.message)}
                     </ReactMarkdown>
                 </div>
                 {attachmentsList.length > 0 && (
@@ -372,9 +437,9 @@ const MessageItem = React.memo(({
                             : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 rounded-2xl rounded-tl-sm'
                     } text-[13px] sm:text-sm`}
                 >
-                    <div className="break-words markdown-body [&_p]:whitespace-pre-wrap [&_li]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {msg.message}
+                    <div className="break-words markdown-body [&_p]:whitespace-pre-wrap [&_blockquote]:whitespace-pre-wrap [&_pre]:whitespace-pre-wrap [&_li_p]:inline [&_li_p]:m-0 [&_li]:leading-normal">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            {formatMessageBody(msg.message)}
                         </ReactMarkdown>
                     </div>
                     {attachmentsList.length > 0 && (
@@ -1426,7 +1491,7 @@ const SupportInboxPage: React.FC = () => {
                                                 
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className={`text-[12px] truncate ${hasUnreads ? 'font-medium text-zinc-800 dark:text-zinc-200' : 'text-zinc-500 dark:text-zinc-500'}`}>
-                                                        {latestMessage}
+                                                        {stripHtmlAndMarkdown(latestMessage)}
                                                     </p>
                                                     {hasUnreads && (
                                                         <span className="shrink-0 bg-indigo-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center flex items-center justify-center -mr-1">
