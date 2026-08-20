@@ -96,8 +96,9 @@ const formatMessageBody = (text: string): string => {
     // 6. Clean up list item indentation so "*   text" becomes "* text"
     formatted = formatted.replace(/^([ \t]*[*+-]|\d+\.)[ \t]{2,}/gm, '$1 ');
 
-    // 7. Ensure clean blank line before list blocks for standard CommonMark parsing
+    // 7. Ensure clean blank line before list blocks and headings for standard CommonMark parsing
     formatted = formatted.replace(/([^\n])\n([*+-]|\d+\.) /g, '$1\n\n$2 ');
+    formatted = formatted.replace(/([^\n])\n(#{1,6}\s+)/g, '$1\n\n$2');
 
     // 8. Remove any trailing <br> or messy tags from list lines
     formatted = formatted.replace(/([*+-]|\d+\..*?)<br\s*[\/]?>/gi, '$1');
@@ -230,6 +231,110 @@ const PendingAttachmentsList: React.FC<{
     );
 };
 
+function parseInlineMarkdown(text: string): string {
+    if (!text) return '';
+    return text
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+        .replace(/_([^_]+)_/g, '<i>$1</i>')
+        .replace(/~~([^~]+)~~/g, '<s>$1</s>')
+        .replace(/~([^~]+)~/g, '<s>$1</s>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function markdownToHtml(md: string): string {
+    if (!md) return '';
+
+    let text = md.replace(/\r\n/g, '\n');
+
+    // Protect code blocks first
+    const codeBlocks: string[] = [];
+    text = text.replace(/```([\s\S]*?)```/g, (_, code) => {
+        const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+        return placeholder;
+    });
+
+    // Protect inline code
+    const inlineCodes: string[] = [];
+    text = text.replace(/`([^`\n]+)`/g, (_, code) => {
+        const placeholder = `__INLINE_CODE_${inlineCodes.length}__`;
+        inlineCodes.push(`<code>${code}</code>`);
+        return placeholder;
+    });
+
+    const lines = text.split('\n');
+    const output: string[] = [];
+    let inList: 'ul' | 'ol' | null = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Unordered list (* or - or +)
+        const ulMatch = line.match(/^(\s*)[*+-]\s+(.*)$/);
+        if (ulMatch) {
+            if (inList !== 'ul') {
+                if (inList === 'ol') output.push('</ol>');
+                output.push('<ul>');
+                inList = 'ul';
+            }
+            output.push(`<li>${parseInlineMarkdown(ulMatch[2])}</li>`);
+            continue;
+        }
+
+        // Ordered list (1. item)
+        const olMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+        if (olMatch) {
+            if (inList !== 'ol') {
+                if (inList === 'ul') output.push('</ul>');
+                output.push('<ol>');
+                inList = 'ol';
+            }
+            output.push(`<li>${parseInlineMarkdown(olMatch[2])}</li>`);
+            continue;
+        }
+
+        // Close list if line is not a list item
+        if (inList) {
+            output.push(inList === 'ul' ? '</ul>' : '</ol>');
+            inList = null;
+        }
+
+        // Headings
+        if (/^###\s+(.*)$/.test(line)) {
+            output.push(`<h3>${parseInlineMarkdown(line.replace(/^###\s+/, ''))}</h3>`);
+        } else if (/^##\s+(.*)$/.test(line)) {
+            output.push(`<h2>${parseInlineMarkdown(line.replace(/^##\s+/, ''))}</h2>`);
+        } else if (/^#\s+(.*)$/.test(line)) {
+            output.push(`<h1>${parseInlineMarkdown(line.replace(/^#\s+/, ''))}</h1>`);
+        } else if (/^>\s+(.*)$/.test(line)) {
+            output.push(`<blockquote>${parseInlineMarkdown(line.replace(/^>\s+/, ''))}</blockquote>`);
+        } else if (line.trim() === '') {
+            output.push('<p><br/></p>');
+        } else {
+            output.push(`<p>${parseInlineMarkdown(line)}</p>`);
+        }
+    }
+
+    if (inList) {
+        output.push(inList === 'ul' ? '</ul>' : '</ol>');
+    }
+
+    let result = output.join('');
+
+    // Restore inline codes
+    inlineCodes.forEach((code, idx) => {
+        result = result.replace(`__INLINE_CODE_${idx}__`, code);
+    });
+
+    // Restore code blocks
+    codeBlocks.forEach((code, idx) => {
+        result = result.replace(`__CODE_BLOCK_${idx}__`, code);
+    });
+
+    return result;
+}
+
 function htmlToMarkdown(html: string): string {
     if (!html) return '';
     if (!/<[a-z][\s\S]*>/i.test(html)) return html.trim();
@@ -238,6 +343,8 @@ function htmlToMarkdown(html: string): string {
     text = text.replace(/<div><br><\/div>/gi, '\n');
     text = text.replace(/<div>/gi, '\n');
     text = text.replace(/<\/div>/gi, '');
+    text = text.replace(/<p><br\s*[\/]?>\s*<\/p>/gi, '\n\n');
+    text = text.replace(/<p><\/p>/gi, '\n\n');
     text = text.replace(/<p>/gi, '');
     text = text.replace(/<\/p>/gi, '\n\n');
     text = text.replace(/<b>(.*?)<\/b>/gi, '**$1**');
@@ -247,21 +354,23 @@ function htmlToMarkdown(html: string): string {
     text = text.replace(/<u>(.*?)<\/u>/gi, '_$1_');
     text = text.replace(/<s>(.*?)<\/s>/gi, '~$1~');
     text = text.replace(/<strike>(.*?)<\/strike>/gi, '~$1~');
-    text = text.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n');
-    text = text.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n');
-    text = text.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n');
-    text = text.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n');
-    text = text.replace(/<pre>(.*?)<\/pre>/gi, '```\n$1\n```');
-    text = text.replace(/<ul>(.*?)<\/ul>/gi, '$1');
-    text = text.replace(/<ol>(.*?)<\/ol>/gi, '$1');
-    text = text.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+    text = text.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n');
+    text = text.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n');
+    text = text.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n');
+    text = text.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n\n');
+    text = text.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n');
+    text = text.replace(/<pre>([\s\S]*?)<\/pre>/gi, '```\n$1\n```\n\n');
+    text = text.replace(/<code>(.*?)<\/code>/gi, '`$1`');
+    text = text.replace(/<ul>([\s\S]*?)<\/ul>/gi, '$1\n');
+    text = text.replace(/<ol>([\s\S]*?)<\/ol>/gi, '$1\n');
+    text = text.replace(/<li>(.*?)<\/li>/gi, '* $1\n');
     text = text.replace(/<br\s*\/?>/gi, '\n');
     text = text.replace(/<a [^>]*href="(.*?)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
     text = text.replace(/&nbsp;/g, ' ');
     text = text.replace(/&lt;/g, '<');
     text = text.replace(/&gt;/g, '>');
     text = text.replace(/&amp;/g, '&');
-    return text.trim();
+    return text.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 const KNOWN_MODELS = [
@@ -1259,12 +1368,7 @@ const SupportInboxPage: React.FC = () => {
             setLastGeneratedText(generated);
             setSendMode('direct');
             if (richEditorRef.current) {
-                const formattedHtml = generated
-                    .replace(/\n\n/g, '<p></p>')
-                    .replace(/\n/g, '<br/>')
-                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                    .replace(/\*(.*?)\*/g, '<i>$1</i>');
-                richEditorRef.current.innerHTML = formattedHtml;
+                richEditorRef.current.innerHTML = markdownToHtml(generated);
             }
             if (mailTextareaRef.current) {
                 mailTextareaRef.current.value = generated;
@@ -1750,7 +1854,15 @@ const SupportInboxPage: React.FC = () => {
                                                         }, 150);
                                                     }}
                                                     className="w-full bg-transparent border-none focus:outline-none min-h-[110px] max-h-[350px] overflow-y-auto text-[15px] sm:text-sm text-zinc-900 dark:text-white leading-relaxed
-                                                    [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through [&_h3]:text-base [&_h3]:font-bold [&_h3]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-indigo-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-zinc-600 [&_pre]:bg-zinc-100 [&_pre]:dark:bg-zinc-800 [&_pre]:p-2 [&_pre]:rounded [&_pre]:font-mono [&_a]:text-indigo-600 [&_a]:underline"
+                                                    [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through 
+                                                    [&_h1]:text-lg [&_h1]:font-bold [&_h1]:my-2
+                                                    [&_h2]:text-base [&_h2]:font-bold [&_h2]:my-1.5
+                                                    [&_h3]:text-[15px] [&_h3]:font-bold [&_h3]:my-1.5 [&_h3]:text-zinc-900 [&_h3]:dark:text-zinc-100
+                                                    [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1.5 [&_li]:my-0.5
+                                                    [&_blockquote]:border-l-2 [&_blockquote]:border-indigo-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-zinc-600 [&_blockquote]:dark:text-zinc-400 [&_blockquote]:my-1.5
+                                                    [&_pre]:bg-zinc-100 [&_pre]:dark:bg-zinc-800 [&_pre]:p-2 [&_pre]:rounded [&_pre]:font-mono [&_pre]:text-xs [&_pre]:my-1.5
+                                                    [&_code]:bg-zinc-100 [&_code]:dark:bg-zinc-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs
+                                                    [&_a]:text-indigo-600 [&_a]:underline"
                                                 />
                                                 {(!replyText || !replyText.trim()) && (
                                                     <div 
