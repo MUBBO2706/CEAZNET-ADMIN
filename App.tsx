@@ -339,47 +339,44 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/85 backdrop-blur-md p-4">
-            <div className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden flex flex-col border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-6 border-b flex items-center gap-4 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-sm">
-                        <img 
-                            src="/logo.png" 
-                            alt="Ceaznet Logo" 
-                            className="w-8 h-8 object-contain" 
-                            onError={(e) => {
-                                const target = e.currentTarget;
-                                target.style.display = 'none';
-                                if (target.nextElementSibling) {
-                                    (target.nextElementSibling as HTMLElement).style.display = 'block';
-                                }
-                            }} 
-                        />
-                        <Zap className="h-6 w-6 hidden text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Ceaznet Admin</h1>
-                        <p className="text-sm mt-0.5 text-zinc-500 dark:text-zinc-400 font-medium">Authentication Required</p>
-                    </div>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/92 backdrop-blur-xl p-6 animate-in fade-in duration-200">
+            <div className="w-full max-w-sm flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl mb-4">
+                    <img 
+                        src="/logo.png" 
+                        alt="Ceaznet Logo" 
+                        className="w-10 h-10 object-contain" 
+                        onError={(e) => {
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            if (target.nextElementSibling) {
+                                (target.nextElementSibling as HTMLElement).style.display = 'block';
+                            }
+                        }} 
+                    />
+                    <Zap className="h-8 w-8 hidden text-indigo-500" />
                 </div>
                 
-                <form onSubmit={handleLogin} className="p-6 space-y-4">
+                <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">Ceaznet Admin</h1>
+                <p className="text-sm text-zinc-400 mb-8">Authentication Required to Proceed</p>
+                
+                <form onSubmit={handleLogin} className="w-full space-y-4 text-left">
                     <div>
-                        <label className="block text-sm font-medium mb-1.5 text-zinc-700 dark:text-zinc-300">Admin Username</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Admin Username</label>
                         <input 
                             type="text" 
                             value={usernameInput}
                             onChange={(e) => {
-                                setUsernameInput(e.target.value);
+                               setUsernameInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/80 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm"
                             placeholder="Enter username..."
                             autoFocus
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5 text-zinc-700 dark:text-zinc-300">Admin Password</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Admin Password</label>
                         <input 
                             type="password" 
                             value={passwordInput}
@@ -387,20 +384,20 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                                 setPasswordInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/80 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm"
                             placeholder="Enter secure password..."
                         />
                     </div>
                     {error && (
-                        <div className="p-3 rounded-lg text-sm flex items-center gap-2 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400">
-                            <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <div className="p-3 rounded-xl text-sm flex items-center gap-2 bg-red-950/60 border border-red-900/50 text-red-300">
+                            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
                             <span>{error}</span>
                         </div>
                     )}
                     <button 
                         type="submit" 
                         disabled={isLoading}
-                        className="w-full px-5 py-2.5 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                        className="w-full mt-2 px-5 py-3 text-white text-sm font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]"
                     >
                         {isLoading ? 'Authenticating...' : 'Access Admin Panel'}
                     </button>
