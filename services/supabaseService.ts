@@ -858,3 +858,41 @@ export async function deletePublicContent(key: string) {
 export async function createPublicContent(key: string, content: any) {
     return await dbMain.from('public_content').insert({ key, content });
 }
+
+// === Admin Authentication via Backend / Supabase ===
+export async function verifyAdminBackend(username: string, password: string): Promise<boolean> {
+    try {
+        const { data, error } = await dbMain.rpc('verify_admin_login', {
+            p_username: username,
+            p_password: password
+        });
+        if (!error && data !== null && data !== undefined) {
+            return Boolean(data);
+        }
+    } catch (e) {
+        // fallback
+    }
+
+    try {
+        const { data, error } = await dbMain
+            .from('admin_users')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (!error && data) {
+            return data.password === password || data.password_hash === password;
+        }
+    } catch (e) {
+        // fallback
+    }
+
+    const expectedUsername = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_USERNAME) || 'admin';
+    const expectedPassword = (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_ACTION_PASSWORD)) || '';
+
+    if (expectedPassword && username === expectedUsername && password === expectedPassword) {
+        return true;
+    }
+
+    return false;
+}

@@ -11,6 +11,7 @@ import Header from './components/Header';
 import { LoadingSpinner } from './components/skeletons';
 
 import SupportInboxPage from './pages/SupportInboxPage';
+import { verifyAdminBackend } from './services/supabaseService';
 
 // Lazy load new pages
 const AdvancedAnalyticsPage = React.lazy(() => import('./pages/AdvancedAnalyticsPage'));
@@ -302,44 +303,69 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
     });
     const [usernameInput, setUsernameInput] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
     if (isAuthenticated) {
         return <>{children}</>;
     }
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const expectedUsername = import.meta.env.VITE_ADMIN_USERNAME || (import.meta.env.DEV ? 'admin' : '');
-        const expectedPassword = import.meta.env.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_ACTION_PASSWORD;
-        if (!expectedPassword) {
-            setError("Admin credentials not configured in environment variables.");
+        if (!usernameInput.trim() || !passwordInput.trim()) {
+            setError("Please enter both username and password.");
             return;
         }
-        if (usernameInput === expectedUsername && passwordInput === expectedPassword) {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('ceaznet-admin-auth', 'true');
-        } else {
-            setError("Incorrect username or password.");
+        setIsLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameInput, password: passwordInput })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setIsAuthenticated(true);
+                sessionStorage.setItem('ceaznet-admin-auth', 'true');
+            } else {
+                setError(data.message || "Incorrect username or password.");
+            }
+        } catch (err: any) {
+            setError(`Authentication error: ${err.message || 'Server connection failed'}`);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--body-bg)' }}>
-            <div className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden flex flex-col border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-                <div className="p-6 border-b flex items-center gap-4" style={{ borderColor: 'var(--border-color)' }}>
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--accent-glow)' }}>
-                        <Zap className="h-6 w-6" style={{ color: 'var(--accent-color)' }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/85 backdrop-blur-md p-4">
+            <div className="w-full max-w-md shadow-2xl rounded-2xl overflow-hidden flex flex-col border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-6 border-b flex items-center gap-4 border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-sm">
+                        <img 
+                            src="/logo.png" 
+                            alt="Ceaznet Logo" 
+                            className="w-8 h-8 object-contain" 
+                            onError={(e) => {
+                                const target = e.currentTarget;
+                                target.style.display = 'none';
+                                if (target.nextElementSibling) {
+                                    (target.nextElementSibling as HTMLElement).style.display = 'block';
+                                }
+                            }} 
+                        />
+                        <Zap className="h-6 w-6 hidden text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Ceaznet Admin</h1>
-                        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Authentication Required</p>
+                        <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Ceaznet Admin</h1>
+                        <p className="text-sm mt-0.5 text-zinc-500 dark:text-zinc-400 font-medium">Authentication Required</p>
                     </div>
                 </div>
                 
                 <form onSubmit={handleLogin} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Admin Username</label>
+                        <label className="block text-sm font-medium mb-1.5 text-zinc-700 dark:text-zinc-300">Admin Username</label>
                         <input 
                             type="text" 
                             value={usernameInput}
@@ -347,18 +373,13 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                                 setUsernameInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all shadow-sm"
-                            style={{ 
-                                backgroundColor: 'var(--subtle-bg)', 
-                                borderColor: 'var(--border-color)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="w-full px-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
                             placeholder="Enter username..."
                             autoFocus
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Admin Password</label>
+                        <label className="block text-sm font-medium mb-1.5 text-zinc-700 dark:text-zinc-300">Admin Password</label>
                         <input 
                             type="password" 
                             value={passwordInput}
@@ -366,29 +387,22 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                                 setPasswordInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all shadow-sm"
-                            style={{ 
-                                backgroundColor: 'var(--subtle-bg)', 
-                                borderColor: 'var(--border-color)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="w-full px-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
                             placeholder="Enter secure password..."
                         />
                     </div>
                     {error && (
-                        <div className="p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: 'var(--status-danger-subtle-bg)', color: 'var(--danger)' }}>
+                        <div className="p-3 rounded-lg text-sm flex items-center gap-2 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400">
                             <AlertTriangle className="h-4 w-4 shrink-0" />
                             <span>{error}</span>
                         </div>
                     )}
                     <button 
                         type="submit" 
-                        className="w-full px-5 py-2.5 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
-                        style={{ backgroundColor: 'var(--accent-color)' }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-dark)'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color)'}
+                        disabled={isLoading}
+                        className="w-full px-5 py-2.5 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
                     >
-                        Access Admin Panel
+                        {isLoading ? 'Authenticating...' : 'Access Admin Panel'}
                     </button>
                 </form>
             </div>
