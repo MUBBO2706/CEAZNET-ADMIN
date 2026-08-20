@@ -318,6 +318,18 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
         setIsLoading(true);
         setError('');
+
+        const expectedEnvUser = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
+        const expectedEnvPass = import.meta.env.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_ACTION_PASSWORD || '';
+
+        // Check client-side env variables first if configured
+        if (expectedEnvPass && usernameInput === expectedEnvUser && passwordInput === expectedEnvPass) {
+            setIsAuthenticated(true);
+            sessionStorage.setItem('ceaznet-admin-auth', 'true');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
