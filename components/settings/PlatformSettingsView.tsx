@@ -65,8 +65,8 @@ const PlatformSettingsView: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl max-w-[100vw] overflow-hidden py-2">
-            <div className="mb-6">
+        <div className="max-w-4xl mx-auto py-2">
+            <div className="mb-8">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-indigo-500" />
                     Platform Settings
@@ -76,41 +76,41 @@ const PlatformSettingsView: React.FC = () => {
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Support Email */}
-                    <div className="bg-slate-50/50 dark:bg-slate-800/20 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <div className="flex flex-col">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             <Mail className="w-4 h-4 text-slate-400" />
                             Support Email
                         </label>
-                        <p className="text-xs text-slate-500 mb-3">Visible to users in the Support Inbox.</p>
+                        <p className="text-xs text-slate-500 mb-2.5">Visible to users in the Support Inbox.</p>
                         <input 
                             type="email" 
                             name="support_email" 
                             required 
                             value={formData.support_email} 
                             onChange={handleChange} 
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none text-slate-800 dark:text-slate-100" 
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-slate-800 dark:text-slate-100 shadow-sm" 
                             placeholder="support@ceaznet.com"
                         />
                     </div>
 
                     {/* Platform Logo */}
-                    <div className="bg-slate-50/50 dark:bg-slate-800/20 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/50 md:row-span-2 flex flex-col">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <div className="flex flex-col md:row-span-2">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             <ImageIcon className="w-4 h-4 text-slate-400" />
                             Platform Logo URL
                         </label>
-                        <p className="text-xs text-slate-500 mb-3">Main logo displayed in the header and sidebars.</p>
-                        <div className="flex items-center gap-2">
+                        <p className="text-xs text-slate-500 mb-2.5">Main logo displayed in the header and sidebars.</p>
+                        <div className="flex items-center gap-2 mb-3">
                             <input 
                                 type="text" 
                                 name="platform_logo_url" 
                                 required 
                                 value={formData.platform_logo_url.startsWith('data:image') ? 'Uploaded Image (Base64)' : formData.platform_logo_url} 
                                 onChange={handleChange} 
-                                className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400" 
+                                className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 shadow-sm" 
                                 placeholder="https://example.com/logo.png"
                                 disabled={formData.platform_logo_url.startsWith('data:image')}
                             />
@@ -121,34 +121,35 @@ const PlatformSettingsView: React.FC = () => {
                                 } else {
                                     logoInputRef.current?.click();
                                 }
-                            }} className="shrink-0 p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                {formData.platform_logo_url.startsWith('data:image') ? 'Clear' : <Upload className="w-4 h-4" />}
+                            }} className="shrink-0 px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium shadow-sm transition-all">
+                                {formData.platform_logo_url.startsWith('data:image') ? 'Clear' : <Upload className="w-4 h-4 inline mr-1.5" />}
+                                {!formData.platform_logo_url.startsWith('data:image') && 'Upload'}
                             </button>
                         </div>
-                        <div className="mt-4 flex-1 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-4 min-h-[120px]">
+                        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-900/30 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 min-h-[140px]">
                             {formData.platform_logo_url ? (
                                 <img src={formData.platform_logo_url} alt="Logo Preview" className="max-h-24 max-w-full object-contain drop-shadow-sm" onError={(e) => e.currentTarget.style.display = 'none'} onLoad={(e) => e.currentTarget.style.display = 'block'} />
                             ) : (
-                                <span className="text-sm text-slate-400 italic">No image</span>
+                                <span className="text-sm text-slate-400 italic">No logo preview</span>
                             )}
                         </div>
                     </div>
 
                     {/* Platform Favicon */}
-                    <div className="bg-slate-50/50 dark:bg-slate-800/20 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <div className="flex flex-col">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             <Globe className="w-4 h-4 text-slate-400" />
                             Favicon URL
                         </label>
-                        <p className="text-xs text-slate-500 mb-3">The small icon shown in browser tabs.</p>
-                        <div className="flex items-center gap-2">
+                        <p className="text-xs text-slate-500 mb-2.5">The small icon shown in browser tabs.</p>
+                        <div className="flex items-center gap-2 mb-3">
                             <input 
                                 type="text" 
                                 name="platform_favicon_url" 
                                 required 
                                 value={formData.platform_favicon_url.startsWith('data:image') ? 'Uploaded Image (Base64)' : formData.platform_favicon_url} 
                                 onChange={handleChange} 
-                                className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400" 
+                                className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 shadow-sm" 
                                 placeholder="https://example.com/favicon.png"
                                 disabled={formData.platform_favicon_url.startsWith('data:image')}
                             />
@@ -159,28 +160,29 @@ const PlatformSettingsView: React.FC = () => {
                                 } else {
                                     faviconInputRef.current?.click();
                                 }
-                            }} className="shrink-0 p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                {formData.platform_favicon_url.startsWith('data:image') ? 'Clear' : <Upload className="w-4 h-4" />}
+                            }} className="shrink-0 px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium shadow-sm transition-all">
+                                {formData.platform_favicon_url.startsWith('data:image') ? 'Clear' : <Upload className="w-4 h-4 inline mr-1.5" />}
+                                {!formData.platform_favicon_url.startsWith('data:image') && 'Upload'}
                             </button>
                         </div>
-                        <div className="mt-3 flex items-center gap-3">
-                             <div className="w-9 h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-1.5 overflow-hidden shadow-sm">
+                        <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-2 overflow-hidden shadow-sm">
                                 {formData.platform_favicon_url ? (
                                     <img src={formData.platform_favicon_url} alt="Favicon Preview" className="w-full h-full object-contain" />
                                 ) : (
                                     <Globe className="w-4 h-4 text-slate-300" />
                                 )}
                              </div>
-                             <span className="text-xs text-slate-500 font-medium tracking-wide uppercase">Preview</span>
+                             <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Favicon Preview</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-2 flex justify-end">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
                     <button 
                         type="submit" 
                         disabled={isSaving} 
-                        className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-70 disabled:cursor-not-allowed text-sm w-full sm:w-auto"
+                        className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed text-sm w-full sm:w-auto"
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'Saving Changes...' : 'Save Settings'}
