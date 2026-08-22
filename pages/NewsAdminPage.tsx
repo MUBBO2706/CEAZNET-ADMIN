@@ -355,7 +355,7 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div className="pill-nav-container !mb-0" ref={navRef}>
                     <div className="pill-nav">

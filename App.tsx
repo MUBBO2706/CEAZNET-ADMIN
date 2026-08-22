@@ -44,11 +44,25 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     };
 
     private handleGlobalError = (event: ErrorEvent) => {
-        this.addError(event.error || new Error(event.message));
+        const err = event.error || new Error(event.message);
+        const errStr = (err?.message || err?.toString() || '').toLowerCase();
+        if (errStr.includes('websocket') || errStr.includes('closed without opened') || errStr.includes('failed to fetch')) {
+            event.preventDefault();
+            console.warn("Ceaznet Admin - Suppressed global websocket/network error:", err);
+            return;
+        }
+        this.addError(err);
     };
 
     private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-        this.addError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+        const err = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+        const errStr = (err?.message || err?.toString() || '').toLowerCase();
+        if (errStr.includes('websocket') || errStr.includes('closed without opened') || errStr.includes('failed to fetch')) {
+            event.preventDefault();
+            console.warn("Ceaznet Admin - Suppressed global unhandled websocket/network rejection:", err);
+            return;
+        }
+        this.addError(err);
     };
 
     componentDidMount() {
@@ -62,15 +76,31 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
 
     static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+        // We only show the full fallback UI if it's NOT a websocket error
+        const errStr = error.toString().toLowerCase();
+        if (errStr.includes('websocket') || errStr.includes('closed without opened')) {
+            return { hasError: false };
+        }
         return { hasError: true };
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        const errStr = error.toString().toLowerCase();
+        if (errStr.includes('websocket') || errStr.includes('closed without opened')) {
+            console.warn("Ceaznet Admin - Suppressed React lifecycle websocket error:", error);
+            return;
+        }
         console.error("Ceaznet Admin - Uncaught Application Error:", error, errorInfo);
         this.addError(error, errorInfo.componentStack);
     }
 
     addError(error: Error, componentStack?: string | null) {
+        const errStr = (error?.message || error?.toString() || '').toLowerCase();
+        if (errStr.includes('websocket') || errStr.includes('closed without opened') || errStr.includes('failed to fetch') || errStr.includes('load failed')) {
+            console.warn("Ceaznet Admin - Ignored benign/network error in addError:", error);
+            return;
+        }
+
         const newError: AppError = {
             id: Math.random().toString(36).substr(2, 9),
             timestamp: new Date(),
@@ -265,7 +295,7 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
                 {/* Main Content */}
                 <main 
                     ref={mainRef}
-                    className={`flex-1 flex flex-col overflow-y-auto ${location.pathname.startsWith('/support-inbox') ? '' : 'px-3 pb-3 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6'}`}
+                    className={`flex-1 flex flex-col overflow-y-auto ${location.pathname.startsWith('/support-inbox') ? '' : ((location.pathname === '/' || location.pathname.startsWith('/users') || location.pathname.startsWith('/news')) ? 'px-3 pb-0 sm:px-4 sm:pb-0 lg:px-6 lg:pb-0' : 'px-3 pb-3 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6')}`}
                 >
                     <div className={`h-[50px] shrink-0 w-full ${location.pathname.startsWith('/support-inbox') ? '' : 'mb-4 sm:mb-5 lg:mb-6'}`}></div>
                     <Suspense fallback={<LoadingSpinner />}>

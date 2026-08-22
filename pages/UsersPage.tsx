@@ -768,7 +768,7 @@ const UsersPage: React.FC = () => {
     }
     
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-0">
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -867,305 +867,296 @@ const UsersPage: React.FC = () => {
             </div>
 
             {processedUsers.length > 0 ? (
-                <PanelCard className="!p-0 flex flex-col [clip-path:inset(0_round_0.5rem)]">
+                <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
                     
-                    <div className="flex flex-col">
-                        {/* Header Row */}
-                        <div 
-                            ref={headerRef}
-                            className="sticky z-20 bg-[var(--card-bg)] flex items-center px-1 md:px-2 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 top-[50px] py-2 lg:min-w-full"
-                        >
-                            {isSelectionMode && (
-                                <div className="w-10 shrink-0 text-center animate-fade-in pl-1">
-                                    <input
-                                        ref={selectAllCheckboxRef}
-                                        type="checkbox"
-                                        className="h-4 w-4 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                    />
-                                </div>
-                            )}
-                            <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">User & Provider</div>
-                            <div className="w-24 shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Status</div>
-                            <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Joined Date</div>
-                            <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Last Login</div>
-                            <div className="w-20 shrink-0 px-2 text-center text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Chats</div>
-                            <div className="w-12 shrink-0 px-1 text-right text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Actions</div>
-                            <div className="w-10 shrink-0 px-1"></div>
-                        </div>
+                    <div className="w-full overflow-x-auto custom-scrollbar">
+                        <div className="min-w-[850px] flex flex-col">
+                            {/* Header Row */}
+                            <div 
+                                className="sticky z-20 bg-[var(--card-bg)] flex items-center px-1 md:px-2 border-b border-[var(--border-color)] transition-all duration-300 top-[50px] py-2 lg:min-w-full"
+                            >
+                                {isSelectionMode && (
+                                    <div className="w-10 shrink-0 text-center animate-fade-in pl-1">
+                                        <input
+                                            ref={selectAllCheckboxRef}
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </div>
+                                )}
+                                <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">User & Provider</div>
+                                <div className="w-24 shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Status</div>
+                                <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Joined Date</div>
+                                <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Last Login</div>
+                                <div className="w-20 shrink-0 px-2 text-center text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Chats</div>
+                                <div className="w-12 shrink-0 px-1 text-right text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Actions</div>
+                                <div className="w-10 shrink-0 px-1"></div>
+                            </div>
 
-                        {/* Data Rows */}
-                        <div className="flex flex-col">
-                            {processedUsers.map(userStat => {
-                                const { id, full_name, avatar_url, email, created_at, updated_at, last_sign_in_at, providers, is_suspended } = userStat.user;
-                                const { conversation_count } = userStat;
-                                const isSelected = selectedUsers.has(id);
-                                const isExpanded = expandedRow === id;
-                                const firstLetter = (full_name || email || 'A').charAt(0).toUpperCase();
-                                const bgColor = stringToColor(full_name || email || id);
-                                const fallbackAvatar = `https://api.dicebear.com/8.x/initials/svg?seed=${firstLetter}&backgroundColor=${bgColor}&textColor=ffffff`;
+                            {/* Data Rows */}
+                            <div className="flex flex-col">
+                                {processedUsers.map(userStat => {
+                                    const { id, full_name, avatar_url, email, created_at, updated_at, last_sign_in_at, providers, is_suspended } = userStat.user;
+                                    const { conversation_count } = userStat;
+                                    const isSelected = selectedUsers.has(id);
+                                    const isExpanded = expandedRow === id;
+                                    const firstLetter = (full_name || email || 'A').charAt(0).toUpperCase();
+                                    const bgColor = stringToColor(full_name || email || id);
+                                    const fallbackAvatar = `https://api.dicebear.com/8.x/initials/svg?seed=${firstLetter}&backgroundColor=${bgColor}&textColor=ffffff`;
 
-                                const maskFromClass = isExpanded 
-                                    ? 'from-[var(--subtle-bg)]' 
-                                    : isSelected 
-                                        ? 'from-indigo-50 dark:from-indigo-900/40 group-hover:from-[var(--subtle-bg)]' 
-                                        : 'from-[var(--card-bg)] group-hover:from-[var(--subtle-bg)]';
-
-                                return (
-                                    <div key={id} className={`flex flex-col border-b border-[var(--border-color)] last:border-b-0 group ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${is_suspended ? 'opacity-75 bg-slate-50/30' : ''}`}>
-                                        <div className="relative">
-                                            <div 
-                                                className={`flex items-center py-2 px-1 md:px-2 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] lg:min-w-full ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
-                                                onScroll={handleRowScroll}
-                                                onClick={() => {
-                                                    if (isSelectionMode) {
-                                                        handleToggleSelection(id);
-                                                    } else {
-                                                        toggleRowExpansion(id);
-                                                    }
-                                                }}
-                                                onTouchStart={() => handleTouchStart(id)}
-                                                onTouchEnd={handleTouchEnd}
-                                                onMouseDown={() => handleTouchStart(id)}
-                                                onMouseUp={handleTouchEnd}
-                                                onMouseLeave={handleTouchEnd}
-                                            >
-                                                {isSelectionMode && (
-                                                    <div className="w-10 shrink-0 text-center animate-fade-in pl-1" onClick={(e) => e.stopPropagation()}>
-                                                        <input
-                                                            type="checkbox"
-                                                            className="h-4 w-4 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                                            checked={isSelected}
-                                                            onChange={() => handleToggleSelection(id)}
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 hover:opacity-90">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative shrink-0">
-                                                            <div className="relative">
-                                                                <img
-                                                                    src={avatar_url || fallbackAvatar}
-                                                                    alt={full_name || 'Avatar'}
-                                                                    className={`w-8 h-8 rounded-full object-cover bg-slate-200 dark:bg-slate-700 ring-2 ring-white dark:ring-slate-800 shadow-sm shrink-0 ${is_suspended ? 'grayscale opacity-70' : ''}`}
-                                                                    onError={(e) => { e.currentTarget.src = fallbackAvatar; }}
-                                                                />
-                                                                {is_suspended && (
-                                                                    <div className="absolute inset-0 bg-red-900/20 rounded-full flex items-center justify-center backdrop-blur-[1px]">
-                                                                        <UserX size={14} className="text-white drop-shadow-md" />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {userStat.settings?.voice_proactive_mode && !is_suspended && (
-                                                                <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-2 ring-white dark:ring-slate-900" title="Proactive Mode Active"></span>
-                                                            )}
+                                    return (
+                                        <div key={id} className={`flex flex-col border-b border-[var(--border-color)] last:border-b-0 group ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${is_suspended ? 'opacity-75 bg-slate-50/30' : ''}`}>
+                                            <div className="relative">
+                                                <div 
+                                                    className={`flex items-center py-2 px-1 md:px-2 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none lg:min-w-full ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
+                                                    onClick={() => {
+                                                        if (isSelectionMode) {
+                                                            handleToggleSelection(id);
+                                                        } else {
+                                                            toggleRowExpansion(id);
+                                                        }
+                                                    }}
+                                                    onTouchStart={() => handleTouchStart(id)}
+                                                    onTouchEnd={handleTouchEnd}
+                                                    onMouseDown={() => handleTouchStart(id)}
+                                                    onMouseUp={handleTouchEnd}
+                                                    onMouseLeave={handleTouchEnd}
+                                                >
+                                                    {isSelectionMode && (
+                                                        <div className="w-10 shrink-0 text-center animate-fade-in pl-1" onClick={(e) => e.stopPropagation()}>
+                                                            <input
+                                                                type="checkbox"
+                                                                className="h-4 w-4 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                                checked={isSelected}
+                                                                onChange={() => handleToggleSelection(id)}
+                                                            />
                                                         </div>
-                                                        <div className="truncate flex-1 min-w-0">
-                                                            <div className={`font-bold truncate text-[13px] flex items-center gap-1.5 ${is_suspended ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}`}>
-                                                                {full_name || 'Anonymous User'}
-                                                                {providers && providers.length > 0 && (
-                                                                    <div className="flex gap-0.5 no-underline">
-                                                                        {providers.map(p => (
-                                                                            <span key={p} className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 uppercase px-1 rounded-sm leading-tight tracking-wider" title={`Logged in via ${p}`}>{p}</span>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-[11px] text-[var(--text-secondary)] truncate">{email}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="w-24 shrink-0 px-2 flex items-center">
-                                                    {is_suspended ? (
-                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50">
-                                                            <ShieldAlert size={10} /> Suspended
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
-                                                            <ShieldCheck size={10} /> Active
-                                                        </span>
                                                     )}
-                                                </div>
-                                                <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
-                                                    <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Joined Date">
-                                                        {formatDateCompact(created_at)}
+                                                    <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 hover:opacity-90">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative shrink-0">
+                                                                <div className="relative">
+                                                                    <img
+                                                                        src={avatar_url || fallbackAvatar}
+                                                                        alt={full_name || 'Avatar'}
+                                                                        className={`w-8 h-8 rounded-full object-cover bg-slate-200 dark:bg-slate-700 ring-2 ring-white dark:ring-slate-800 shadow-sm shrink-0 ${is_suspended ? 'grayscale opacity-70' : ''}`}
+                                                                        onError={(e) => { e.currentTarget.src = fallbackAvatar; }}
+                                                                    />
+                                                                    {is_suspended && (
+                                                                        <div className="absolute inset-0 bg-red-900/20 rounded-full flex items-center justify-center backdrop-blur-[1px]">
+                                                                            <UserX size={14} className="text-white drop-shadow-md" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {userStat.settings?.voice_proactive_mode && !is_suspended && (
+                                                                    <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-2 ring-white dark:ring-slate-900" title="Proactive Mode Active"></span>
+                                                                )}
+                                                            </div>
+                                                            <div className="truncate flex-1 min-w-0">
+                                                                <div className={`font-bold truncate text-[13px] flex items-center gap-1.5 ${is_suspended ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}`}>
+                                                                    {full_name || 'Anonymous User'}
+                                                                    {providers && providers.length > 0 && (
+                                                                        <div className="flex gap-0.5 no-underline">
+                                                                            {providers.map(p => (
+                                                                                <span key={p} className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 uppercase px-1 rounded-sm leading-tight tracking-wider" title={`Logged in via ${p}`}>{p}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-[11px] text-[var(--text-secondary)] truncate">{email}</div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-[var(--text-secondary)] text-[9px]" title="Joined Time">
-                                                        {formatTimeCompact(created_at)}
+                                                    <div className="w-24 shrink-0 px-2 flex items-center">
+                                                        {is_suspended ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50">
+                                                                <ShieldAlert size={10} /> Suspended
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
+                                                                <ShieldCheck size={10} /> Active
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                </div>
-                                                <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
-                                                    <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Last Login Date">
-                                                        {last_sign_in_at ? formatDateCompact(last_sign_in_at) : 'Never'}
+                                                    <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
+                                                        <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Joined Date">
+                                                            {formatDateCompact(created_at)}
+                                                        </div>
+                                                        <div className="text-[var(--text-secondary)] text-[9px]" title="Joined Time">
+                                                            {formatTimeCompact(created_at)}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-[var(--text-secondary)] text-[9px]" title="Last Login Time">
-                                                        {last_sign_in_at ? formatTimeCompact(last_sign_in_at) : ''}
+                                                    <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
+                                                        <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Last Login Date">
+                                                            {last_sign_in_at ? formatDateCompact(last_sign_in_at) : 'Never'}
+                                                        </div>
+                                                        <div className="text-[var(--text-secondary)] text-[9px]" title="Last Login Time">
+                                                            {last_sign_in_at ? formatTimeCompact(last_sign_in_at) : ''}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="w-20 shrink-0 px-2 flex justify-center items-center">
-                                                    <span className="inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded-full bg-[var(--card-bg)] shadow-sm border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-[10px]">
-                                                        {conversation_count}
-                                                    </span>
-                                                </div>
-                                                <div className="w-12 shrink-0 px-1 text-right flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            if (actionPopoverData?.id === id) {
-                                                                setActionPopoverData(null);
-                                                            } else {
-                                                                setActionPopoverData({ id, anchorEl: e.currentTarget });
-                                                            }
-                                                        }}
-                                                        className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-colors"
-                                                    >
-                                                        <MoreVertical size={16} />
-                                                    </button>
-                                                </div>
-                                                <div className="w-10 shrink-0 px-1 text-center flex justify-center items-center">
-                                                    <div className="p-1 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:bg-[var(--border-color)] bg-transparent rounded-md transition-colors">
-                                                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                    <div className="w-20 shrink-0 px-2 flex justify-center items-center">
+                                                        <span className="inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded-full bg-[var(--card-bg)] shadow-sm border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-[10px]">
+                                                            {conversation_count}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-12 shrink-0 px-1 text-right flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                if (actionPopoverData?.id === id) {
+                                                                    setActionPopoverData(null);
+                                                                } else {
+                                                                    setActionPopoverData({ id, anchorEl: e.currentTarget });
+                                                                }
+                                                            }}
+                                                            className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-colors"
+                                                        >
+                                                            <MoreVertical size={16} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="w-10 shrink-0 px-1 text-center flex justify-center items-center">
+                                                        <div className="p-1 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:bg-[var(--border-color)] bg-transparent rounded-md transition-colors">
+                                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 
-                                                {/* Right fade gradient for scroll indication */}
-                                                <div className={`absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l to-transparent pointer-events-none z-10 ${maskFromClass}`}></div>
-                                            </div>
-                                            
-                                            {/* Expanded View */}
-                                            {isExpanded && (
-                                                <div className="bg-slate-50/50 dark:bg-slate-800/30 border-t border-[var(--border-color)] p-2 inset-shadow-sm animate-fade-in">
-                                                    <div className="flex flex-col md:flex-row gap-2">
-                                                        {/* Profile Info */}
-                                                        <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-colors">
-                                                            <div className={`absolute top-0 left-0 w-[3px] h-full ${is_suspended ? 'bg-red-500/50' : 'bg-indigo-400/50'} transition-colors`}></div>
-                                                            <div className="flex items-start justify-between mb-2 gap-2">
-                                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                                    <div className="relative shrink-0">
-                                                                        <img src={avatar_url || fallbackAvatar} alt="Avatar" className={`w-8 h-8 rounded-full border border-slate-100 dark:border-slate-800 object-cover ${is_suspended ? 'grayscale opacity-70' : ''}`} />
-                                                                        {is_suspended && (
-                                                                            <div className="absolute inset-0 bg-red-900/20 rounded-full flex items-center justify-center backdrop-blur-[1px]">
-                                                                                <UserX size={12} className="text-white drop-shadow-md" />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className={`font-bold text-[13px] leading-tight flex flex-wrap items-center gap-1.5 ${is_suspended ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-100'}`}>
-                                                                            <span className="truncate">{full_name || 'Anonymous'}</span>
-                                                                            <span className="font-mono text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-1 py-0.5 rounded no-underline shrink-0">ID:{id.substring(0,6)}</span>
+                                                {/* Expanded View */}
+                                                {isExpanded && (
+                                                    <div className="bg-slate-50/50 dark:bg-slate-800/30 border-t border-[var(--border-color)] p-2 inset-shadow-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex flex-col md:flex-row gap-2">
+                                                            {/* Profile Info */}
+                                                            <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-colors">
+                                                                <div className={`absolute top-0 left-0 w-[3px] h-full ${is_suspended ? 'bg-red-500/50' : 'bg-indigo-400/50'} transition-colors`}></div>
+                                                                <div className="flex items-start justify-between mb-2 gap-2">
+                                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                                        <div className="relative shrink-0">
+                                                                            <img src={avatar_url || fallbackAvatar} alt="Avatar" className={`w-8 h-8 rounded-full border border-slate-100 dark:border-slate-800 object-cover ${is_suspended ? 'grayscale opacity-70' : ''}`} />
+                                                                            {is_suspended && (
+                                                                                <div className="absolute inset-0 bg-red-900/20 rounded-full flex items-center justify-center backdrop-blur-[1px]">
+                                                                                    <UserX size={12} className="text-white drop-shadow-md" />
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">{email}</div>
+                                                                        <div className="min-w-0">
+                                                                            <div className={`font-bold text-[13px] leading-tight flex flex-wrap items-center gap-1.5 ${is_suspended ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-100'}`}>
+                                                                                <span className="truncate">{full_name || 'Anonymous'}</span>
+                                                                                <span className="font-mono text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-1 py-0.5 rounded no-underline shrink-0">ID:{id.substring(0,6)}</span>
+                                                                            </div>
+                                                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">{email}</div>
+                                                                        </div>
                                                                     </div>
+                                                                    {is_suspended && (
+                                                                        <div className="bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded flex items-center justify-center text-[9px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap self-start mt-0">
+                                                                            <AlertTriangle size={10} className="mr-1" /> Suspended
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                                {is_suspended && (
-                                                                    <div className="bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded flex items-center justify-center text-[9px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap self-start mt-0">
-                                                                        <AlertTriangle size={10} className="mr-1" /> Suspended
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-1.5 text-[10px]">
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Joined:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(created_at)} at {formatTimeCompact(created_at)}</span>
-                                                                </div>
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Login:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300">{last_sign_in_at ? `${formatDateCompact(last_sign_in_at)} at ${formatTimeCompact(last_sign_in_at)}` : 'Never'}</span>
-                                                                </div>
-                                                                {updated_at && (
+                                                                <div className="flex flex-wrap gap-1.5 text-[10px]">
                                                                     <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Updated:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(updated_at)} at {formatTimeCompact(updated_at)}</span>
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Joined:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(created_at)} at {formatTimeCompact(created_at)}</span>
                                                                     </div>
-                                                                )}
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Chats:</span>
-                                                                    <span className="font-bold text-slate-700 dark:text-slate-300">{conversation_count}</span>
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Login:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{last_sign_in_at ? `${formatDateCompact(last_sign_in_at)} at ${formatTimeCompact(last_sign_in_at)}` : 'Never'}</span>
+                                                                    </div>
+                                                                    {updated_at && (
+                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Updated:</span>
+                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(updated_at)} at {formatTimeCompact(updated_at)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Chats:</span>
+                                                                        <span className="font-bold text-slate-700 dark:text-slate-300">{conversation_count}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
 
-                                                        {/* AI Settings */}
-                                                        <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-emerald-200 dark:hover:border-emerald-800/60 transition-colors">
-                                                            <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-400/50 transition-colors"></div>
-                                                            <div className="flex items-center justify-between mb-2 gap-2">
-                                                                <h4 className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 shrink-0"><Settings size={10}/> AI Config</h4>
-                                                                <div className="flex items-center gap-1 shrink-0">
-                                                                    <button onClick={() => setEditingUser(userStat)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-900/30 px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer">
-                                                                        <Edit size={10} /> Edit Settings
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={() => setSuspendConfirmation({ id, currentStatus: !!is_suspended })} 
-                                                                        className={`text-[9px] font-bold px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer ${is_suspended ? 'text-green-600 dark:text-green-400 hover:text-green-700 bg-green-50/80 dark:bg-green-900/30' : 'text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50/80 dark:bg-red-900/30'}`}
-                                                                    >
-                                                                        {is_suspended ? <><UserCheck size={10} /> Normalize</> : <><UserX size={10} /> Suspend</>}
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <div className="flex flex-wrap gap-1.5 text-[10px]">
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Persona:</span>
-                                                                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_persona || 'Assistant'}</span>
-                                                                </div>
-                                                                <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_recording_enabled ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                    <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice Rec:</span>
-                                                                    <span className="font-bold">{userStat.settings?.voice_recording_enabled ? 'Enabled' : 'Disabled'}</span>
-                                                                </div>
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Tone:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_mode_tone_instruction || 'None'}</span>
-                                                                </div>
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Custom:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]" title={userStat.settings?.voice_mode_custom_instruction}>{userStat.settings?.voice_mode_custom_instruction || 'None'}</span>
-                                                                </div>
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings?.voice_mode_voice || 'Puck'}</span>
-                                                                </div>
-                                                                <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_proactive_mode ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                    <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Proactive:</span>
-                                                                    <span className="font-bold">{userStat.settings?.voice_proactive_mode ? 'On' : 'Off'}</span>
-                                                                </div>
-                                                                <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.api_key ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                    <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">API Key:</span>
-                                                                    <span className="font-bold">{userStat.settings?.api_key ? 'Set' : 'None'}</span>
-                                                                </div>
-                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Translator:</span>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300">In: {userStat.settings?.translator_usage?.input || 0} / Out: {userStat.settings?.translator_usage?.output || 0}</span>
-                                                                </div>
-                                                                {userStat.settings?.last_molecule && (
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Molecule:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings.last_molecule}</span>
+                                                            {/* AI Settings */}
+                                                            <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-emerald-200 dark:hover:border-emerald-800/60 transition-colors">
+                                                                <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-400/50 transition-colors"></div>
+                                                                <div className="flex items-center justify-between mb-2 gap-2">
+                                                                    <h4 className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 shrink-0"><Settings size={10}/> AI Config</h4>
+                                                                    <div className="flex items-center gap-1 shrink-0">
+                                                                        <button onClick={() => setEditingUser(userStat)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-900/30 px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer">
+                                                                            <Edit size={10} /> Edit Settings
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => setSuspendConfirmation({ id, currentStatus: !!is_suspended })} 
+                                                                            className={`text-[9px] font-bold px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer ${is_suspended ? 'text-green-600 dark:text-green-400 hover:text-green-700 bg-green-50/80 dark:bg-green-900/30' : 'text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50/80 dark:bg-red-900/30'}`}
+                                                                        >
+                                                                            {is_suspended ? <><UserCheck size={10} /> Normalize</> : <><UserX size={10} /> Suspend</>}
+                                                                        </button>
                                                                     </div>
-                                                                )}
-                                                                {userStat.settings?.updated_at && (
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Updated:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(userStat.settings.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(userStat.settings.updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                </div>
+                                                                
+                                                                <div className="flex flex-wrap gap-1.5 text-[10px]">
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Persona:</span>
+                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_persona || 'Assistant'}</span>
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 font-medium">
-                                                                <span className="text-slate-400 uppercase font-bold text-[8px] tracking-wider block mb-1">System Prompt Instructions</span>
-                                                                <div className="text-[10px] text-slate-650 dark:text-slate-350 bg-slate-50/50 dark:bg-slate-900/40 p-2 rounded border border-slate-100 dark:border-slate-800/40 max-h-20 overflow-y-auto whitespace-pre-wrap leading-relaxed select-all">
-                                                                    {userStat.settings?.voice_mode_persona_instruction || 'No instruction prompt set.'}
+                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_recording_enabled ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
+                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice Rec:</span>
+                                                                        <span className="font-bold">{userStat.settings?.voice_recording_enabled ? 'Enabled' : 'Disabled'}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Tone:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_mode_tone_instruction || 'None'}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Custom:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]" title={userStat.settings?.voice_mode_custom_instruction}>{userStat.settings?.voice_mode_custom_instruction || 'None'}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings?.voice_mode_voice || 'Puck'}</span>
+                                                                    </div>
+                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_proactive_mode ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
+                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Proactive:</span>
+                                                                        <span className="font-bold">{userStat.settings?.voice_proactive_mode ? 'On' : 'Off'}</span>
+                                                                    </div>
+                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.api_key ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
+                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">API Key:</span>
+                                                                        <span className="font-bold">{userStat.settings?.api_key ? 'Set' : 'None'}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Translator:</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">In: {userStat.settings?.translator_usage?.input || 0} / Out: {userStat.settings?.translator_usage?.output || 0}</span>
+                                                                    </div>
+                                                                    {userStat.settings?.last_molecule && (
+                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Molecule:</span>
+                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings.last_molecule}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {userStat.settings?.updated_at && (
+                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
+                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Updated:</span>
+                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(userStat.settings.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(userStat.settings.updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 font-medium">
+                                                                    <span className="text-slate-400 uppercase font-bold text-[8px] tracking-wider block mb-1">System Prompt Instructions</span>
+                                                                    <div className="text-[10px] text-slate-650 dark:text-slate-350 bg-slate-50/50 dark:bg-slate-900/40 p-2 rounded border border-slate-100 dark:border-slate-800/40 max-h-20 overflow-y-auto whitespace-pre-wrap leading-relaxed select-all">
+                                                                        {userStat.settings?.voice_mode_persona_instruction || 'No instruction prompt set.'}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
-                </PanelCard>
+                </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-24 px-4 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 border-dashed">
                     <div className="w-20 h-20 mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center ring-8 ring-slate-50 dark:ring-slate-900/50">

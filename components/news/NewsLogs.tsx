@@ -143,7 +143,7 @@ const NewsLogs: React.FC<{
     const visibleLogs = filteredAndSortedLogs.slice(0, visibleCount);
 
     return (
-        <PanelCard className="!p-0 flex flex-col [clip-path:inset(0_round_0.5rem)]">
+        <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
             <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between gap-4">
                 <button 
                     onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
@@ -319,7 +319,7 @@ const NewsLogs: React.FC<{
                     </div>
                 </div>
             </div>
-        </PanelCard>
+        </div>
     );
 };
 

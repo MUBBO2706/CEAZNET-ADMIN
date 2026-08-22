@@ -563,7 +563,7 @@ const ApiKeyManager: React.FC<{
                 </div>
             )}
 
-            <PanelCard className="overflow-visible !p-0 w-full min-w-0 flex flex-col justify-between">
+            <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
                 <div className="flex justify-between items-center gap-4 p-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-md">
@@ -806,7 +806,7 @@ const ApiKeyManager: React.FC<{
                         </div>
                     </div>
                 )}
-            </PanelCard>
+            </div>
             
             <ConfirmationModal
                 isOpen={keyToDelete !== null}
