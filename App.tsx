@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode, Suspense, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Zap, X, AlertTriangle, ChevronRight, ChevronDown, Loader } from 'lucide-react';
+import { Zap, X, AlertTriangle, ChevronRight, ChevronDown, Loader, Sun, Moon } from 'lucide-react';
 
 import MainDashboard from './pages/MainDashboard';
 import NewsAdminPage from './pages/NewsAdminPage';
@@ -326,7 +326,7 @@ import { PlatformSettingsProvider, usePlatformSettings } from './components/Plat
 import { BroadcastPopup } from './components/BroadcastPopup';
 import { GlobalAlertProvider } from './components/ui';
 
-const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
+const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme: () => void }> = ({ children, theme, toggleTheme }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         if (import.meta.env.DEV) return true; // Skip password in development
         return sessionStorage.getItem('ceaznet-admin-auth') === 'true';
@@ -399,9 +399,20 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/92 backdrop-blur-xl p-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300 animate-in fade-in duration-200">
+            {/* Theme Toggle Button */}
+            <button
+                type="button"
+                onClick={toggleTheme}
+                className="absolute top-6 right-6 p-3 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:bg-zinc-800/80 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                id="login-theme-toggle"
+            >
+                {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-500 animate-pulse" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+            </button>
+
             <div className="w-full max-w-sm flex flex-col items-center text-center">
-                <div className="mb-5 flex flex-col items-center">
+                <div className="mb-6 flex flex-col items-center">
                     <img 
                         src="/logo.png" 
                         alt="Ceaznet Logo" 
@@ -417,12 +428,12 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                     <Zap className="h-16 w-16 hidden text-indigo-500" />
                 </div>
                 
-                <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">Ceaznet Admin</h1>
-                <p className="text-sm text-zinc-400 mb-8">Authentication Required to Proceed</p>
+                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1 tracking-tight">Ceaznet Admin</h1>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Authentication Required to Proceed</p>
                 
                 <form onSubmit={handleLogin} className="w-full space-y-4 text-left">
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Admin Username</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Admin Username</label>
                         <input 
                             type="text" 
                             value={usernameInput}
@@ -430,13 +441,13 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                                 setUsernameInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/80 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm"
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-white dark:placeholder-zinc-600 dark:focus:ring-indigo-500/30"
                             placeholder="Enter username..."
                             autoFocus
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Admin Password</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Admin Password</label>
                         <input 
                             type="password" 
                             value={passwordInput}
@@ -444,13 +455,13 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                                 setPasswordInput(e.target.value);
                                 setError('');
                             }}
-                            className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-900/80 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm"
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-inner text-sm dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-white dark:placeholder-zinc-600 dark:focus:ring-indigo-500/30"
                             placeholder="Enter secure password..."
                         />
                     </div>
                     {error && (
-                        <div className="p-3 rounded-xl text-sm flex items-center gap-2 bg-red-950/60 border border-red-900/50 text-red-300">
-                            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                        <div className="p-3.5 rounded-xl text-sm flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/60 dark:border-red-900/50 dark:text-red-300">
+                            <AlertTriangle className="h-4 w-4 shrink-0 text-red-500 dark:text-red-400" />
                             <span>{error}</span>
                         </div>
                     )}
@@ -499,7 +510,7 @@ const App: React.FC = () => {
     return (
         <BrowserRouter>
             <ErrorBoundary>
-                <AdminAuthGuard>
+                <AdminAuthGuard theme={theme} toggleTheme={toggleTheme}>
                     <AutoRefreshProvider>
                         <PlatformSettingsProvider>
                             <PageLayout theme={theme} toggleTheme={toggleTheme} />
