@@ -161,7 +161,7 @@ const getHttpStatusCode = (method: string, status: string) => {
     return 200;
 };
 
-export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog }> = ({ log }) => {
+export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: boolean }> = ({ log, isEmbedded = false }) => {
     const [viewMode, setViewMode] = useState<'structured' | 'raw'>('structured');
     const [copied, setCopied] = useState(false);
 
@@ -266,7 +266,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog }> = ({ log })
     const rawJsonString = JSON.stringify(eventData, null, 2);
 
     return (
-        <div className="px-3 py-3 sm:px-6 sm:py-4 bg-[var(--body-bg)] text-[var(--text-primary)] font-sans border-t border-[var(--border-color)]">
+        <div className={`text-[var(--text-primary)] font-sans ${isEmbedded ? 'bg-transparent border-t-0 px-4 py-4 sm:px-6 sm:py-5' : 'bg-[var(--body-bg)] border-t border-[var(--border-color)] px-3 py-3 sm:px-6 sm:py-4'}`}>
             <div className="flex items-center justify-between gap-3 mb-6">
                 <div className="flex items-center gap-2 min-w-0">
                     <Database size={14} className="text-[var(--text-secondary)] opacity-50 shrink-0" />
@@ -919,7 +919,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog }> = ({ log })
                                         {log.source || 'Client'}
                                     </span>
                                 </div>
-                                <span className="text-[var(--text-primary)] font-mono text-[10px] sm:text-xs whitespace-nowrap sm:truncate flex-1 min-w-[150px]">
+                                <span className="text-[var(--text-primary)] font-mono text-[10px] sm:text-xs truncate flex-1 min-w-[150px]">
                                     {log.description}
                                 </span>
 
@@ -952,7 +952,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog }> = ({ log })
 
                                 {/* Inline Shortcuts Hover actions */}
                                 <div className="flex items-center justify-end w-12 shrink-0" onClick={e => e.stopPropagation()}>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={() => handleCopyLog(log)}
                                             className="p-1 text-[var(--text-secondary)] hover:text-[var(--success)] hover:bg-[var(--subtle-bg)] rounded transition-colors"
@@ -973,10 +973,8 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog }> = ({ log })
                             
                             {/* Expanded Details with Container layout */}
                             {isExpanded && (
-                                <div className="w-full border-t border-[var(--border-color)]">
-                                    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                                        <ExpandedLogDetail log={log} />
-                                    </div>
+                                <div className="w-full border-t border-[var(--border-color)] bg-slate-50/40 dark:bg-zinc-950/20">
+                                    <ExpandedLogDetail log={log} isEmbedded={true} />
                                 </div>
                             )}
                         </div>

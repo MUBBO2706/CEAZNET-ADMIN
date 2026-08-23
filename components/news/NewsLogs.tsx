@@ -10,30 +10,30 @@ const ExpandedSummary: React.FC<{ log: NewsLog, onShowDetails: (id: number) => v
 
     return (
         <div className="px-4 py-4 bg-[var(--subtle-bg)] border-t border-[var(--border-color)]">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                <div className="bg-[var(--card-bg)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-semibold mb-1">Duration</div>
-                    <div className="text-sm font-mono text-[var(--text-primary)]">{duration}s</div>
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 divide-x divide-[var(--border-color)]">
+                <div className="flex flex-col items-center text-center">
+                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Duration</div>
+                    <div className="text-xs sm:text-sm font-mono font-bold text-[var(--text-primary)]">{duration}s</div>
                 </div>
-                <div className="bg-[var(--card-bg)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-semibold mb-1">Articles</div>
-                    <div className="text-sm font-mono text-indigo-500">{articlesUpdated}</div>
+                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
+                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Articles</div>
+                    <div className="text-xs sm:text-sm font-mono font-bold text-indigo-500">{articlesUpdated}</div>
                 </div>
-                <div className="bg-[var(--card-bg)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-semibold mb-1">Errors</div>
-                    <div className="text-sm font-mono text-red-500">{errors}</div>
+                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
+                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Errors</div>
+                    <div className="text-xs sm:text-sm font-mono font-bold text-red-500">{errors}</div>
                 </div>
-                <div className="bg-[var(--card-bg)] p-3 rounded-lg border border-[var(--border-color)]">
-                    <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-semibold mb-1">Status</div>
-                    <div className={`text-sm font-mono ${log.status === 'SUCCESS' ? 'text-emerald-500' : 'text-red-500'}`}>{log.status}</div>
+                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
+                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Status</div>
+                    <div className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider ${log.status === 'SUCCESS' ? 'text-emerald-500' : 'text-red-500'}`}>{log.status}</div>
                 </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
                 <button 
                     onClick={(e) => { e.stopPropagation(); onShowDetails(log.id); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold rounded-md transition-colors shadow-sm"
                 >
-                    <Terminal size={14} />
+                    <Terminal size={12} />
                     View Full Logs
                 </button>
             </div>
@@ -43,6 +43,7 @@ const ExpandedSummary: React.FC<{ log: NewsLog, onShowDetails: (id: number) => v
 
 const NewsLogs: React.FC<{ 
     logs: NewsLog[], 
+    isLoading?: boolean,
     onShowDetails: (id: number) => void, 
     onDelete: (id: number) => void,
     isSelectionMode: boolean,
@@ -53,6 +54,7 @@ const NewsLogs: React.FC<{
     isScrolled?: boolean
 }> = ({ 
     logs, 
+    isLoading = false,
     onShowDetails, 
     onDelete, 
     isSelectionMode, 
@@ -163,6 +165,7 @@ const NewsLogs: React.FC<{
                             'ERROR': 'Error',
                             'WARNING': 'Warning'
                         }}
+                        triggerClassName="!border-0 !bg-transparent !p-0 !outline-none !shadow-none focus:!ring-0 font-semibold text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors gap-1"
                     />
                 </div>
             </div>
@@ -170,7 +173,7 @@ const NewsLogs: React.FC<{
                 {/* Header Row */}
                 <div 
                     ref={headerRef}
-                    className={`sticky z-20 bg-[var(--card-bg)] flex items-center px-4 pr-24 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 top-[50px] py-3`}
+                    className={`bg-[var(--card-bg)] flex items-center px-4 pr-24 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-3`}
                 >
                     {isSelectionMode && (
                         <div className="shrink-0 flex justify-center mr-3 min-w-[24px]">
@@ -194,7 +197,35 @@ const NewsLogs: React.FC<{
                 
                 {/* Data Rows */}
                 <div className="flex flex-col">
-                    {visibleLogs.length > 0 ? (
+                    {isLoading ? (
+                        Array.from({ length: 5 }).map((_, idx) => (
+                            <div key={idx} className="flex items-center py-4 px-4 pr-24 border-b border-[var(--border-color)] animate-pulse">
+                                {isSelectionMode && (
+                                    <div className="shrink-0 flex justify-center mr-3 min-w-[24px]">
+                                        <div className="h-4 w-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                    </div>
+                                )}
+                                <div className="flex-1 min-w-[120px]">
+                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-2/3"></div>
+                                </div>
+                                <div className="flex-1 min-w-[150px]">
+                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/2"></div>
+                                </div>
+                                <div className="flex-1 min-w-[150px]">
+                                    <div className="h-6 bg-slate-200 dark:bg-zinc-800 rounded-full w-20"></div>
+                                </div>
+                                <div className="flex-1 min-w-[120px]">
+                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/3"></div>
+                                </div>
+                                <div className="flex-1 min-w-[140px] flex justify-center">
+                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-8"></div>
+                                </div>
+                                <div className="flex-1 min-w-[80px] flex justify-center">
+                                    <div className="h-6 bg-slate-200 dark:bg-zinc-800 rounded w-6"></div>
+                                </div>
+                            </div>
+                        ))
+                    ) : visibleLogs.length > 0 ? (
                         visibleLogs.map(log => {
                             const isSelected = selectedLogs.has(log.id);
                             const isExpanded = expandedLog === log.id;
@@ -296,8 +327,9 @@ const NewsLogs: React.FC<{
                             );
                         })
                     ) : (
-                        <div className="text-center py-10 text-slate-500">
-                            No logs found.
+                        <div className="text-center py-12 text-slate-400 font-medium text-sm flex flex-col items-center justify-center gap-1">
+                            <span>No logs found.</span>
+                            <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">Try selecting another filter or run a manual update.</span>
                         </div>
                     )}
                 </div>

@@ -464,7 +464,7 @@ const TableDetailsView = React.forwardRef<HTMLDivElement, { details: TableDetail
                                     {/* Header Row */}
                                     <div 
                                         ref={headerRef}
-                                        className="flex items-center py-3 px-3 bg-[var(--card-bg)] border-y border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] sticky top-[50px] z-20"
+                                        className="flex items-center py-3 px-3 bg-[var(--card-bg)] border-y border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                                     >
                                         {details.columns.map((col) => {
                                             const isFocused = focusedColumn === col;

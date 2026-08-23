@@ -16,6 +16,7 @@ import {
     AlertTriangle,
     Trash2,
     X,
+    Loader,
 } from 'lucide-react';
 
 export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ info, className = '' }) => {
@@ -744,13 +745,14 @@ export const DateRangeFilter: React.FC<{
 export const ConfirmationModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
     title: string;
     message: React.ReactNode;
     confirmText?: string;
     cancelText?: string;
     confirmButtonClass?: string;
     isConfirmDisabled?: boolean;
+    isLoading?: boolean;
 }> = ({ 
     isOpen, 
     onClose, 
@@ -760,9 +762,37 @@ export const ConfirmationModal: React.FC<{
     confirmText = 'Confirm',
     cancelText = 'Cancel',
     confirmButtonClass = 'btn-primary',
-    isConfirmDisabled = false
+    isConfirmDisabled = false,
+    isLoading: externalIsLoading
 }) => {
+    const [localIsLoading, setLocalIsLoading] = useState(false);
+    const isLoading = externalIsLoading || localIsLoading;
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
     if (!isOpen) return null;
+
+    const handleConfirm = async () => {
+        if (isLoading) return;
+        try {
+            setLocalIsLoading(true);
+            const result = onConfirm();
+            if (result instanceof Promise) {
+                await result;
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            if (isMounted.current) {
+                setLocalIsLoading(false);
+            }
+        }
+    };
 
     return ReactDOM.createPortal(
         <div 
@@ -779,14 +809,15 @@ export const ConfirmationModal: React.FC<{
                     </div>
                 </div>
                 <div className="bg-slate-50 px-4 py-3 flex justify-end gap-2 rounded-b-2xl">
-                    <button type="button" onClick={onClose} className="btn btn-secondary text-sm">{cancelText}</button>
+                    <button type="button" onClick={onClose} className="btn btn-secondary text-sm" disabled={isLoading}>{cancelText}</button>
                     <button 
                         type="button"
-                        onClick={onConfirm} 
-                        className={`btn ${confirmButtonClass} text-sm`} 
-                        disabled={isConfirmDisabled}
+                        onClick={handleConfirm} 
+                        className={`btn ${confirmButtonClass} text-sm flex items-center justify-center gap-1.5 min-w-[80px]`} 
+                        disabled={isConfirmDisabled || isLoading}
                     >
-                        {confirmText}
+                        {isLoading && <Loader className="animate-spin" size={14} />}
+                        <span>{confirmText}</span>
                     </button>
                 </div>
             </div>
@@ -983,7 +1014,7 @@ export const ActionPopover: React.FC<{
             if (!anchorEl || !popoverEl) return;
 
             const rect = anchorEl.getBoundingClientRect();
-            const popoverWidth = 208; // w-52
+            const popoverWidth = popoverEl.offsetWidth || 150; // Dynamic width based on content
             const popoverHeight = popoverEl.offsetHeight || 150; // estimate if not rendered yet
             
             // Check if it overflows bottom
@@ -1036,7 +1067,7 @@ export const ActionPopover: React.FC<{
     }
 
     return ReactDOM.createPortal(
-        <div ref={popoverRef} className={`z-50 w-52 ${className}`} style={{ position: 'fixed', top: '-9999px', left: '-9999px' }}>
+        <div ref={popoverRef} className={`z-50 w-max min-w-[120px] max-w-[280px] ${className}`} style={{ position: 'fixed', top: '-9999px', left: '-9999px' }}>
             {/* The Tail */}
             <div ref={tailRef} className="absolute -top-1.5 right-4 w-3 h-3 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-0"></div>
             {/* The Content */}

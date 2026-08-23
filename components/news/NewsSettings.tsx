@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAutoRefresh } from '../AutoRefreshContext';
@@ -6,7 +7,7 @@ import { PanelCard, ConfirmationModal, CustomDropdown } from '../ui';
 import { LoadingSpinner } from '../skeletons';
 import { dbMain, getNewsApiKeys, addNewsApiKey, deleteNewsApiKey, updateNewsApiKey, resetNewsApiKeysStatus, resetAllNewsApiKeysData, getNewsSystemConfigs, updateNewsSystemConfig, addNewsSystemConfig } from '../../services/supabaseService';
 import type { NewsApiKey, NewsSystemConfig } from '../../types';
-import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RotateCw, Loader, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle } from 'lucide-react';
+import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RotateCw, Loader, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle, Play, Pause, ChevronDown } from 'lucide-react';
 import CodeEditor from '../ui/CodeEditor';
 import { JsonNode, updateNestedValue, deleteNestedValue, getNestedValue } from '../data/JsonEditor';
 
@@ -566,9 +567,6 @@ const ApiKeyManager: React.FC<{
             <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
                 <div className="flex justify-between items-center gap-4 p-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-md">
-                            {icon}
-                        </div>
                         <div>
                             <h3 className="text-sm font-bold text-[var(--text-primary)]">API Keys</h3>
                             <p className="text-[10px] text-[var(--text-secondary)]">
@@ -898,7 +896,7 @@ const AiModelConfigManager: React.FC<{
                         <p>No configurations found.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                         {configs.filter(c => c.config_key !== 'is_news_updating' && c.config_key !== 'last_run_trigger').map(config => {
                             const isEditing = editingId === config.id;
                             const displayValue = typeof config.config_value === 'string' ? config.config_value : JSON.stringify(config.config_value);
@@ -985,23 +983,297 @@ const AiModelConfigManager: React.FC<{
 const AUDIO_OPTIONS = [
     '/notification.mp3',
     '/universfield-system-notification-02-352442.mp3',
-    'https://actions.google.com/sounds/v1/alarms/beep_short.ogg',
-    'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg',
-    'https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg',
-    'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg',
-    'https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg',
+    '/chime-1.mp3',
+    '/chime-2.mp3',
+    '/chime-3.mp3',
+    '/chime-4.mp3',
+    '/chime-5.mp3',
+    '/chime-6.mp3',
+    '/chime-7.mp3',
+    '/chime-8.mp3',
+    '/click-low.mp3',
+    '/click-high.mp3',
     'custom'
 ];
 
 const AUDIO_LABELS: Record<string, string> = {
     '/notification.mp3': 'Default Bell',
     '/universfield-system-notification-02-352442.mp3': 'System Ping',
-    'https://actions.google.com/sounds/v1/alarms/beep_short.ogg': 'Google: Short Beep',
-    'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg': 'Google: Digital Watch',
-    'https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg': 'Google: Mechanical Clock',
-    'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg': 'Google: Alarm Clock',
-    'https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg': 'Google: Bugle Tune',
+    '/chime-1.mp3': 'Playful Chime',
+    '/chime-2.mp3': 'Classic Beep',
+    '/chime-3.mp3': 'Coins Drop',
+    '/chime-4.mp3': 'Bottle Pop',
+    '/chime-5.mp3': 'Menu Select',
+    '/chime-6.mp3': 'Soft Click',
+    '/chime-7.mp3': 'Double Click',
+    '/chime-8.mp3': 'High Pitch Pip',
+    '/click-low.mp3': 'Click Low',
+    '/click-high.mp3': 'Click High',
     'custom': 'Custom/Other URL...'
+};
+
+interface AudioDropdownProps {
+    options: string[];
+    value: string;
+    displayLabels: Record<string, string>;
+    onChange: (value: string) => void;
+    triggerClassName?: string;
+}
+
+const AudioDropdown: React.FC<AudioDropdownProps> = ({
+    options,
+    value,
+    displayLabels,
+    onChange,
+    triggerClassName = ''
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    
+    const [position, setPosition] = useState({ 
+        top: 0, 
+        left: 0, 
+        width: 0, 
+        minWidth: 0,
+        direction: 'down' as 'up' | 'down' 
+    });
+
+    const calculatePosition = (triggerEl: HTMLButtonElement, lockedWidth?: number) => {
+        const rect = triggerEl.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const panelHeight = Math.min(options.length * 36 + 12, 240);
+        
+        let direction: 'up' | 'down' = 'down';
+        let top = rect.bottom;
+        
+        if (spaceBelow < panelHeight && spaceAbove > spaceBelow) {
+            direction = 'up';
+            top = rect.top;
+        }
+
+        let panelWidth = lockedWidth || 0;
+
+        if (!panelWidth) {
+            let maxCharLength = 0;
+            options.forEach((opt) => {
+                const label = displayLabels?.[opt] || opt;
+                if (label.length > maxCharLength) {
+                    maxCharLength = label.length;
+                }
+            });
+
+            const hasScrollbar = options.length > 6;
+            const contentNeededWidth = Math.ceil(maxCharLength * 7.5 + 64 + (hasScrollbar ? 16 : 0));
+            const desiredWidth = Math.max(rect.width, contentNeededWidth);
+            const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
+            panelWidth = Math.min(desiredWidth, maxAllowedScreenWidth);
+        }
+
+        const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
+        const minWidth = Math.min(rect.width, maxAllowedScreenWidth);
+
+        let left = rect.left;
+        if (left + panelWidth > window.innerWidth - 12) {
+            left = Math.max(12, window.innerWidth - panelWidth - 12);
+        }
+        if (left < 12) {
+            left = 12;
+        }
+
+        return {
+            top,
+            left,
+            width: panelWidth,
+            minWidth,
+            direction
+        };
+    };
+
+    const toggleOpen = () => {
+        if (!isOpen && triggerRef.current) {
+            setPosition(calculatePosition(triggerRef.current));
+        }
+        setIsOpen(!isOpen);
+    };
+
+    useEffect(() => {
+        if (isOpen && triggerRef.current) {
+            setPosition(calculatePosition(triggerRef.current));
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            const isClickInsideTrigger = dropdownRef.current?.contains(target);
+            const isClickInsidePanel = panelRef.current?.contains(target);
+            
+            if (!isClickInsideTrigger && !isClickInsidePanel) {
+                setIsOpen(false);
+            }
+        };
+        
+        const handleScrollOrResize = (event: Event) => {
+            if (panelRef.current && (event.target === panelRef.current || panelRef.current.contains(event.target as Node))) {
+                return;
+            }
+            if (isOpen && triggerRef.current) {
+                setPosition((prev) => calculatePosition(triggerRef.current!, prev.width));
+            }
+        };
+
+        const preventScroll = (e: Event) => {
+            if (isOpen) {
+                const target = e.target as Node;
+                if (!panelRef.current?.contains(target)) {
+                    e.preventDefault();
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+        
+        if (isOpen) {
+            document.addEventListener('wheel', preventScroll, { passive: false, capture: true });
+            document.addEventListener('touchmove', preventScroll, { passive: false, capture: true });
+        }
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+            document.removeEventListener('wheel', preventScroll, { capture: true });
+            document.removeEventListener('touchmove', preventScroll, { capture: true });
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen && audioRef.current) {
+            audioRef.current.pause();
+            setPlayingUrl(null);
+        }
+    }, [isOpen]);
+
+    const handlePlayPause = (e: React.MouseEvent, url: string) => {
+        e.stopPropagation();
+        if (url === 'custom') return;
+
+        if (playingUrl === url) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            setPlayingUrl(null);
+            return;
+        }
+
+        if (audioRef.current) {
+            audioRef.current.pause();
+        }
+
+        let finalUrl = url;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(url)}`;
+        }
+
+        const audio = new Audio(finalUrl);
+        audio.volume = 0.5;
+        audioRef.current = audio;
+        setPlayingUrl(url);
+
+        audio.play().catch(err => {
+            console.log("Preview play failed:", err.message);
+            setPlayingUrl(null);
+        });
+
+        audio.onended = () => {
+            setPlayingUrl(null);
+        };
+    };
+
+    const displayValue = displayLabels[value] || value;
+
+    const panelContent = (
+        <div
+            ref={panelRef}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto`}
+            role="listbox"
+            style={{
+                position: 'fixed',
+                top: position.direction === 'down' ? position.top + 4 : 'auto',
+                bottom: position.direction === 'up' ? window.innerHeight - position.top + 4 : 'auto',
+                left: position.left,
+                width: position.width ? `${position.width}px` : 'auto',
+                minWidth: position.minWidth ? `${position.minWidth}px` : undefined,
+                maxWidth: 'calc(100vw - 24px)',
+                zIndex: 999999
+            }}
+        >
+            {options.map((option) => {
+                const isSelected = value === option;
+                const label = displayLabels[option] || option;
+                const isPlaying = playingUrl === option;
+
+                return (
+                    <div
+                        key={option}
+                        onClick={() => {
+                            onChange(option);
+                            setIsOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-2 py-1.5 text-[11px] hover:bg-[var(--subtle-bg)] cursor-pointer transition-colors ${
+                            isSelected ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'
+                        }`}
+                    >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {option !== 'custom' ? (
+                                <button
+                                    type="button"
+                                    onClick={(e) => handlePlayPause(e, option)}
+                                    className={`p-1 rounded hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors shrink-0 flex items-center justify-center ${
+                                        isPlaying ? 'text-green-600 dark:text-green-400' : 'text-[var(--text-secondary)]'
+                                    }`}
+                                    title={isPlaying ? "Pause preview" : "Play preview"}
+                                >
+                                    {isPlaying ? <Pause size={10} fill="currentColor" /> : <Play size={10} fill="currentColor" />}
+                                </button>
+                            ) : (
+                                <div className="w-5 shrink-0" />
+                            )}
+                            <span className="truncate">{label}</span>
+                        </div>
+                        {isSelected && <Check size={12} className="shrink-0 text-indigo-600 dark:text-indigo-400 ml-1" />}
+                    </div>
+                );
+            })}
+        </div>
+    );
+
+    return (
+        <div ref={dropdownRef} className="custom-dropdown-wrapper min-w-0 max-w-full relative w-full">
+            <button
+                ref={triggerRef}
+                type="button"
+                onClick={toggleOpen}
+                className={`custom-dropdown-trigger min-w-0 max-w-full ${triggerClassName}`}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+            >
+                <span className="capitalize truncate min-w-0 flex-1 text-left">{displayValue}</span>
+                <ChevronDown size={14} className="text-slate-400 dark:text-zinc-500 chevron shrink-0 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            </button>
+            {isOpen && ReactDOM.createPortal(panelContent, document.body)}
+        </div>
+    );
 };
 
 const ExpandablePath: React.FC<{ path: string }> = ({ path }) => {
@@ -1050,15 +1322,23 @@ const AudioSettingsManager: React.FC = () => {
     };
 
     const testNotifSound = () => {
-        const audio = new Audio(notifSound);
+        let finalUrl = notifSound;
+        if (notifSound.startsWith('http://') || notifSound.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(notifSound)}`;
+        }
+        const audio = new Audio(finalUrl);
         audio.volume = 0.5;
-        audio.play().catch(e => console.error("Test failed:", e));
+        audio.play().catch(e => console.log("Notification sound playback info:", e.message));
     };
 
     const testCompletionSound = () => {
-        const audio = new Audio(completionSound);
+        let finalUrl = completionSound;
+        if (completionSound.startsWith('http://') || completionSound.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(completionSound)}`;
+        }
+        const audio = new Audio(finalUrl);
         audio.volume = 0.5;
-        audio.play().catch(e => console.error("Test failed:", e));
+        audio.play().catch(e => console.log("Completion sound playback info:", e.message));
     };
 
     const startEditingNotif = () => {
@@ -1100,7 +1380,7 @@ const AudioSettingsManager: React.FC = () => {
                 <p className="text-xs text-[var(--text-secondary)]">Manage notification sounds</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${editingNotif ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
                     <div className="flex items-start gap-2 sm:gap-3 flex-1">
                         <div className={`mt-[2px] p-1.5 sm:p-2 rounded-lg transition-colors shrink-0 ${notifEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-[var(--subtle-bg)] text-[var(--text-secondary)]'}`}>
@@ -1116,7 +1396,7 @@ const AudioSettingsManager: React.FC = () => {
                             <div className="flex flex-col gap-1.5 w-full min-w-0">
                                 <div className="flex items-center gap-1 w-full">
                                     <div className="flex-1 min-w-0">
-                                        <CustomDropdown
+                                        <AudioDropdown
                                             options={AUDIO_OPTIONS}
                                             value={notifDropdownVal}
                                             displayLabels={AUDIO_LABELS}
@@ -1124,7 +1404,7 @@ const AudioSettingsManager: React.FC = () => {
                                                 setNotifDropdownVal(val);
                                                 if (val !== 'custom') setNotifInputUrl(val);
                                             }}
-                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] !py-0.5 !px-1.5 !text-[10px] shadow-inner !min-h-[24px] h-[26px] flex items-center"
+                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px]"
                                         />
                                     </div>
                                     <button onClick={saveNotifInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
@@ -1187,7 +1467,7 @@ const AudioSettingsManager: React.FC = () => {
                             <div className="flex flex-col gap-1.5 w-full min-w-0">
                                 <div className="flex items-center gap-1 w-full">
                                     <div className="flex-1 min-w-0">
-                                        <CustomDropdown
+                                        <AudioDropdown
                                             options={AUDIO_OPTIONS}
                                             value={compDropdownVal}
                                             displayLabels={AUDIO_LABELS}
@@ -1195,7 +1475,7 @@ const AudioSettingsManager: React.FC = () => {
                                                 setCompDropdownVal(val);
                                                 if (val !== 'custom') setCompInputUrl(val);
                                             }}
-                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] !py-0.5 !px-1.5 !text-[10px] shadow-inner !min-h-[24px] h-[26px] flex items-center"
+                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px]"
                                         />
                                     </div>
                                     <button onClick={saveCompletionInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
@@ -1268,11 +1548,11 @@ const SystemStatusManager: React.FC<{
                 <p className="text-xs text-[var(--text-secondary)]">Current operational state</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {/* News Update Status */}
                 <div className="group relative bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-indigo-500/30 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200">
                     <div className="mb-2 flex items-center justify-between">
-                        <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)]">News Update Status</h4>
+                        <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)]">Update Status</h4>
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                              {isUpdating ? (
                                 <>
@@ -1292,7 +1572,8 @@ const SystemStatusManager: React.FC<{
                     </div>
                     <div>
                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                             Indicates if the AI content engine is actively fetching, summarizing, and publishing new articles.
+                             <span className="sm:hidden">AI engine fetching and publishing status.</span>
+                             <span className="hidden sm:inline">Indicates whether the AI content engine is actively fetching, summarizing, and publishing new articles in real-time.</span>
                          </p>
                     </div>
                 </div>
@@ -1313,7 +1594,8 @@ const SystemStatusManager: React.FC<{
                     </div>
                     <div>
                          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                             Shows whether the most recent update was initiated automatically by the system schedule or manually by an admin.
+                             <span className="sm:hidden">Source of the most recent update run.</span>
+                             <span className="hidden sm:inline">Shows whether the most recent news update was initiated automatically by the scheduled system workflow or triggered manually by an admin.</span>
                          </p>
                     </div>
                 </div>
@@ -1410,11 +1692,13 @@ const NewsSettings: React.FC<{ currentConfig?: any; onUpdate?: () => Promise<voi
 
             {activeTab === 'configuration' && (
                 <div className="space-y-8 animate-in fade-in duration-300 w-full">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch w-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-stretch w-full">
                         <AiModelConfigManager configs={configs} onRefresh={fetchData} />
                         <AudioSettingsManager />
                     </div>
-                    <SystemStatusManager configs={configs} />
+                    <div className="w-full">
+                        <SystemStatusManager configs={configs} />
+                    </div>
                     
                     <div className="w-full flex flex-col gap-8">
                         <ApiKeyManager

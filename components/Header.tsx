@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAutoRefresh, useCountdown } from './AutoRefreshContext';
-import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, MessageSquare, RotateCw } from 'lucide-react';
+import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, MessageSquare, RotateCw, Loader, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dbMain, fetchLiveActivityLogs } from '../services/supabaseService';
 import type { RecentActivityLog } from '../types';
@@ -78,9 +78,13 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         // Cooldown of 1 second (1000ms) to handle high frequency bursts
         if (now - lastPlayedTimeRef.current > 1000) {
             if (audioRef.current) {
+                let finalUrl = currentUrl;
+                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                    finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}`;
+                }
                 // Only update src if it changed to avoid reloading the same audio
-                if (!audioRef.current.src.endsWith(currentUrl)) {
-                    audioRef.current.src = currentUrl;
+                if (!audioRef.current.src.endsWith(finalUrl)) {
+                    audioRef.current.src = finalUrl;
                 }
                 audioRef.current.currentTime = 0;
                 audioRef.current.play().catch(e => {
@@ -359,11 +363,9 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                                                     initial={{ height: 0, opacity: 0 }}
                                                                     animate={{ height: 'auto', opacity: 1 }}
                                                                     exit={{ height: 0, opacity: 0 }}
-                                                                    className="overflow-hidden border-t border-slate-100/50 dark:border-zinc-800/30 bg-slate-50/50 dark:bg-black/10"
+                                                                    className="overflow-hidden border-t border-slate-100/50 dark:border-zinc-800/30 bg-slate-50/50 dark:bg-black/15"
                                                                 >
-                                                                    <div className="p-3">
-                                                                        <ExpandedLogDetail log={log} />
-                                                                    </div>
+                                                                    <ExpandedLogDetail log={log} isEmbedded={true} />
                                                                 </motion.div>
                                                             )}
                                                         </AnimatePresence>
@@ -487,6 +489,7 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
     const countdown = useCountdown();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isSpinning, setIsSpinning] = useState(false);
+    const [showSuccessCheck, setShowSuccessCheck] = useState(false);
     const pressTimer = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -516,7 +519,15 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
     useEffect(() => {
         if (refreshTrigger > 0) {
             setIsSpinning(true);
-            const timer = setTimeout(() => setIsSpinning(false), 800);
+            setShowSuccessCheck(false);
+            const timer = setTimeout(() => {
+                setIsSpinning(false);
+                setShowSuccessCheck(true);
+                const checkTimer = setTimeout(() => {
+                    setShowSuccessCheck(false);
+                }, 1500);
+                return () => clearTimeout(checkTimer);
+            }, 800);
             return () => clearTimeout(timer);
         }
     }, [refreshTrigger]);
@@ -544,9 +555,51 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
                 className={`relative p-2 ${activeHeaderIcon === 'refresh' ? 'text-indigo-600' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] rounded-full transition-colors`}
                 title="Click to refresh, long press for auto-refresh settings"
             >
-                <motion.div animate={isSpinning ? { rotate: 360 } : {}} transition={isSpinning ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}>
-                    <CustomRefreshIcon size={18} />
-                </motion.div>
+                <div className="relative w-[18px] h-[18px] flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                        {isSpinning ? (
+                            <motion.div
+                                key="loader"
+                                initial={{ rotate: 0, scale: 0.8 }}
+                                animate={{ rotate: 360, scale: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{
+                                    rotate: { duration: 1, repeat: Infinity, ease: "linear" },
+                                    scale: { duration: 0.15 }
+                                }}
+                                className="flex items-center justify-center text-indigo-600 dark:text-indigo-400"
+                            >
+                                <Loader size={18} />
+                            </motion.div>
+                        ) : showSuccessCheck ? (
+                            <motion.div
+                                key="success"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ 
+                                    type: "spring",
+                                    bounce: 0.45,
+                                    duration: 0.4
+                                }}
+                                className="flex items-center justify-center text-emerald-500 font-bold"
+                            >
+                                <Check size={18} strokeWidth={3} />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="refresh"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex items-center justify-center"
+                            >
+                                <RotateCw size={18} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
                 {refreshRate > 0 && !isSpinning && (
                     <span className="absolute -bottom-1 -right-1 bg-[var(--subtle-bg)] text-[8px] font-bold px-1 rounded-sm border border-[var(--border-color)] text-[var(--text-secondary)]">
                         {countdown}s

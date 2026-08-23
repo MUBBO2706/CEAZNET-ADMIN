@@ -70,12 +70,16 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
             const isEnabled = localStorage.getItem('admin_audio_completion_enabled') !== 'false';
             if (isEnabled && completionAudioRef.current) {
                 const currentUrl = localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3';
-                if (!completionAudioRef.current.src.endsWith(currentUrl)) {
-                    completionAudioRef.current.src = currentUrl;
+                let finalUrl = currentUrl;
+                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                    finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}`;
+                }
+                if (!completionAudioRef.current.src.endsWith(finalUrl)) {
+                    completionAudioRef.current.src = finalUrl;
                 }
                 completionAudioRef.current.currentTime = 0;
                 completionAudioRef.current.volume = 0.5;
-                completionAudioRef.current.play().catch(e => console.error("Failed to play completion sound:", e));
+                completionAudioRef.current.play().catch(e => console.warn("Failed to play completion sound:", e.message));
             }
         }
         prevIsUpdatingRef.current = isUpdatingNews;
@@ -337,6 +341,7 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
             case 'logs':
                 return <NewsLogs 
                     logs={logs} 
+                    isLoading={loading}
                     onShowDetails={(id) => setSelectedLogId(id)} 
                     onDelete={handleDeleteRequest} 
                     isSelectionMode={isSelectionMode}

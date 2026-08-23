@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode, Suspense, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Zap, X, AlertTriangle, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+import { Zap, X, AlertTriangle, ChevronRight, ChevronDown, Loader } from 'lucide-react';
 
 import MainDashboard from './pages/MainDashboard';
 import NewsAdminPage from './pages/NewsAdminPage';
@@ -459,7 +459,7 @@ const AdminAuthGuard: React.FC<{ children: ReactNode }> = ({ children }) => {
                         disabled={isLoading}
                         className="w-full mt-2 px-5 py-3 text-white text-sm font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]"
                     >
-                        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isLoading && <Loader className="w-4 h-4 animate-spin" />}
                         {isLoading ? 'Authenticating...' : 'Access Admin Panel'}
                     </button>
                 </form>

@@ -32,6 +32,34 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/audio-proxy", async (req, res) => {
+    const { url } = req.query;
+    if (!url || typeof url !== "string") {
+      return res.status(400).send("Missing url parameter");
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        return res.status(response.status).send(`Failed to fetch audio: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (contentType) {
+        res.setHeader("content-type", contentType);
+      }
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      res.send(buffer);
+    } catch (err: any) {
+      console.error("Audio proxy error:", err);
+      res.status(500).send(`Audio proxy failed: ${err.message}`);
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

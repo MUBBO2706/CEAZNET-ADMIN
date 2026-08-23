@@ -580,6 +580,17 @@ const UsersPage: React.FC = () => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
+    useEffect(() => {
+        if (expandedRow) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [expandedRow]);
+
     const handleTouchStart = (userId: string) => {
         longPressTimer.current = setTimeout(() => {
             handleStartSelection(userId);
@@ -822,12 +833,12 @@ const UsersPage: React.FC = () => {
                 </div>
                 
                 {/* Unified Toolbar */}
-                <div className="flex flex-col xl:flex-row xl:items-center gap-3 xl:gap-4 w-full bg-slate-50/50 dark:bg-slate-800/20 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800/60 overflow-visible">
+                <div className="flex flex-col xl:flex-row xl:items-center gap-3 xl:gap-4 w-full p-0 bg-transparent border-none shadow-none overflow-visible">
                     
                     {/* Search and Sort Container */}
-                    <div className="flex flex-row items-center gap-2 xl:gap-3 w-full xl:w-auto xl:flex-1">
+                    <div className="flex flex-row items-center gap-2 w-full xl:w-auto xl:flex-1">
                         {/* Search Input */}
-                        <div className={`relative transition-all duration-300 ease-in-out shrink-0 ${isSearchFocused ? 'w-full xl:w-auto xl:flex-grow' : 'w-[65%] xl:w-auto xl:flex-grow xl:min-w-[200px]'}`}>
+                        <div className={`relative transition-all duration-300 ease-in-out ${isSearchFocused ? 'flex-grow' : 'w-[60%] sm:w-[65%] xl:flex-grow'}`}>
                             <Search size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${isSearchFocused ? 'left-3 text-indigo-500' : 'left-3 text-slate-400'}`} />
                             <input 
                                 type="text"
@@ -836,12 +847,12 @@ const UsersPage: React.FC = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 onFocus={() => setIsSearchFocused(true)}
                                 onBlur={() => setIsSearchFocused(false)}
-                                className={`w-full py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 transition-all shadow-sm placeholder:text-slate-400 dark:text-slate-200 cursor-pointer focus:cursor-text pl-9 pr-4`}
+                                className="w-full py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 transition-all shadow-sm placeholder:text-slate-400 dark:text-slate-200 cursor-pointer focus:cursor-text pl-9 pr-4"
                             />
                         </div>
 
                         {/* Controls Group */}
-                        <div className={`flex flex-row flex-nowrap items-center gap-2 transition-all duration-300 ease-in-out ${isSearchFocused ? 'w-0 opacity-0 px-0 invisible xl:w-auto xl:opacity-100 xl:px-0 xl:visible' : 'w-[35%] xl:w-auto opacity-100 visible'}`}>
+                        <div className={`transition-all duration-300 ease-in-out ${isSearchFocused ? 'w-0 opacity-0 scale-0 overflow-hidden pointer-events-none' : 'w-[40%] sm:w-[35%] xl:w-auto opacity-100 scale-100'}`}>
                             <div className="w-full relative z-20">
                                 <CustomDropdown
                                     value={sortOption}
@@ -873,7 +884,7 @@ const UsersPage: React.FC = () => {
                         <div className="min-w-[850px] flex flex-col">
                             {/* Header Row */}
                             <div 
-                                className="sticky z-20 bg-[var(--card-bg)] flex items-center px-1 md:px-2 border-b border-[var(--border-color)] transition-all duration-300 top-[50px] py-2 lg:min-w-full"
+                                className="bg-[var(--card-bg)] flex items-center px-1 md:px-2 border-b border-[var(--border-color)] py-2.5 lg:min-w-full select-none"
                             >
                                 {isSelectionMode && (
                                     <div className="w-10 shrink-0 text-center animate-fade-in pl-1">
@@ -886,13 +897,13 @@ const UsersPage: React.FC = () => {
                                         />
                                     </div>
                                 )}
-                                <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">User & Provider</div>
+                                <div className="w-80 lg:flex-1 lg:min-w-[20rem] shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">User & Provider</div>
                                 <div className="w-24 shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Status</div>
-                                <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Joined Date</div>
-                                <div className="w-32 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Last Login</div>
+                                <div className="w-36 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Joined Date</div>
+                                <div className="w-36 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Last Login</div>
                                 <div className="w-20 shrink-0 px-2 text-center text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Chats</div>
                                 <div className="w-12 shrink-0 px-1 text-right text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Actions</div>
-                                <div className="w-10 shrink-0 px-1"></div>
+                                <div className="w-10 shrink-0 px-1 hidden md:block"></div>
                             </div>
 
                             {/* Data Rows */}
@@ -934,7 +945,7 @@ const UsersPage: React.FC = () => {
                                                             />
                                                         </div>
                                                     )}
-                                                    <div className="w-64 lg:flex-1 lg:min-w-[16rem] shrink-0 px-2 hover:opacity-90">
+                                                    <div className="w-80 lg:flex-1 lg:min-w-[20rem] shrink-0 px-2 hover:opacity-90">
                                                         <div className="flex items-center gap-2">
                                                             <div className="relative shrink-0">
                                                                 <div className="relative">
@@ -954,18 +965,18 @@ const UsersPage: React.FC = () => {
                                                                     <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-2 ring-white dark:ring-slate-900" title="Proactive Mode Active"></span>
                                                                 )}
                                                             </div>
-                                                            <div className="truncate flex-1 min-w-0">
-                                                                <div className={`font-bold truncate text-[13px] flex items-center gap-1.5 ${is_suspended ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}`}>
+                                                            <div className="flex flex-row items-baseline gap-2 truncate flex-grow">
+                                                                <span className={`font-bold text-[13px] whitespace-nowrap ${is_suspended ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}`}>
                                                                     {full_name || 'Anonymous User'}
-                                                                    {providers && providers.length > 0 && (
-                                                                        <div className="flex gap-0.5 no-underline">
-                                                                            {providers.map(p => (
-                                                                                <span key={p} className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 uppercase px-1 rounded-sm leading-tight tracking-wider" title={`Logged in via ${p}`}>{p}</span>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-[11px] text-[var(--text-secondary)] truncate">{email}</div>
+                                                                </span>
+                                                                <span className="text-[11px] text-[var(--text-secondary)] truncate font-normal">({email})</span>
+                                                                {providers && providers.length > 0 && (
+                                                                    <span className="inline-flex gap-0.5 shrink-0">
+                                                                        {providers.map(p => (
+                                                                            <span key={p} className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 uppercase px-1 rounded-sm leading-tight tracking-wider" title={`Logged in via ${p}`}>{p}</span>
+                                                                        ))}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -980,21 +991,17 @@ const UsersPage: React.FC = () => {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
-                                                        <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Joined Date">
-                                                            {formatDateCompact(created_at)}
-                                                        </div>
-                                                        <div className="text-[var(--text-secondary)] text-[9px]" title="Joined Time">
-                                                            {formatTimeCompact(created_at)}
-                                                        </div>
+                                                    <div className="w-36 shrink-0 px-3 flex flex-row items-center gap-1.5 text-[11px]">
+                                                        <span className="text-[var(--text-primary)] font-medium whitespace-nowrap">{formatDateCompact(created_at)}</span>
+                                                        <span className="text-[var(--text-secondary)] text-[10px] whitespace-nowrap">{formatTimeCompact(created_at)}</span>
                                                     </div>
-                                                    <div className="w-32 shrink-0 px-3 flex flex-col justify-center gap-0.5">
-                                                        <div className="text-[var(--text-primary)] font-medium text-[10px]" title="Last Login Date">
+                                                    <div className="w-36 shrink-0 px-3 flex flex-row items-center gap-1.5 text-[11px]">
+                                                        <span className="text-[var(--text-primary)] font-medium whitespace-nowrap">
                                                             {last_sign_in_at ? formatDateCompact(last_sign_in_at) : 'Never'}
-                                                        </div>
-                                                        <div className="text-[var(--text-secondary)] text-[9px]" title="Last Login Time">
-                                                            {last_sign_in_at ? formatTimeCompact(last_sign_in_at) : ''}
-                                                        </div>
+                                                        </span>
+                                                        {last_sign_in_at && (
+                                                            <span className="text-[var(--text-secondary)] text-[10px] whitespace-nowrap">{formatTimeCompact(last_sign_in_at)}</span>
+                                                        )}
                                                     </div>
                                                     <div className="w-20 shrink-0 px-2 flex justify-center items-center">
                                                         <span className="inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded-full bg-[var(--card-bg)] shadow-sm border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-[10px]">
@@ -1015,7 +1022,7 @@ const UsersPage: React.FC = () => {
                                                             <MoreVertical size={16} />
                                                         </button>
                                                     </div>
-                                                    <div className="w-10 shrink-0 px-1 text-center flex justify-center items-center">
+                                                    <div className="w-10 shrink-0 px-1 text-center hidden md:flex justify-center items-center">
                                                         <div className="p-1 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:bg-[var(--border-color)] bg-transparent rounded-md transition-colors">
                                                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                                         </div>
@@ -1024,7 +1031,10 @@ const UsersPage: React.FC = () => {
                                                 
                                                 {/* Expanded View */}
                                                 {isExpanded && (
-                                                    <div className="bg-slate-50/50 dark:bg-slate-800/30 border-t border-[var(--border-color)] p-2 inset-shadow-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                                    <div 
+                                                        className="sticky left-0 w-[100vw] sm:w-auto max-w-[100vw] sm:max-w-none bg-slate-50/50 dark:bg-slate-800/30 border-t border-[var(--border-color)] p-2 inset-shadow-sm animate-fade-in" 
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
                                                         <div className="flex flex-col md:flex-row gap-2">
                                                             {/* Profile Info */}
                                                             <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-colors">
@@ -1190,7 +1200,7 @@ const UsersPage: React.FC = () => {
                                 if (user) setEditingUser(user);
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer whitespace-nowrap"
                         >
                             <Edit size={14} />
                             Edit Settings
@@ -1206,12 +1216,12 @@ const UsersPage: React.FC = () => {
                                 }
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors cursor-pointer whitespace-nowrap"
                         >
                             {processedUsers.find(u => u.user.id === actionPopoverData.id)?.user.is_suspended ? (
-                                <><UserCheck size={14} /> Normalize User</>
+                                <span className="flex items-center gap-2"><UserCheck size={14} /> Normalize User</span>
                             ) : (
-                                <><UserX size={14} /> Suspend User</>
+                                <span className="flex items-center gap-2"><UserX size={14} /> Suspend User</span>
                             )}
                         </button>
                         <button
@@ -1219,7 +1229,7 @@ const UsersPage: React.FC = () => {
                                 handleDeleteRequest(actionPopoverData.id);
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer whitespace-nowrap"
                         >
                             <Trash2 size={14} />
                             Delete User

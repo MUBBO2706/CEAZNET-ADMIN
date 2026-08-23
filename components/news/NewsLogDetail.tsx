@@ -14,7 +14,8 @@ import {
     CheckCircle2,
     XCircle,
     Terminal,
-    AlertCircle
+    AlertCircle,
+    ChevronRight
 } from 'lucide-react';
 import { timeAgo } from '../ui';
 
@@ -89,7 +90,7 @@ const StructuredSummary: React.FC<{ summary: string[] }> = ({ summary }) => {
     categoryStats.sort((a, b) => a.category.localeCompare(b.category));
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {/* Top Stats */}
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 flex flex-col items-center justify-center text-center">
@@ -102,46 +103,46 @@ const StructuredSummary: React.FC<{ summary: string[] }> = ({ summary }) => {
                 </div>
             </div>
 
-            {/* General Info */}
-            <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-zinc-800/30 p-3 rounded-lg border border-slate-100 dark:border-zinc-800/50">
+            {/* General Info - Side by Side and Containerless */}
+            <div className="grid grid-cols-2 gap-4 text-xs">
                 {Object.entries(generalInfo).filter(([k]) => k !== 'Total Duration').map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium">{key}</span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{value}</span>
+                    <div key={key} className="flex flex-col gap-0.5">
+                        <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">{key}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{value}</span>
                     </div>
                 ))}
             </div>
 
-            {/* Category Breakdown */}
+            {/* Category Breakdown - Containerless & Edge to Edge */}
             {categoryStats.length > 0 && (
-                <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Category Breakdown</h4>
-                    <div className="grid grid-cols-1 gap-1.5">
+                <div className="pt-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Category Breakdown</h4>
+                    <div className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                         {categoryStats.map(stat => (
-                            <div key={stat.category} className="bg-white dark:bg-zinc-900 p-2.5 rounded border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col gap-1.5 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
+                            <div key={stat.category} className="py-3 flex flex-col gap-2 transition-colors first:pt-0 last:pb-0">
                                 <div className="font-bold text-xs text-slate-800 dark:text-slate-200 capitalize flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
                                     {stat.category}
                                 </div>
-                                <div className="grid grid-cols-5 gap-1 text-[9px] sm:text-[10px] px-1 bg-slate-50 dark:bg-zinc-800/50 rounded py-1.5">
+                                <div className="grid grid-cols-5 gap-1 text-[9px] sm:text-[10px] py-1">
                                     <div className="flex flex-col items-center text-center">
-                                        <span className="text-slate-400 uppercase tracking-wider font-semibold">Fetch</span>
+                                        <span className="text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold">Fetch</span>
                                         <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{stat.fetched}</span>
                                     </div>
-                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-700">
-                                        <span className="text-slate-400 uppercase tracking-wider font-semibold" title="Duplicates">Dupe</span>
+                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-800">
+                                        <span className="text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold" title="Duplicates">Dupe</span>
                                         <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{stat.duplicates}</span>
                                     </div>
-                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-700">
-                                        <span className="text-slate-400 uppercase tracking-wider font-semibold">To AI</span>
+                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-800">
+                                        <span className="text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold">To AI</span>
                                         <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{stat.sentToAi}</span>
                                     </div>
-                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-700">
-                                        <span className="text-slate-400 uppercase tracking-wider font-semibold">Fmt</span>
+                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-800">
+                                        <span className="text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold">Fmt</span>
                                         <span className="font-bold text-green-600 dark:text-green-400 text-xs">{stat.formatted}</span>
                                     </div>
-                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-700">
-                                        <span className="text-slate-400 uppercase tracking-wider font-semibold">Skip</span>
+                                    <div className="flex flex-col items-center text-center border-l border-slate-200 dark:border-zinc-800">
+                                        <span className="text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold">Skip</span>
                                         <span className={`font-bold text-xs ${parseInt(stat.skipped) > 0 ? 'text-amber-500' : 'text-slate-700 dark:text-slate-300'}`}>{stat.skipped}</span>
                                     </div>
                                 </div>
@@ -152,6 +153,51 @@ const StructuredSummary: React.FC<{ summary: string[] }> = ({ summary }) => {
             )}
         </div>
     );
+};
+
+// Helper to get category badge color styling
+const getCategoryStyle = (category: string) => {
+    const cat = category.toLowerCase().trim();
+    if (cat.includes('health')) {
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80';
+    }
+    if (cat.includes('support')) {
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/80';
+    }
+    if (cat.includes('science')) {
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800/80';
+    }
+    if (cat.includes('system')) {
+        return 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700';
+    }
+    if (cat.includes('tech') || cat.includes('technology')) {
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800/80';
+    }
+    if (cat.includes('business') || cat.includes('finance')) {
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800/80';
+    }
+    if (cat.includes('sports') || cat.includes('sport')) {
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border-orange-200 dark:border-orange-800/80';
+    }
+    if (cat.includes('entertainment')) {
+        return 'bg-pink-100 text-pink-800 dark:bg-pink-950/80 dark:text-pink-300 border-pink-200 dark:border-pink-800/80';
+    }
+    if (cat.includes('general') || cat.includes('world')) {
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/80';
+    }
+
+    const palette = [
+        'bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 border-teal-200 dark:border-teal-800/80',
+        'bg-violet-100 text-violet-800 dark:bg-violet-950/80 dark:text-violet-300 border-violet-200 dark:border-violet-800/80',
+        'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/80 dark:text-fuchsia-300 border-fuchsia-200 dark:border-fuchsia-800/80',
+        'bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border-sky-200 dark:border-sky-800/80',
+        'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800/80',
+    ];
+    let hash = 0;
+    for (let i = 0; i < cat.length; i++) {
+        hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return palette[Math.abs(hash) % palette.length];
 };
 
 // --- StructuredDetails Component ---
@@ -228,7 +274,7 @@ const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
                 return (
                     <div key={index} className={`flex flex-col border-b border-slate-100 dark:border-[#2e2e2e] transition-colors last:border-b-0 ${rowBg}`}>
                         <div 
-                            className="flex items-center gap-3 sm:gap-4 px-4 py-2.5 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                            className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                             onClick={() => setExpandedIndex(isExpanded ? null : index)}
                         >
                             <span className="text-slate-500 dark:text-[#8b8b8b] font-mono text-[10px] sm:text-xs whitespace-nowrap shrink-0">
@@ -238,13 +284,17 @@ const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
                                 {levelIcon}
                                 {level}
                             </span>
-                            <span className="text-slate-700 dark:text-[#ededed] font-mono text-[10px] sm:text-xs whitespace-nowrap sm:truncate flex-1">
-                                <span className="text-slate-400 dark:text-[#8b8b8b] mr-2">[{category}]</span>
-                                {message}
-                            </span>
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-[#ededed] font-mono text-[10px] sm:text-xs min-w-0 flex-1">
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border uppercase tracking-wider shrink-0 select-none ${getCategoryStyle(category)}`}>
+                                    {category}
+                                </span>
+                                <span className="truncate flex-1">
+                                    {message}
+                                </span>
+                            </div>
                         </div>
                         {isExpanded && (
-                            <div className="px-4 py-5 bg-slate-50/50 dark:bg-black border-t border-slate-100 dark:border-[#2e2e2e] text-slate-700 dark:text-[#ededed] font-mono text-[11px] sm:text-xs shadow-inner">
+                            <div className="px-3 sm:px-4 py-5 bg-slate-50/50 dark:bg-zinc-900/30 border-t border-slate-100 dark:border-[#2e2e2e] text-slate-700 dark:text-[#ededed] font-mono text-[11px] sm:text-xs shadow-inner my-0">
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                     {/* Meta Info Column */}
                                     <div className="md:col-span-3 flex flex-col gap-4">
@@ -260,7 +310,7 @@ const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <span className="text-slate-400 dark:text-[#8b8b8b] text-[9px] uppercase tracking-wider font-semibold">Category</span>
-                                            <span className="text-blue-600 dark:text-[#60a5fa] font-medium">{category}</span>
+                                            <span className={`w-fit px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${getCategoryStyle(category)}`}>{category}</span>
                                         </div>
                                     </div>
                                     
@@ -272,12 +322,12 @@ const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <details className="group">
-                                                <summary className="text-slate-400 dark:text-[#8b8b8b] text-[9px] uppercase tracking-wider font-semibold cursor-pointer hover:text-slate-600 dark:hover:text-[#a5d6ff] transition-colors select-none list-none flex items-center gap-1">
-                                                    <span className="group-open:rotate-90 transition-transform">▶</span>
+                                                <summary className="text-slate-400 dark:text-[#8b8b8b] text-[9px] uppercase tracking-wider font-semibold cursor-pointer hover:text-slate-600 dark:hover:text-[#a5d6ff] transition-colors select-none list-none flex items-center gap-1.5">
+                                                    <ChevronRight size={12} className="group-open:rotate-90 transition-transform" />
                                                     Raw Log
                                                 </summary>
-                                                <div className="mt-2 whitespace-pre-wrap break-words bg-slate-100/50 dark:bg-[#1a1a1a] p-3 rounded border border-slate-200 dark:border-[#333]">
-                                                    <code className="text-slate-500 dark:text-[#8b949e] text-[10px]">{raw}</code>
+                                                <div className="mt-2 whitespace-pre-wrap break-words py-1 text-slate-500 dark:text-[#8b949e] text-[10px]">
+                                                    {raw}
                                                 </div>
                                             </details>
                                         </div>
@@ -335,35 +385,28 @@ const NewsLogDetail: React.FC<{ log: NewsLog; onBack: () => void; }> = ({ log, o
             </div>
 
             {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch pt-2">
                 {/* Left Column: Summary */}
                 <div className="lg:col-span-4 xl:col-span-3 flex flex-col">
-                    <div className="bg-white dark:bg-zinc-900 rounded-md border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col flex-grow h-full">
-                        <div className="px-3 py-2.5 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-2 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
+                    <div className="flex flex-col flex-grow h-full">
+                        <div className="pb-2 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 shrink-0 mb-4">
                             <List size={14} className="text-slate-400" />
                             <h3 className="font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Execution Summary</h3>
                         </div>
-                        <div className="p-3 flex-grow overflow-y-auto">
+                        <div className="flex-grow">
                             <StructuredSummary summary={log.summary} />
                         </div>
                     </div>
                 </div>
 
                 {/* Right Column: Terminal Details */}
-                <div className="lg:col-span-8 xl:col-span-9 flex flex-col">
-                    <div className="bg-white dark:bg-[#1c1c1c] rounded-md border border-slate-200 dark:border-[#2e2e2e] shadow-sm dark:shadow-xl overflow-hidden flex flex-col flex-grow h-full min-h-[500px]">
-                        <div className="px-4 py-3 border-b border-slate-200 dark:border-[#2e2e2e] flex items-center justify-between bg-slate-50 dark:bg-[#151515] shrink-0">
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <Terminal size={16} className="text-[#10b981]" />
-                                <span className="font-semibold text-xs tracking-wider text-slate-700 dark:text-[#ededed] uppercase">Execution Details</span>
-                            </div>
-                            <div className="flex gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
-                            </div>
+                <div className="lg:col-span-8 xl:col-span-9 flex flex-col mx-[-12px] sm:mx-[-16px] lg:mx-0">
+                    <div className="flex flex-col flex-grow h-full min-h-[500px]">
+                        <div className="pb-2 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 shrink-0 mb-4 px-3 sm:px-4 lg:px-0">
+                            <Terminal size={16} className="text-[#10b981]" />
+                            <span className="font-semibold text-xs tracking-wider text-slate-700 dark:text-[#ededed] uppercase">Execution Details</span>
                         </div>
-                        <div className="p-0 overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-[#1c1c1c]">
+                        <div className="overflow-y-auto flex-1 custom-scrollbar">
                             <StructuredDetails details={log.details} />
                         </div>
                     </div>

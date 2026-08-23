@@ -123,6 +123,50 @@ const StructuredSummary: React.FC<{ summary: string[] }> = ({ summary }) => {
 };
 
 
+const getCategoryStyle = (category: string) => {
+    const cat = category.toLowerCase().trim();
+    if (cat.includes('health')) {
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80';
+    }
+    if (cat.includes('support')) {
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/80';
+    }
+    if (cat.includes('science')) {
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800/80';
+    }
+    if (cat.includes('system')) {
+        return 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700';
+    }
+    if (cat.includes('tech') || cat.includes('technology')) {
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800/80';
+    }
+    if (cat.includes('business') || cat.includes('finance')) {
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800/80';
+    }
+    if (cat.includes('sports') || cat.includes('sport')) {
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border-orange-200 dark:border-orange-800/80';
+    }
+    if (cat.includes('entertainment')) {
+        return 'bg-pink-100 text-pink-800 dark:bg-pink-950/80 dark:text-pink-300 border-pink-200 dark:border-pink-800/80';
+    }
+    if (cat.includes('general') || cat.includes('world')) {
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/80';
+    }
+
+    const palette = [
+        'bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 border-teal-200 dark:border-teal-800/80',
+        'bg-violet-100 text-violet-800 dark:bg-violet-950/80 dark:text-violet-300 border-violet-200 dark:border-violet-800/80',
+        'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/80 dark:text-fuchsia-300 border-fuchsia-200 dark:border-fuchsia-800/80',
+        'bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border-sky-200 dark:border-sky-800/80',
+        'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800/80',
+    ];
+    let hash = 0;
+    for (let i = 0; i < cat.length; i++) {
+        hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return palette[Math.abs(hash) % palette.length];
+};
+
 // --- StructuredDetails Component ---
 const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
     if (!details) {
@@ -210,11 +254,13 @@ const StructuredDetails: React.FC<{ details: string }> = ({ details }) => {
                                     </span>
                                 )}
                             </div>
-                            <div className="whitespace-pre-wrap break-words min-w-0 flex items-center">
-                                <div>
-                                    {category && <span className="font-bold text-[var(--accent-color)] capitalize mr-1">[{category}]</span>}
-                                    {message}
-                                </div>
+                            <div className="whitespace-pre-wrap break-words min-w-0 flex items-center gap-1.5">
+                                {category && (
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider shrink-0 select-none ${getCategoryStyle(category)}`}>
+                                        {category}
+                                    </span>
+                                )}
+                                <span className="flex-1">{message}</span>
                             </div>
                         </div>
                     );
