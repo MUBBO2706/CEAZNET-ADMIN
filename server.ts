@@ -38,6 +38,23 @@ async function startServer() {
       return res.status(400).send("Missing url parameter");
     }
 
+    // Handle local files
+    if (url.startsWith("/")) {
+      const safePath = path.normalize(url).replace(/^(\.\.(\/|\\|$))+/, '');
+      const filePath = path.join(process.cwd(), "public", safePath);
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error("Local audio serve error:", err);
+          if (!res.headersSent) {
+            res.status(404).send("Audio file not found");
+          }
+        }
+      });
+    }
+
     try {
       const response = await fetch(url);
       if (!response.ok) {

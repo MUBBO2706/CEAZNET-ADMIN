@@ -79,7 +79,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         if (now - lastPlayedTimeRef.current > 1000) {
             if (audioRef.current) {
                 let finalUrl = currentUrl;
-                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://') || currentUrl.startsWith('/')) {
                     finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}`;
                 }
                 // Only update src if it changed to avoid reloading the same audio

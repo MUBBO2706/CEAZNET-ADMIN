@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ceaznet-admin-v1';
+const CACHE_NAME = 'ceaznet-admin-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -32,8 +32,12 @@ self.addEventListener('activate', (e) => {
 
 // Fetch Event (Network First with Cache Fallback for reliability)
 self.addEventListener('fetch', (e) => {
-  // Ignore non-GET requests or external API calls to avoid cache conflicts
-  if (e.request.method !== 'GET' || e.request.url.includes('/api/')) {
+  // Ignore non-GET requests, API calls, or audio files to avoid range request issues in Safari/Chrome
+  if (
+    e.request.method !== 'GET' || 
+    e.request.url.includes('/api/') || 
+    e.request.url.includes('.mp3')
+  ) {
     return;
   }
 

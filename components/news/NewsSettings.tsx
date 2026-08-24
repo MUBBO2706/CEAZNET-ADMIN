@@ -42,7 +42,7 @@ const ApiKeyRow: React.FC<{
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
                 setIsMenuOpen(false);
             }
         };
@@ -1109,9 +1109,10 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            const isClickInsideTrigger = dropdownRef.current?.contains(target);
-            const isClickInsidePanel = panelRef.current?.contains(target);
+            const target = event.target;
+            if (!(target instanceof Node)) return;
+            const isClickInsideTrigger = dropdownRef.current?.contains(target) || false;
+            const isClickInsidePanel = panelRef.current?.contains(target) || false;
             
             if (!isClickInsideTrigger && !isClickInsidePanel) {
                 setIsOpen(false);
@@ -1119,7 +1120,8 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
         };
         
         const handleScrollOrResize = (event: Event) => {
-            if (panelRef.current && (event.target === panelRef.current || panelRef.current.contains(event.target as Node))) {
+            const target = event.target;
+            if (panelRef.current && target instanceof Node && (target === panelRef.current || panelRef.current.contains(target))) {
                 return;
             }
             if (isOpen && triggerRef.current) {
@@ -1129,8 +1131,8 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
 
         const preventScroll = (e: Event) => {
             if (isOpen) {
-                const target = e.target as Node;
-                if (!panelRef.current?.contains(target)) {
+                const target = e.target;
+                if (target instanceof Node && !panelRef.current?.contains(target)) {
                     e.preventDefault();
                 }
             }
@@ -1181,7 +1183,7 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
         }
 
         let finalUrl = url;
-        if (url.startsWith('http://') || url.startsWith('https://')) {
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
             finalUrl = `/api/audio-proxy?url=${encodeURIComponent(url)}`;
         }
 
@@ -1323,7 +1325,7 @@ const AudioSettingsManager: React.FC = () => {
 
     const testNotifSound = () => {
         let finalUrl = notifSound;
-        if (notifSound.startsWith('http://') || notifSound.startsWith('https://')) {
+        if (notifSound.startsWith('http://') || notifSound.startsWith('https://') || notifSound.startsWith('/')) {
             finalUrl = `/api/audio-proxy?url=${encodeURIComponent(notifSound)}`;
         }
         const audio = new Audio(finalUrl);
@@ -1333,7 +1335,7 @@ const AudioSettingsManager: React.FC = () => {
 
     const testCompletionSound = () => {
         let finalUrl = completionSound;
-        if (completionSound.startsWith('http://') || completionSound.startsWith('https://')) {
+        if (completionSound.startsWith('http://') || completionSound.startsWith('https://') || completionSound.startsWith('/')) {
             finalUrl = `/api/audio-proxy?url=${encodeURIComponent(completionSound)}`;
         }
         const audio = new Audio(finalUrl);
