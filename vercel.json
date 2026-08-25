@@ -9,7 +9,7 @@
       "destination": "/$1.wav"
     },
     {
-      "source": "/((?!api/|.*\\.[\\w]+$).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
