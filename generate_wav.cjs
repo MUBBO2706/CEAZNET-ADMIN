@@ -33,13 +33,13 @@ function createWav(freq, durationMs, filepath) {
     fs.writeFileSync(filepath, buffer);
 }
 
-createWav(600, 300, 'public/chime-1.mp3');
-createWav(800, 300, 'public/chime-2.mp3');
-createWav(1000, 400, 'public/chime-3.mp3');
-createWav(1200, 500, 'public/chime-4.mp3');
-createWav(400, 200, 'public/chime-5.mp3');
-createWav(500, 200, 'public/chime-6.mp3');
-createWav(700, 300, 'public/chime-7.mp3');
-createWav(900, 400, 'public/chime-8.mp3');
-createWav(300, 100, 'public/click-low.mp3');
-createWav(1500, 100, 'public/click-high.mp3');
+createWav(600, 300, 'public/chime-1.wav');
+createWav(800, 300, 'public/chime-2.wav');
+createWav(1000, 400, 'public/chime-3.wav');
+createWav(1200, 500, 'public/chime-4.wav');
+createWav(400, 200, 'public/chime-5.wav');
+createWav(500, 200, 'public/chime-6.wav');
+createWav(700, 300, 'public/chime-7.wav');
+createWav(900, 400, 'public/chime-8.wav');
+createWav(300, 100, 'public/click-low.wav');
+createWav(1500, 100, 'public/click-high.wav');

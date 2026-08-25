@@ -5,6 +5,10 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/(chime-[0-9]|click-low|click-high).mp3",
+      "destination": "/$1.wav"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

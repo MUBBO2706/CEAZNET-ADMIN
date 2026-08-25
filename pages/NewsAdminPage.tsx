@@ -65,7 +65,7 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
         if (prevIsUpdatingRef.current === true && isUpdatingNews === false) {
             const isEnabled = localStorage.getItem('admin_audio_completion_enabled') !== 'false';
             if (isEnabled) {
-                const currentUrl = localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3';
+                const currentUrl =  (localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav');
                 let finalUrl = currentUrl;
                 if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
                     finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;

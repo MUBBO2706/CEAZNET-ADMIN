@@ -73,7 +73,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         const isEnabled = localStorage.getItem('admin_audio_notifications_enabled') !== 'false';
         if (!isEnabled) return;
 
-        const currentUrl = localStorage.getItem('admin_audio_notifications_url') || '/notification.mp3';
+        const currentUrl =  (localStorage.getItem('admin_audio_notifications_url') || '/notification.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav');
         const now = Date.now();
         
         // Cooldown of 1 second (1000ms) to handle high frequency bursts

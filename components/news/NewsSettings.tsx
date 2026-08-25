@@ -984,32 +984,32 @@ const AiModelConfigManager: React.FC<{
 const AUDIO_OPTIONS = [
     '/notification.mp3',
     '/universfield-system-notification-02-352442.mp3',
-    '/chime-1.mp3',
-    '/chime-2.mp3',
-    '/chime-3.mp3',
-    '/chime-4.mp3',
-    '/chime-5.mp3',
-    '/chime-6.mp3',
-    '/chime-7.mp3',
-    '/chime-8.mp3',
-    '/click-low.mp3',
-    '/click-high.mp3',
+    '/chime-1.wav',
+    '/chime-2.wav',
+    '/chime-3.wav',
+    '/chime-4.wav',
+    '/chime-5.wav',
+    '/chime-6.wav',
+    '/chime-7.wav',
+    '/chime-8.wav',
+    '/click-low.wav',
+    '/click-high.wav',
     'custom'
 ];
 
 const AUDIO_LABELS: Record<string, string> = {
     '/notification.mp3': 'Default Bell',
     '/universfield-system-notification-02-352442.mp3': 'System Ping',
-    '/chime-1.mp3': 'Playful Chime',
-    '/chime-2.mp3': 'Classic Beep',
-    '/chime-3.mp3': 'Coins Drop',
-    '/chime-4.mp3': 'Bottle Pop',
-    '/chime-5.mp3': 'Menu Select',
-    '/chime-6.mp3': 'Soft Click',
-    '/chime-7.mp3': 'Double Click',
-    '/chime-8.mp3': 'High Pitch Pip',
-    '/click-low.mp3': 'Click Low',
-    '/click-high.mp3': 'Click High',
+    '/chime-1.wav': 'Playful Chime',
+    '/chime-2.wav': 'Classic Beep',
+    '/chime-3.wav': 'Coins Drop',
+    '/chime-4.wav': 'Bottle Pop',
+    '/chime-5.wav': 'Menu Select',
+    '/chime-6.wav': 'Soft Click',
+    '/chime-7.wav': 'Double Click',
+    '/chime-8.wav': 'High Pitch Pip',
+    '/click-low.wav': 'Click Low',
+    '/click-high.wav': 'Click High',
     'custom': 'Custom/Other URL...'
 };
 
@@ -1301,8 +1301,8 @@ const AudioSettingsManager: React.FC = () => {
         const saved = localStorage.getItem('admin_audio_completion_enabled');
         return saved !== null ? saved === 'true' : true;
     });
-    const [notifSound, setNotifSound] = useState(() => localStorage.getItem('admin_audio_notifications_url') || '/notification.mp3');
-    const [completionSound, setCompletionSound] = useState(() => localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3');
+    const [notifSound, setNotifSound] = useState(() =>  (localStorage.getItem('admin_audio_notifications_url') || '/notification.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav'));
+    const [completionSound, setCompletionSound] = useState(() =>  (localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav'));
 
     const [editingNotif, setEditingNotif] = useState(false);
     const [notifInputUrl, setNotifInputUrl] = useState('');
@@ -1434,7 +1434,7 @@ const AudioSettingsManager: React.FC = () => {
                                     onClick={startEditingNotif}
                                     className="p-1 px-1.5 bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-[4px] text-[10px] font-semibold transition-colors flex items-center gap-1 border border-transparent"
                                 >
-                                    <Settings size={12} /> Change
+                                    Change sound effect
                                 </button>
                                 <div className="flex items-center gap-2">
                                     <button 
@@ -1505,7 +1505,7 @@ const AudioSettingsManager: React.FC = () => {
                                     onClick={startEditingCompletion}
                                     className="p-1 px-1.5 bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-[4px] text-[10px] font-semibold transition-colors flex items-center gap-1 border border-transparent"
                                 >
-                                    <Settings size={12} /> Change
+                                    Change sound effect
                                 </button>
                                 <div className="flex items-center gap-2">
                                     <button 
