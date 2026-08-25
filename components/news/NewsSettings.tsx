@@ -10,6 +10,7 @@ import type { NewsApiKey, NewsSystemConfig } from '../../types';
 import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RotateCw, Loader, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle, Play, Pause, ChevronDown } from 'lucide-react';
 import CodeEditor from '../ui/CodeEditor';
 import { JsonNode, updateNestedValue, deleteNestedValue, getNestedValue } from '../data/JsonEditor';
+import { playAudio } from '../audioUtils';
 
 const ApiKeyRow: React.FC<{ 
     apiKeyObj: NewsApiKey | any; 
@@ -1032,7 +1033,7 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [playingUrl, setPlayingUrl] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioRef = useRef<{ stop: () => void } | null>(null);
     
     const [position, setPosition] = useState({ 
         top: 0, 
@@ -1154,52 +1155,52 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
             document.removeEventListener('wheel', preventScroll, { capture: true });
             document.removeEventListener('touchmove', preventScroll, { capture: true });
             if (audioRef.current) {
-                audioRef.current.pause();
+                audioRef.current.stop();
             }
         };
     }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen && audioRef.current) {
-            audioRef.current.pause();
+            audioRef.current.stop();
             setPlayingUrl(null);
         }
     }, [isOpen]);
 
-    const handlePlayPause = (e: React.MouseEvent, url: string) => {
+    const handlePlayPause = async (e: React.MouseEvent, url: string) => {
         e.stopPropagation();
         if (url === 'custom') return;
 
         if (playingUrl === url) {
             if (audioRef.current) {
-                audioRef.current.pause();
+                audioRef.current.stop();
             }
             setPlayingUrl(null);
             return;
         }
 
         if (audioRef.current) {
-            audioRef.current.pause();
+            audioRef.current.stop();
         }
 
         let finalUrl = url;
-        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(url)}`;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(url)}&_t=${Date.now()}`;
+        } else if (url.startsWith('/')) {
+            finalUrl = `${url}?_t=${Date.now()}`;
         }
 
-        const audio = new Audio(finalUrl);
-        audio.volume = 0.5;
-        audioRef.current = audio;
         setPlayingUrl(url);
 
-        audio.play().catch(err => {
-            console.log("Preview play failed:", err.message);
+        const control = await playAudio(finalUrl, 0.5, () => {
             setPlayingUrl(null);
         });
 
-        audio.onended = () => {
+        if (control) {
+            audioRef.current = control;
+        } else {
             setPlayingUrl(null);
-        };
+        }
     };
 
     const displayValue = displayLabels[value] || value;
@@ -1325,22 +1326,23 @@ const AudioSettingsManager: React.FC = () => {
 
     const testNotifSound = () => {
         let finalUrl = notifSound;
-        if (notifSound.startsWith('http://') || notifSound.startsWith('https://') || notifSound.startsWith('/')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(notifSound)}`;
+        if (notifSound.startsWith('http://') || notifSound.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(notifSound)}&_t=${Date.now()}`;
+        } else if (notifSound.startsWith('/')) {
+            finalUrl = `${notifSound}?_t=${Date.now()}`;
         }
-        const audio = new Audio(finalUrl);
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log("Notification sound playback info:", e.message));
+        console.log("Testing audio with Web Audio API:", finalUrl);
+        playAudio(finalUrl, 0.5);
     };
 
     const testCompletionSound = () => {
         let finalUrl = completionSound;
-        if (completionSound.startsWith('http://') || completionSound.startsWith('https://') || completionSound.startsWith('/')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(completionSound)}`;
+        if (completionSound.startsWith('http://') || completionSound.startsWith('https://')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(completionSound)}&_t=${Date.now()}`;
+        } else if (completionSound.startsWith('/')) {
+            finalUrl = `${completionSound}?_t=${Date.now()}`;
         }
-        const audio = new Audio(finalUrl);
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log("Completion sound playback info:", e.message));
+        playAudio(finalUrl, 0.5);
     };
 
     const startEditingNotif = () => {

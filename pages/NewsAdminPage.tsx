@@ -13,6 +13,7 @@ import NewsEngagement from '../components/news/NewsEngagement';
 import NewsLogDetail from '../components/news/NewsLogDetail';
 import NewsContentManager from '../components/news/NewsContentManager';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
+import { playAudio } from '../components/audioUtils';
 
 const BouncingDots = () => {
     return (
@@ -58,28 +59,20 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
     const [lastRunTrigger, setLastRunTrigger] = useState('cron');
 
     const isUnloading = useRef(false);
-    const completionAudioRef = useRef<HTMLAudioElement | null>(null);
     const prevIsUpdatingRef = useRef<boolean>(false);
-
-    useEffect(() => {
-        completionAudioRef.current = new Audio('/universfield-system-notification-02-352442.mp3');
-    }, []);
 
     useEffect(() => {
         if (prevIsUpdatingRef.current === true && isUpdatingNews === false) {
             const isEnabled = localStorage.getItem('admin_audio_completion_enabled') !== 'false';
-            if (isEnabled && completionAudioRef.current) {
+            if (isEnabled) {
                 const currentUrl = localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3';
                 let finalUrl = currentUrl;
-                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://') || currentUrl.startsWith('/')) {
-                    finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}`;
+                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                    finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;
+                } else if (currentUrl.startsWith('/')) {
+                    finalUrl = `${currentUrl}?_t=${Date.now()}`;
                 }
-                if (!completionAudioRef.current.src.endsWith(finalUrl)) {
-                    completionAudioRef.current.src = finalUrl;
-                }
-                completionAudioRef.current.currentTime = 0;
-                completionAudioRef.current.volume = 0.5;
-                completionAudioRef.current.play().catch(e => console.warn("Failed to play completion sound:", e.message));
+                playAudio(finalUrl, 0.5);
             }
         }
         prevIsUpdatingRef.current = isUpdatingNews;

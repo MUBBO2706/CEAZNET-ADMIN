@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { BroadcastTab } from './BroadcastTab';
 import { Radio, LayoutList } from 'lucide-react';
 import { usePlatformSettings } from './PlatformSettingsContext';
+import { playAudio } from './audioUtils';
 
 function formatRelativeTime(dateString: string) {
     const date = new Date(dateString);
@@ -65,7 +66,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
     const lastPlayedTimeRef = useRef<number>(0);
 
     useEffect(() => {
-        audioRef.current = new Audio('/notification.mp3');
+        // audioRef no longer needed, using playAudio directly
     }, []);
 
     const playNotificationSound = () => {
@@ -77,22 +78,14 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         
         // Cooldown of 1 second (1000ms) to handle high frequency bursts
         if (now - lastPlayedTimeRef.current > 1000) {
-            if (audioRef.current) {
-                let finalUrl = currentUrl;
-                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://') || currentUrl.startsWith('/')) {
-                    finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}`;
-                }
-                // Only update src if it changed to avoid reloading the same audio
-                if (!audioRef.current.src.endsWith(finalUrl)) {
-                    audioRef.current.src = finalUrl;
-                }
-                audioRef.current.currentTime = 0;
-                audioRef.current.play().catch(e => {
-                    // Browsers often block audio until user interaction
-                    console.log('Notification sound blocked or failed:', e.message);
-                });
-                lastPlayedTimeRef.current = now;
+            let finalUrl = currentUrl;
+            if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;
+            } else if (currentUrl.startsWith('/')) {
+                finalUrl = `${currentUrl}?_t=${Date.now()}`;
             }
+            playAudio(finalUrl, 0.5);
+            lastPlayedTimeRef.current = now;
         }
     };
 
