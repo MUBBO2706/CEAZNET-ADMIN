@@ -1,4 +1,19 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)\\.(mp3|wav|ogg|m4a)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -9,7 +24,7 @@
       "destination": "/$1.wav"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/|.*\\.(?:js|css|json|ico|png|jpg|jpeg|svg|webp|gif|mp3|wav|ogg|m4a|woff|woff2|ttf|txt)).*)",
       "destination": "/index.html"
     }
   ]

@@ -1233,14 +1233,9 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
             audioRef.current.stop();
         }
 
-        let finalUrl = playUrl;
-        if (playUrl.startsWith('http://') || playUrl.startsWith('https://') || playUrl.startsWith('/')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(playUrl)}&_t=${Date.now()}`;
-        }
-
         setPlayingUrl(url);
 
-        const control = await playAudio(finalUrl, 0.5, () => {
+        const control = await playAudio(playUrl, 0.5, () => {
             setPlayingUrl(null);
         });
 
@@ -1380,11 +1375,7 @@ const AudioSettingsManager: React.FC = () => {
 
     const playTestUrl = (url: string) => {
         if (!url || !url.trim()) return;
-        let finalUrl = normalizeAudioUrl(url.trim());
-        if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('/')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(finalUrl)}&_t=${Date.now()}`;
-        }
-        playAudio(finalUrl, 0.5);
+        playAudio(url.trim(), 0.5);
     };
 
     const testNotifSound = () => {

@@ -75,11 +75,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         
         // Cooldown of 1 second (1000ms) to handle high frequency bursts
         if (now - lastPlayedTimeRef.current > 1000) {
-            let finalUrl = currentUrl;
-            if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://') || currentUrl.startsWith('/')) {
-                finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;
-            }
-            playAudio(finalUrl, 0.5);
+            playAudio(currentUrl, 0.5);
             lastPlayedTimeRef.current = now;
         }
     };
