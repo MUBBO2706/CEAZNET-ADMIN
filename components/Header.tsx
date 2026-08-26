@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAutoRefresh, useCountdown } from './AutoRefreshContext';
-import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, MessageSquare, RotateCw, Loader, Check } from 'lucide-react';
+import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, EyeOff, MessageSquare, RotateCw, Loader, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dbMain, fetchLiveActivityLogs } from '../services/supabaseService';
 import type { RecentActivityLog } from '../types';
@@ -137,9 +137,9 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
     }, []);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             const target = event.target as Element;
-            if (target.closest('.modal-bg') || target.closest('[role="dialog"]') || target.closest('.custom-dropdown-panel')) {
+            if (target?.closest?.('.modal-bg') || target?.closest?.('[role="dialog"]') || target?.closest?.('.custom-dropdown-panel')) {
                 return;
             }
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -149,8 +149,12 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
         };
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('touchstart', handleClickOutside, { passive: true });
         }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, [isOpen]);
 
     const handleOpen = () => {
@@ -235,11 +239,18 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute right-0 mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 w-[340px] sm:w-[400px] max-h-[65vh] sm:max-h-[70vh]"
+                        className="fixed inset-x-2.5 top-[56px] md:inset-x-auto md:right-0 md:top-full md:mt-3 w-auto md:w-[40vw] h-[90vh] max-h-[90vh] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300"
                     >
                         {/* Header Title & Actions */}
-                        <div className="px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 flex items-center justify-between z-10 shrink-0">
-                            <span className="text-[11px] text-slate-500 font-bold tracking-wide uppercase">Recent System Events</span>
+                        <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 flex items-center justify-between z-10 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10.5px] text-slate-500 dark:text-zinc-400 font-bold tracking-wider uppercase">System Events</span>
+                                {unreadCount > 0 && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full">
+                                        {unreadCount} new
+                                    </span>
+                                )}
+                            </div>
                             {hasUnread && (
                                 <button 
                                     onClick={markAllAsRead}
@@ -252,10 +263,10 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                         </div>
                         
                         {/* Body Container */}
-                        <div className="flex-1 overflow-y-auto relative flex flex-col min-h-[300px]">
-                            <div className="flex flex-col p-0 sleek-scrollbar bg-slate-50/30 dark:bg-zinc-900/20">
+                        <div className="flex-1 overflow-y-auto relative flex flex-col min-h-0 sleek-scrollbar bg-slate-50/30 dark:bg-zinc-900/20">
+                            <div className="flex flex-col p-0">
                                 {displayLogs.length === 0 ? (
-                                    <div className="p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500 h-full min-h-[300px]">
+                                    <div className="p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500 my-auto py-12">
                                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mb-2">
                                             <Bell size={20} className="text-slate-300 dark:text-zinc-600" />
                                         </div>
@@ -263,7 +274,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                         <span className="text-[11px] font-medium opacity-70">No activity to show right now.</span>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col">
+                                    <div className="flex flex-col divide-y divide-slate-100/70 dark:divide-zinc-800/60">
                                         {displayLogs.map((log, idx) => {
                                             const isExpanded = expandedLog === (log.id || idx);
                                             const isRead = readLogIds.has(String(log.id || idx));
@@ -272,51 +283,47 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                                 <motion.div 
                                                     layout="position"
                                                     key={log.id || idx} 
-                                                    className={`group relative flex flex-col border-b border-slate-100 dark:border-zinc-800/50 last:border-0 transition-all duration-300 ${isRead ? 'bg-white hover:bg-slate-50/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/40' : 'bg-blue-50/40 hover:bg-blue-50/80 dark:bg-blue-900/10 dark:hover:bg-blue-900/20'}`}
+                                                    className={`relative flex flex-col transition-colors duration-150 ${isRead ? 'bg-white hover:bg-slate-50/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/40' : 'bg-blue-50/25 hover:bg-blue-50/50 dark:bg-blue-950/20 dark:hover:bg-blue-900/30'}`}
                                                 >
                                                     <div 
-                                                        className="flex gap-3 px-4 py-3.5 cursor-pointer relative"
+                                                        className="flex items-start gap-2.5 px-3.5 py-2 cursor-pointer relative select-none"
                                                         onClick={() => handleLogClick(log.id || idx)}
                                                     >
-                                                        {/* Unread indicator dot */}
-                                                        <div className={`absolute left-0 top-0 bottom-0 w-0.5 transition-opacity ${!isRead ? 'bg-blue-500 opacity-100' : 'opacity-0'}`} />
+                                                        {/* Permanent Unread indicator bar */}
+                                                        {!isRead && (
+                                                            <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r bg-blue-500" />
+                                                        )}
                                                         
                                                         {/* Icon */}
-                                                        <div className={`mt-0.5 flex items-center justify-center w-7 h-7 rounded-full shrink-0 border shadow-sm ${
-                                                            log.method === 'INSERT' ? 'bg-emerald-50 border-emerald-100/50 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                                                            log.method === 'UPDATE' ? 'bg-blue-50 border-blue-100/50 dark:bg-blue-500/10 dark:border-blue-500/20' :
-                                                            log.method === 'DELETE' ? 'bg-red-50 border-red-100/50 dark:bg-red-500/10 dark:border-red-500/20' :
-                                                            'bg-slate-50 border-slate-200/50 dark:bg-slate-500/10 dark:border-slate-500/20'
+                                                        <div className={`mt-0.5 flex items-center justify-center w-5 h-5 rounded-md shrink-0 border ${
+                                                            log.method === 'INSERT' ? 'bg-emerald-50 border-emerald-200/60 dark:bg-emerald-500/10 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400' :
+                                                            log.method === 'UPDATE' ? 'bg-blue-50 border-blue-200/60 dark:bg-blue-500/10 dark:border-blue-500/30 text-blue-600 dark:text-blue-400' :
+                                                            log.method === 'DELETE' ? 'bg-red-50 border-red-200/60 dark:bg-red-500/10 dark:border-red-500/30 text-red-600 dark:text-red-400' :
+                                                            'bg-slate-100 border-slate-200 dark:bg-zinc-800 dark:border-zinc-700 text-slate-500 dark:text-zinc-400'
                                                         }`}>
                                                             {getIcon(log.method)}
                                                         </div>
                         
                                                         {/* Content */}
-                                                        <div className="flex-1 min-w-0 pr-4">
-                                                            <div className="flex justify-between items-start gap-2 mb-1">
-                                                                <span className={`text-[12px] font-semibold truncate ${!isRead ? 'text-slate-800 dark:text-zinc-100' : 'text-slate-600 dark:text-zinc-400'}`}>
-                                                                    {log.table}
-                                                                </span>
-                                                                <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 shrink-0 flex items-center gap-1.5 mt-0.5">
-                                                                    <Clock size={10} className="opacity-70" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-center gap-1.5 mb-0.5">
+                                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                                    <span className={`text-[11px] font-semibold truncate ${!isRead ? 'text-slate-900 dark:text-zinc-100' : 'text-slate-700 dark:text-zinc-300'}`}>
+                                                                        {log.table}
+                                                                    </span>
+                                                                    {!isRead && (
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-[9.5px] font-medium text-slate-400 dark:text-zinc-500 shrink-0 flex items-center gap-1">
+                                                                    <Clock size={9} className="opacity-60" />
                                                                     {formatRelativeTime(log.timestamp)}
                                                                 </span>
                                                             </div>
-                                                            <p className={`text-[11px] leading-relaxed line-clamp-2 ${!isRead ? 'text-slate-600 font-medium dark:text-zinc-300' : 'text-slate-500 dark:text-zinc-500'}`}>
+                                                            <p className={`text-[10.5px] leading-tight line-clamp-1 ${!isRead ? 'text-slate-600 font-medium dark:text-zinc-300' : 'text-slate-400 dark:text-zinc-500'}`}>
                                                                 {log.description}
                                                             </p>
                                                         </div>
-                        
-                                                        {/* Action icons (hover) */}
-                                                        {!isRead && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); markAsRead(log.id || idx); }}
-                                                                className="opacity-0 group-hover:opacity-100 absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white dark:bg-zinc-800 rounded-full shadow-md text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all scale-95 hover:scale-105 border border-slate-100 dark:border-zinc-700"
-                                                                title="Mark as read"
-                                                            >
-                                                                <Eye size={13} strokeWidth={2.5} />
-                                                            </button>
-                                                        )}
                                                     </div>
                                                     <AnimatePresence>
                                                         {isExpanded && (
@@ -339,10 +346,10 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                         </div>
                         
                         {/* Footer */}
-                        <div className="px-3 py-2 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 border-b-0 rounded-b-2xl shrink-0 flex items-center gap-2">
+                        <div className="px-3.5 py-2.5 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 border-b-0 rounded-b-2xl shrink-0 flex items-center justify-between gap-2">
                             <button 
                                 onClick={handleNavigate}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:text-blue-600 dark:text-zinc-300 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-lg transition-all"
+                                className="w-fit flex items-center justify-center gap-1.5 py-1 px-1.5 text-[11px] font-semibold text-slate-700 hover:text-blue-600 dark:text-zinc-300 dark:hover:text-blue-400 transition-colors"
                             >
                                 View Complete Activity History
                             </button>
@@ -351,10 +358,10 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                     e.stopPropagation();
                                     setLogs(prev => prev.filter(log => !readLogIds.has(String(log.id))));
                                 }}
-                                className="flex-shrink-0 px-3 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:text-red-600 dark:text-zinc-300 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all border border-transparent hover:border-red-100 dark:hover:border-red-500/30"
+                                className="w-fit flex-shrink-0 px-1.5 flex items-center justify-center gap-1.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-blue-600 dark:text-zinc-300 dark:hover:text-blue-400 transition-colors"
                                 title="Hide all read logs"
                             >
-                                <Trash2 size={13} />
+                                <EyeOff size={13} />
                                 Hide All Read
                             </button>
                         </div>

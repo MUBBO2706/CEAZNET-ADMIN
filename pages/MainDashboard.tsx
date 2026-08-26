@@ -155,6 +155,37 @@ const getHttpMethod = (method: string) => {
     }
 };
 
+const getMethodTextColor = (method: string) => {
+    switch (method?.toUpperCase()) {
+        case 'GET':
+        case 'SELECT':
+            return 'text-emerald-600 dark:text-emerald-400';
+        case 'POST':
+        case 'INSERT':
+        case 'EXECUTE':
+            return 'text-blue-600 dark:text-blue-400';
+        case 'PUT':
+            return 'text-amber-600 dark:text-amber-400';
+        case 'PATCH':
+        case 'UPDATE':
+            return 'text-purple-600 dark:text-purple-400';
+        case 'DELETE':
+            return 'text-rose-600 dark:text-rose-400';
+        case 'SYS':
+        case 'SYSTEM':
+            return 'text-teal-600 dark:text-teal-400';
+        case 'USR':
+        case 'USER':
+            return 'text-pink-600 dark:text-pink-400';
+        case 'OPTIONS':
+            return 'text-orange-600 dark:text-orange-400';
+        case 'HEAD':
+            return 'text-cyan-600 dark:text-cyan-400';
+        default:
+            return 'text-indigo-600 dark:text-indigo-400';
+    }
+};
+
 const getHttpStatusCode = (method: string, status: string) => {
     if (status !== 'SUCCESS') return 500;
     if (method === 'INSERT') return 201;
@@ -662,7 +693,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 
     return (
         <div 
-            className="flex flex-col overflow-hidden h-[600px] border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none"
+            className="flex flex-col overflow-hidden h-[calc(100dvh-56px)] md:h-[750px] lg:h-[820px] border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none"
             onClick={() => setActiveIndex(null)}
         >
             {/* Header with container layout */}
@@ -911,7 +942,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                         {statusCode}
                                     </span>
                                 </div>
-                                <span className="text-[var(--text-secondary)] font-mono text-[10px] sm:text-xs w-10 sm:w-12 text-center shrink-0">
+                                <span className={`font-mono text-[10px] sm:text-xs w-10 sm:w-12 text-center shrink-0 font-bold ${getMethodTextColor(httpMethod)}`}>
                                     {httpMethod}
                                 </span>
                                 <div className="w-16 sm:w-[70px] shrink-0 flex justify-center">
@@ -963,9 +994,9 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                         <button 
                                             onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                                             className={`p-1 rounded transition-colors ${isExpanded ? 'text-[var(--success)] bg-[var(--subtle-bg)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--subtle-bg)]'}`}
-                                            title="Toggle detail view"
+                                            title={isExpanded ? "Collapse details" : "Expand details"}
                                         >
-                                            <Eye size={12} />
+                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                         </button>
                                     </div>
                                 </div>

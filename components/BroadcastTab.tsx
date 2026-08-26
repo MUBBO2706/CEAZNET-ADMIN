@@ -104,6 +104,15 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
     const [broadcastList, setBroadcastList] = useState<any[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [isDarkTheme, setIsDarkTheme] = useState(() => document.documentElement.classList.contains('dark'));
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDarkTheme(document.documentElement.classList.contains('dark'));
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         if (showHistory) {
@@ -355,13 +364,13 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 overflow-hidden bg-slate-900 z-10 flex items-center justify-center pointer-events-auto"
+                            className="absolute inset-0 overflow-hidden bg-slate-50/95 dark:bg-zinc-950/95 backdrop-blur-md z-10 flex flex-col items-center justify-center pointer-events-auto transition-colors duration-300"
                         >
                             <motion.div
                                 drag
                                 dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
                                 dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[50px] sm:blur-[80px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
+                                className={`absolute filter blur-[50px] sm:blur-[80px] rounded-full cursor-grab active:cursor-grabbing transition-all duration-300 ${isDarkTheme ? 'mix-blend-screen opacity-60' : 'mix-blend-multiply opacity-35'}`}
                                 style={{ width: '60vw', height: '60vw', maxWidth: '500px', maxHeight: '500px', background: '#38bdf8' }}
                                 animate={{ 
                                     x: ['-20%', '20%', '-10%', '-20%'], 
@@ -374,7 +383,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                 drag
                                 dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
                                 dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[60px] sm:blur-[90px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
+                                className={`absolute filter blur-[60px] sm:blur-[90px] rounded-full cursor-grab active:cursor-grabbing transition-all duration-300 ${isDarkTheme ? 'mix-blend-screen opacity-60' : 'mix-blend-multiply opacity-35'}`}
                                 style={{ width: '50vw', height: '50vw', maxWidth: '400px', maxHeight: '400px', background: '#a855f7' }}
                                 animate={{ 
                                     x: ['20%', '-10%', '20%', '20%'], 
@@ -387,7 +396,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                 drag
                                 dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
                                 dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[55px] sm:blur-[85px] opacity-70 rounded-full cursor-grab active:cursor-grabbing"
+                                className={`absolute filter blur-[55px] sm:blur-[85px] rounded-full cursor-grab active:cursor-grabbing transition-all duration-300 ${isDarkTheme ? 'mix-blend-screen opacity-50' : 'mix-blend-multiply opacity-30'}`}
                                 style={{ width: '70vw', height: '70vw', maxWidth: '600px', maxHeight: '600px', background: '#ec4899' }}
                                 animate={{ 
                                     x: ['0%', '15%', '-15%', '0%'], 
