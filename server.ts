@@ -32,15 +32,31 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.options("/api/audio-proxy", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Range");
+    res.sendStatus(204);
+  });
+
   app.get("/api/audio-proxy", async (req, res) => {
     const { url } = req.query;
     if (!url || typeof url !== "string") {
       return res.status(400).send("Missing url parameter");
     }
 
+    let cleanUrl = url;
+    if (cleanUrl.includes("?")) {
+      cleanUrl = cleanUrl.split("?")[0];
+    }
+    if (cleanUrl.includes("#")) {
+      cleanUrl = cleanUrl.split("#")[0];
+    }
+
     // Handle local files
-    if (url.startsWith("/")) {
-      const safePath = path.normalize(url).replace(/^(\.\.(\/|\\|$))+/, '');
+    if (cleanUrl.startsWith("/")) {
+      const decodedPath = decodeURIComponent(cleanUrl);
+      const safePath = path.normalize(decodedPath).replace(/^(\.\.(\/|\\|$))+/, '');
       const filePath = path.join(process.cwd(), "public", safePath);
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
@@ -91,7 +107,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

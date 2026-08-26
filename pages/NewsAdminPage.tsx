@@ -13,7 +13,7 @@ import NewsEngagement from '../components/news/NewsEngagement';
 import NewsLogDetail from '../components/news/NewsLogDetail';
 import NewsContentManager from '../components/news/NewsContentManager';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
-import { playAudio } from '../components/audioUtils';
+import { playAudio, normalizeAudioUrl } from '../components/audioUtils';
 
 const BouncingDots = () => {
     return (
@@ -65,12 +65,10 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
         if (prevIsUpdatingRef.current === true && isUpdatingNews === false) {
             const isEnabled = localStorage.getItem('admin_audio_completion_enabled') !== 'false';
             if (isEnabled) {
-                const currentUrl =  (localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav');
+                const currentUrl = normalizeAudioUrl(localStorage.getItem('admin_audio_completion_url') || '/Sound effects/universfield-system-notification-02-352442.mp3');
                 let finalUrl = currentUrl;
-                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://')) {
+                if (currentUrl.startsWith('http://') || currentUrl.startsWith('https://') || currentUrl.startsWith('/')) {
                     finalUrl = `/api/audio-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;
-                } else if (currentUrl.startsWith('/')) {
-                    finalUrl = `${currentUrl}?_t=${Date.now()}`;
                 }
                 playAudio(finalUrl, 0.5);
             }

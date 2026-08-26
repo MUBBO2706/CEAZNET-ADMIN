@@ -15,6 +15,7 @@ import { verifyAdminBackend } from './services/supabaseService';
 
 // Lazy load new pages
 const AdvancedAnalyticsPage = React.lazy(() => import('./pages/AdvancedAnalyticsPage'));
+const BroadcastPage = React.lazy(() => import('./pages/BroadcastPage'));
 
 
 // --- Error Boundary Component ---
@@ -226,6 +227,8 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
             setPageTitle('Support Inbox');
         } else if (path.startsWith('/advanced-analytics')) {
             setPageTitle('Insights');
+        } else if (path.startsWith('/broadcast')) {
+            setPageTitle('Broadcast');
         } else {
             setPageTitle('Overview');
         }
@@ -295,9 +298,9 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
                 {/* Main Content */}
                 <main 
                     ref={mainRef}
-                    className={`flex-1 flex flex-col overflow-y-auto ${location.pathname.startsWith('/support-inbox') ? '' : ((location.pathname === '/' || location.pathname.startsWith('/users') || location.pathname.startsWith('/news')) ? 'px-3 pb-0 sm:px-4 sm:pb-0 lg:px-6 lg:pb-0' : 'px-3 pb-3 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6')}`}
+                    className={`flex-1 flex flex-col overflow-y-auto ${location.pathname.startsWith('/support-inbox') || location.pathname.startsWith('/broadcast') ? '' : ((location.pathname === '/' || location.pathname.startsWith('/users') || location.pathname.startsWith('/news')) ? 'px-3 pb-0 sm:px-4 sm:pb-0 lg:px-6 lg:pb-0' : 'px-3 pb-3 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6')}`}
                 >
-                    <div className={`h-[50px] shrink-0 w-full ${location.pathname.startsWith('/support-inbox') ? '' : 'mb-4 sm:mb-5 lg:mb-6'}`}></div>
+                    <div className={`h-[50px] shrink-0 w-full ${location.pathname.startsWith('/support-inbox') || location.pathname.startsWith('/broadcast') ? '' : 'mb-4 sm:mb-5 lg:mb-6'}`}></div>
                     <Suspense fallback={<LoadingSpinner />}>
                         <Routes>
                             <Route path="/" element={<MainDashboard />} />
@@ -310,6 +313,7 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
                             <Route path="/support-inbox" element={<SupportInboxPage />} />
                             <Route path="/support-inbox/:convId" element={<SupportInboxPage />} />
                             <Route path="/advanced-analytics" element={<AdvancedAnalyticsPage />} />
+                            <Route path="/broadcast" element={<BroadcastPage />} />
                         </Routes>
                     </Suspense>
                 </main>

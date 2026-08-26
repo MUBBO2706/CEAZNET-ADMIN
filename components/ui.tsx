@@ -223,12 +223,16 @@ export const CustomDropdown: React.FC<{
     const dropdownRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState({ 
+    const [position, setPosition] = useState<{ 
+        top: number; 
+        left: number; 
+        width: number; 
+        direction: 'up' | 'down';
+    }>({ 
         top: 0, 
         left: 0, 
         width: 0, 
-        minWidth: 0,
-        direction: 'down' as 'up' | 'down' 
+        direction: 'down' 
     });
 
     const handleSelect = (option: string) => {
@@ -257,29 +261,22 @@ export const CustomDropdown: React.FC<{
             let maxCharLength = 0;
             options.forEach((opt) => {
                 const label = displayLabels?.[opt] || opt;
-                if (label.length > maxCharLength) {
+                if (label && label.length > maxCharLength) {
                     maxCharLength = label.length;
                 }
             });
 
-            // Account for font size ~12px (~7.5px per char), padding (28px), scrollbar space if > 6 items (16px)
+            // Account for font size ~12px (~7px per char), padding (24px), scrollbar space if > 6 items (12px)
             const hasScrollbar = options.length > 6;
-            const contentNeededWidth = Math.ceil(maxCharLength * 7.5 + 28 + (hasScrollbar ? 16 : 0));
-            
-            // Width fits longest option content, or at least the trigger width
-            const desiredWidth = Math.max(rect.width, contentNeededWidth);
+            const contentNeededWidth = Math.ceil(maxCharLength * 7.0 + 24 + (hasScrollbar ? 12 : 0));
             
             // Maximum allowed width ensures dropdown never overflows screen boundaries (12px margin on left & right)
             const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
             
-            // Clip width to max screen width if content is longer than screen width
-            panelWidth = Math.min(desiredWidth, maxAllowedScreenWidth);
+            // Width dynamically fits longest option content
+            panelWidth = Math.min(Math.max(contentNeededWidth, 90), maxAllowedScreenWidth);
         }
 
-        const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
-        const minWidth = Math.min(rect.width, maxAllowedScreenWidth);
-
-        // Adjust left position so panel never overflows screen edges
         let left = rect.left;
         if (left + panelWidth > window.innerWidth - 12) {
             left = Math.max(12, window.innerWidth - panelWidth - 12);
@@ -292,7 +289,6 @@ export const CustomDropdown: React.FC<{
             top,
             left,
             width: panelWidth,
-            minWidth,
             direction
         };
     };
@@ -373,7 +369,6 @@ export const CustomDropdown: React.FC<{
                 bottom: position.direction === 'up' ? window.innerHeight - position.top + 4 : 'auto',
                 left: position.left,
                 width: position.width ? `${position.width}px` : 'auto',
-                minWidth: position.minWidth ? `${position.minWidth}px` : undefined,
                 maxWidth: 'calc(100vw - 24px)',
                 zIndex: 999999
             }}

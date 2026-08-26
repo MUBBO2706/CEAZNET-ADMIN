@@ -10,7 +10,7 @@ import type { NewsApiKey, NewsSystemConfig } from '../../types';
 import { Newspaper, Sparkles, Eye, EyeOff, Trash2, PlusCircle, List, FileText, KeyRound, MoreVertical, Edit2, X, RotateCw, Loader, RotateCcw, Cpu, Plus, Volume2, VolumeX, Music, Settings, Check, CheckCircle2, XCircle, Play, Pause, ChevronDown } from 'lucide-react';
 import CodeEditor from '../ui/CodeEditor';
 import { JsonNode, updateNestedValue, deleteNestedValue, getNestedValue } from '../data/JsonEditor';
-import { playAudio } from '../audioUtils';
+import { playAudio, normalizeAudioUrl } from '../audioUtils';
 
 const ApiKeyRow: React.FC<{ 
     apiKeyObj: NewsApiKey | any; 
@@ -128,7 +128,7 @@ const ApiKeyRow: React.FC<{
                 <div 
                     onClick={() => !isEditing && setIsExpanded(!isExpanded)}
                     onScroll={onScroll}
-                    className={`api-key-row-scroll-container flex items-center py-3 px-4 hover:bg-[var(--subtle-bg)] dark:hover:bg-[#111] transition-colors text-sm overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-[100px] ${!isEditing ? 'cursor-pointer' : ''}`}
+                    className={`api-key-row-scroll-container flex items-center py-2 sm:py-2.5 px-3 sm:px-4 hover:bg-[var(--subtle-bg)] dark:hover:bg-[#111] transition-colors text-xs overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-[90px] ${!isEditing ? 'cursor-pointer' : ''}`}
                 >
                     {columns.map(col => {
                         const val = apiKeyObj[col];
@@ -147,23 +147,23 @@ const ApiKeyRow: React.FC<{
 
                         if (col === 'api_key') {
                             return (
-                                <div key={col} className={`w-40 sm:w-64 shrink-0 pr-4 font-mono flex items-center gap-2 truncate transition-colors ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-primary)]'}`}>
-                                    <KeyRound size={16} className={`${isFocused ? 'text-indigo-500' : 'text-indigo-400 group-hover:text-indigo-500'} transition-colors shrink-0`} />
+                                <div key={col} className={`w-32 sm:w-48 shrink-0 pr-2 font-mono flex items-center gap-1.5 truncate transition-colors ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-primary)]'}`}>
+                                    <KeyRound size={13} className={`${isFocused ? 'text-indigo-500' : 'text-indigo-400 group-hover:text-indigo-500'} transition-colors shrink-0`} />
                                     <span className="truncate">{isVisible ? displayVal : maskedKey}</span>
                                 </div>
                             );
                         }
                         if (col === 'status') {
                             return (
-                                <div key={col} className="w-32 shrink-0 px-4 flex justify-center items-center">
+                                <div key={col} className="w-20 shrink-0 px-1 flex justify-center items-center">
                                     <span 
-                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide transition-colors ${
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide transition-colors ${
                                             isExhausted 
                                             ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300' 
                                             : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
                                         }`}
                                     >
-                                        {isExhausted ? <XCircle size={11} strokeWidth={2.5} /> : <CheckCircle2 size={11} strokeWidth={2.5} />}
+                                        {isExhausted ? <XCircle size={10} strokeWidth={2.5} /> : <CheckCircle2 size={10} strokeWidth={2.5} />}
                                         <span className="uppercase">{displayVal}</span>
                                     </span>
                                 </div>
@@ -171,9 +171,9 @@ const ApiKeyRow: React.FC<{
                         }
                         if (col === 'account_name') {
                             return (
-                                <div key={col} className="w-40 shrink-0 px-4">
+                                <div key={col} className="w-28 shrink-0 px-1 text-center">
                                     <span 
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border max-w-full truncate ${isNullOrEmpty ? 'bg-[var(--subtle-bg)] text-[var(--text-muted)] border-[var(--border-color)]' : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'}`} 
+                                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold border max-w-full truncate ${isNullOrEmpty ? 'bg-[var(--subtle-bg)] text-[var(--text-muted)] border-[var(--border-color)]' : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'}`} 
                                         title={displayVal}
                                     >
                                         {isNullOrEmpty ? 'Unassigned' : displayVal}
@@ -181,8 +181,15 @@ const ApiKeyRow: React.FC<{
                                 </div>
                             );
                         }
+                        if (col.endsWith('_at') || col === 'cooldown_until') {
+                            return (
+                                <div key={col} className={`w-24 sm:w-28 shrink-0 px-1 text-center truncate transition-colors ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-secondary)]'}`} title={String(val ?? '')}>
+                                    {displayVal}
+                                </div>
+                            );
+                        }
                         return (
-                            <div key={col} className={`w-32 shrink-0 px-4 text-center truncate transition-colors ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-secondary)]'}`} title={String(val ?? '')}>
+                            <div key={col} className={`w-20 shrink-0 px-1 text-center truncate transition-colors ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-secondary)]'}`} title={String(val ?? '')}>
                                 {displayVal}
                             </div>
                         );
@@ -190,22 +197,22 @@ const ApiKeyRow: React.FC<{
                 </div>
                 
                 {/* Actions */}
-                <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[120px] bg-gradient-to-l from-[var(--card-bg)] from-50% to-transparent group-hover:from-[var(--subtle-bg)] dark:group-hover:from-[#111] transition-colors pr-4 z-10 pointer-events-none">
-                    <div className="flex items-center pointer-events-auto" onClick={e => e.stopPropagation()}>
+                <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[100px] bg-gradient-to-l from-[var(--card-bg)] from-50% to-transparent group-hover:from-[var(--subtle-bg)] dark:group-hover:from-[#111] transition-colors pr-3 z-10 pointer-events-none">
+                    <div className="flex items-center gap-0.5 pointer-events-auto" onClick={e => e.stopPropagation()}>
                         <button 
                             onClick={() => setIsVisible(!isVisible)} 
-                            className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--sidebar-link-hover-bg)] hover:text-[var(--text-primary)] transition-colors"
+                            className="p-1 rounded text-[var(--text-secondary)] hover:bg-[var(--sidebar-link-hover-bg)] hover:text-[var(--text-primary)] transition-colors"
                             title={isVisible ? "Hide" : "Show"}
                         >
-                            {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                            {isVisible ? <EyeOff size={13} /> : <Eye size={13} />}
                         </button>
                         <div className="relative" ref={menuRef}>
                             <button 
                                 onClick={() => setIsMenuOpen(prev => !prev)}
-                                className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--sidebar-link-hover-bg)] hover:text-[var(--text-primary)] transition-colors"
+                                className="p-1 rounded text-[var(--text-secondary)] hover:bg-[var(--sidebar-link-hover-bg)] hover:text-[var(--text-primary)] transition-colors"
                                 aria-label="More options"
                             >
-                                <MoreVertical size={14} />
+                                <MoreVertical size={13} />
                             </button>
                             {isMenuOpen && (
                                 <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-48 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-lg overflow-hidden`}>
@@ -566,21 +573,22 @@ const ApiKeyManager: React.FC<{
             )}
 
             <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
-                <div className="flex justify-between items-center gap-4 p-4 border-b border-[var(--border-color)]">
+                <div className="flex justify-between items-center gap-4 py-2.5 sm:py-3 px-3 sm:px-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
-                        <div>
-                            <h3 className="text-sm font-bold text-[var(--text-primary)]">API Keys</h3>
-                            <p className="text-[10px] text-[var(--text-secondary)]">
-                                {keys.length} keys configured
-                            </p>
-                        </div>
+                        <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                            <span>API Keys</span>
+                            <span className="text-[var(--text-secondary)] font-normal">-</span>
+                            <span className="text-[10px] sm:text-xs text-[var(--text-secondary)] font-normal">
+                                {keys.length} Keys Configured
+                            </span>
+                        </h3>
                     </div>
                     
                     <button 
                         onClick={toggleBulkMode} 
-                        className="btn btn-secondary text-xs flex items-center gap-2 shrink-0"
+                        className="btn btn-secondary text-xs flex items-center gap-1.5 py-1 px-2.5 shrink-0"
                     >
-                        {isBulkMode ? <List size={14} /> : <FileText size={14} />}
+                        {isBulkMode ? <List size={13} /> : <FileText size={13} />}
                         <span>{isBulkMode ? 'List View' : 'Bulk Editor'}</span>
                     </button>
                 </div>
@@ -656,22 +664,22 @@ const ApiKeyManager: React.FC<{
                     </div>
                 ) : (
                     <div className="flex flex-col flex-1 api-key-manager-wrapper justify-between h-full">
-                        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-secondary)] bg-[var(--subtle-bg)] px-4 py-3 border-b border-[var(--border-color)]">
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-[var(--text-secondary)] bg-[var(--subtle-bg)] px-3 sm:px-4 py-2 border-b border-[var(--border-color)]">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-4">
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
                                     <span>Total: <strong>{keys.length}</strong></span>
                                 </div>
                                 <div className="hidden sm:block w-px h-3 bg-[var(--border-color)]"></div>
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                     <span>Active: <strong>{activeKeys}</strong></span>
                                 </div>
                                 {exhaustedKeys > 0 && (
                                     <>
                                         <div className="hidden sm:block w-px h-3 bg-[var(--border-color)]"></div>
                                         <div className="flex items-center gap-1.5">
-                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                                             <span className="text-red-600 dark:text-red-400">Exhausted: <strong>{exhaustedKeys}</strong></span>
                                         </div>
                                     </>
@@ -680,9 +688,9 @@ const ApiKeyManager: React.FC<{
                             <button
                                 onClick={() => setIsResetAllModalOpen(true)}
                                 disabled={isResettingAll || keys.length === 0}
-                                className="text-indigo-500 hover:text-indigo-600 font-medium transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1.5"
+                                className="text-indigo-500 hover:text-indigo-600 font-medium transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1 text-[11px] sm:text-xs"
                             >
-                                <RotateCcw size={14} className={isResettingAll ? 'animate-spin' : ''} />
+                                <RotateCcw size={12} className={isResettingAll ? 'animate-spin' : ''} />
                                 <span>{isResettingAll ? 'Resetting...' : 'Reset'}</span>
                             </button>
                         </div>
@@ -692,14 +700,23 @@ const ApiKeyManager: React.FC<{
                                 <div className="relative border-b border-[var(--border-color)]">
                                     <div 
                                         ref={headerRef}
-                                        className="flex items-center py-3 px-4 bg-[var(--subtle-bg)] dark:bg-black text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-[100px]"
+                                        className="flex items-center py-2 px-3 sm:px-4 bg-[var(--subtle-bg)] dark:bg-black text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-[var(--text-secondary)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-[90px]"
                                     >
                                         {dynamicColumns.map((col) => {
                                             const isFocused = focusedColumn === col;
+                                            const colWidthClass = col === 'api_key' 
+                                                ? 'w-32 sm:w-48 shrink-0 pr-2 truncate text-left' 
+                                                : col === 'status' 
+                                                ? 'w-20 shrink-0 px-1 text-center truncate' 
+                                                : col === 'account_name' 
+                                                ? 'w-28 shrink-0 px-1 text-center truncate' 
+                                                : (col.endsWith('_at') || col === 'cooldown_until')
+                                                ? 'w-24 sm:w-28 shrink-0 px-1 text-center truncate'
+                                                : 'w-20 shrink-0 px-1 text-center truncate';
                                             return (
                                                 <div 
                                                     key={col} 
-                                                    className={`cursor-pointer transition-colors ${col === 'api_key' ? 'w-40 sm:w-64 shrink-0 px-4 truncate text-left' : 'w-32 shrink-0 px-4 text-center truncate'} ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-hover-bg)] rounded'}`} 
+                                                    className={`cursor-pointer transition-colors ${colWidthClass} ${isFocused ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-hover-bg)] rounded'}`} 
                                                     title={`Click to focus column: ${col.replace(/_/g, ' ')}`}
                                                     onClick={(e) => {
                                                         const target = e.currentTarget;
@@ -728,8 +745,8 @@ const ApiKeyManager: React.FC<{
                                             );
                                         })}
                                     </div>
-                                    <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[120px] bg-gradient-to-l from-[var(--subtle-bg)] via-[var(--subtle-bg)] dark:from-black dark:via-black to-transparent from-60% pr-4 z-10 pointer-events-none">
-                                        <div className="text-right text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[var(--text-secondary)]">Actions</div>
+                                    <div className="absolute right-0 top-0 bottom-0 flex justify-end items-center w-[100px] bg-gradient-to-l from-[var(--subtle-bg)] via-[var(--subtle-bg)] dark:from-black dark:via-black to-transparent from-60% pr-3 z-10 pointer-events-none">
+                                        <div className="text-right text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-[var(--text-secondary)]">Actions</div>
                                     </div>
                                 </div>
                                 
@@ -760,44 +777,58 @@ const ApiKeyManager: React.FC<{
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-[var(--border-color)] flex flex-row justify-between gap-2 sm:gap-3 bg-[var(--card-bg)] mt-auto">
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={handleResetExhausted} 
-                                    className="btn btn-secondary text-xs flex items-center gap-1.5"
-                                    disabled={exhaustedKeys === 0 || isResetting}
-                                >
-                                    {isResetting ? <Loader size={14} className="animate-spin" /> : <RotateCw size={14} />}
-                                    <span className="hidden sm:inline">Reset Exhausted</span>
-                                </button>
-                            </div>
+                        <div className="py-2.5 sm:py-3 px-3 sm:px-4 border-t border-[var(--border-color)] flex flex-col justify-end bg-[var(--card-bg)] mt-auto">
                             {!isAdding ? (
-                                <button onClick={() => setIsAdding(true)} className="btn btn-primary text-xs justify-center flex-1 sm:flex-none">
-                                    <PlusCircle size={14} /> Add New Key
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                        onClick={handleResetExhausted} 
+                                        className="btn btn-secondary text-xs flex items-center gap-1.5 py-1 px-2.5 shrink-0"
+                                        disabled={exhaustedKeys === 0 || isResetting}
+                                        title="Reset status of exhausted keys"
+                                    >
+                                        {isResetting ? <Loader size={13} className="animate-spin" /> : <RotateCw size={13} />}
+                                        <span>Reset Status</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsAdding(true)} 
+                                        className="btn btn-primary text-xs flex items-center gap-1.5 py-1 px-2.5 shrink-0"
+                                    >
+                                        <PlusCircle size={13} />
+                                        <span>Add New Key</span>
+                                    </button>
+                                </div>
                             ) : (
-                                <div className="flex-grow sm:max-w-xl animate-fade-in-up flex flex-col sm:flex-row gap-2">
-                                    <input 
-                                        value={newApiKey} 
-                                        onChange={e => setNewApiKey(e.target.value)} 
-                                        type="password" 
-                                        placeholder={placeholder} 
-                                        className="form-input w-full text-sm"
-                                        autoFocus
-                                    />
-                                    <input 
-                                        value={newAccountName} 
-                                        onChange={e => setNewAccountName(e.target.value)} 
-                                        type="text" 
-                                        placeholder="Account/Email (optional)" 
-                                        className="form-input w-full text-sm"
-                                    />
-                                    <div className="flex gap-2">
-                                        <button onClick={handleAddKey} className="btn btn-primary whitespace-nowrap text-xs flex-1 sm:flex-none justify-center" disabled={isSaving || !newApiKey.trim()}>
-                                            {isSaving ? 'Saving...' : 'Save'}
+                                <div className="w-full flex flex-col gap-2 animate-fade-in-up">
+                                    <div className="flex flex-row items-center gap-2 w-full">
+                                        <input 
+                                            value={newApiKey} 
+                                            onChange={e => setNewApiKey(e.target.value)} 
+                                            type="password" 
+                                            placeholder={placeholder} 
+                                            className="form-input flex-1 min-w-0 text-xs py-1"
+                                            autoFocus
+                                        />
+                                        <input 
+                                            value={newAccountName} 
+                                            onChange={e => setNewAccountName(e.target.value)} 
+                                            type="text" 
+                                            placeholder="Account/Email (optional)" 
+                                            className="form-input flex-1 min-w-0 text-xs py-1"
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-end gap-2">
+                                        <button 
+                                            onClick={() => { setIsAdding(false); setNewApiKey(''); setNewAccountName(''); }} 
+                                            className="btn btn-secondary text-xs py-1 px-2.5"
+                                        >
+                                            Cancel
                                         </button>
-                                        <button onClick={() => { setIsAdding(false); setNewApiKey(''); setNewAccountName(''); }} className="btn btn-secondary text-xs shrink-0 p-2">
-                                            <X size={14} />
+                                        <button 
+                                            onClick={handleAddKey} 
+                                            className="btn btn-primary whitespace-nowrap text-xs py-1 px-3" 
+                                            disabled={isSaving || !newApiKey.trim()}
+                                        >
+                                            {isSaving ? 'Saving...' : 'Save'}
                                         </button>
                                     </div>
                                 </div>
@@ -841,6 +872,17 @@ const KNOWN_MODELS = [
     'gemini-3-flash',
     'gemini-3-pro'
 ];
+
+const getModelDescription = (key: string, desc?: string | null) => {
+    if (desc && desc.trim()) return desc;
+    const formatted = key.toLowerCase();
+    if (formatted.includes('writer') || formatted.includes('article')) return 'AI model used for writing and structuring articles';
+    if (formatted.includes('summary') || formatted.includes('summariz')) return 'AI model used for generating news summaries';
+    if (formatted.includes('translation') || formatted.includes('translate')) return 'AI model used for multi-language translations';
+    if (formatted.includes('tag') || formatted.includes('categor')) return 'AI model used for categorization and tagging';
+    if (formatted.includes('default') || formatted.includes('gemini')) return 'Default AI model for automated intelligence tasks';
+    return `AI model engine configured for ${key.replace(/_/g, ' ')}`;
+};
 
 const AiModelConfigManager: React.FC<{
     configs: NewsSystemConfig[];
@@ -903,7 +945,7 @@ const AiModelConfigManager: React.FC<{
                             const displayValue = typeof config.config_value === 'string' ? config.config_value : JSON.stringify(config.config_value);
                             
                             return (
-                                <div key={config.id} className={`group relative bg-[var(--card-bg)] border rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full ${isEditing ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
+                                <div key={config.id} className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${isEditing ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
                                     <div className="mb-2">
                                         <div className="flex items-start justify-between gap-2 mb-1">
                                             <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">
@@ -912,16 +954,17 @@ const AiModelConfigManager: React.FC<{
                                             {!isEditing && (
                                                 <button 
                                                     onClick={() => handleEdit(config)} 
-                                                    className="text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 p-0.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
+                                                    className="p-1 -mt-1 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-[3px] transition-colors shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
                                                     aria-label="Edit configuration"
+                                                    title="Edit configuration"
                                                 >
                                                     <Edit2 size={12} />
                                                 </button>
                                             )}
                                         </div>
-                                        {config.description && (
-                                            <p className="text-[10px] text-[var(--text-secondary)] line-clamp-2 leading-snug">{config.description}</p>
-                                        )}
+                                        <p className="text-[10px] text-[var(--text-secondary)] line-clamp-2 leading-snug">
+                                            {getModelDescription(config.config_key, config.description)}
+                                        </p>
                                     </div>
                                     
                                     <div className="mt-auto">
@@ -942,13 +985,13 @@ const AiModelConfigManager: React.FC<{
                                                                     setEditValue(val);
                                                                 }
                                                             }}
-                                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] !py-0.5 !px-1.5 !text-[10px] shadow-inner !min-h-[24px] h-[26px] flex items-center"
+                                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] !py-1 !px-2 !text-[10px] shadow-inner !min-h-[26px] h-[26px] flex items-center !rounded-[3px]"
                                                         />
                                                     </div>
-                                                    <button onClick={() => handleSave(config.id)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
+                                                    <button onClick={() => handleSave(config.id)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-[3px] transition-colors" title="Save">
                                                         {isSaving ? <Loader size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
                                                     </button>
-                                                    <button onClick={() => setEditingId(null)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded border border-[var(--border-color)] transition-colors" title="Cancel">
+                                                    <button onClick={() => setEditingId(null)} disabled={isSaving} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded-[3px] border border-[var(--border-color)] transition-colors" title="Cancel">
                                                         <X size={12} strokeWidth={3} />
                                                     </button>
                                                 </div>
@@ -958,16 +1001,22 @@ const AiModelConfigManager: React.FC<{
                                                         value={editValue} 
                                                         onChange={(e) => setEditValue(e.target.value)}
                                                         placeholder="Enter custom model"
-                                                        className="w-full text-[10px] border border-[var(--border-color)] rounded px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner"
+                                                        className="w-full text-[10px] border border-[var(--border-color)] rounded-[3px] px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner"
                                                         autoFocus
                                                     />
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="inline-flex items-center bg-[var(--subtle-bg)] px-2 py-1 rounded-[4px] border border-[var(--border-color)] w-fit max-w-full">
-                                                <code className="text-[10px] text-[var(--text-primary)] font-mono truncate" title={displayValue}>
-                                                    {displayValue}
-                                                </code>
+                                            <div className="flex items-center justify-between">
+                                                <button 
+                                                    onClick={() => handleEdit(config)}
+                                                    className="inline-flex items-center bg-[var(--subtle-bg)] px-1.5 py-0.5 rounded-[3px] border border-[var(--border-color)] w-fit max-w-full hover:bg-[var(--sidebar-link-hover-bg)] dark:hover:bg-[#111] transition-colors text-left"
+                                                    title="Click to edit model"
+                                                >
+                                                    <code className="text-[10px] text-[var(--text-primary)] font-mono truncate leading-tight" title={displayValue}>
+                                                        {displayValue}
+                                                    </code>
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -982,34 +1031,28 @@ const AiModelConfigManager: React.FC<{
 };
 
 const AUDIO_OPTIONS = [
-    '/notification.mp3',
-    '/universfield-system-notification-02-352442.mp3',
-    '/chime-1.wav',
-    '/chime-2.wav',
-    '/chime-3.wav',
-    '/chime-4.wav',
-    '/chime-5.wav',
-    '/chime-6.wav',
-    '/chime-7.wav',
-    '/chime-8.wav',
-    '/click-low.wav',
-    '/click-high.wav',
+    '/Sound effects/notification.mp3',
+    '/Sound effects/universfield-system-notification-02-352442.mp3',
+    '/Sound effects/dragon-studio-notification-bell-sound-1-376885.mp3',
+    '/Sound effects/universfield-new-notification-03-323602.mp3',
+    '/Sound effects/universfield-new-notification-09-352705.mp3',
+    '/Sound effects/universfield-new-notification-030-480567.mp3',
+    '/Sound effects/universfield-new-notification-032-480570.mp3',
+    '/Sound effects/universfield-new-notification-040-493469.mp3',
+    '/Sound effects/universfield-new-notification-056-494256.mp3',
     'custom'
 ];
 
 const AUDIO_LABELS: Record<string, string> = {
-    '/notification.mp3': 'Default Bell',
-    '/universfield-system-notification-02-352442.mp3': 'System Ping',
-    '/chime-1.wav': 'Playful Chime',
-    '/chime-2.wav': 'Classic Beep',
-    '/chime-3.wav': 'Coins Drop',
-    '/chime-4.wav': 'Bottle Pop',
-    '/chime-5.wav': 'Menu Select',
-    '/chime-6.wav': 'Soft Click',
-    '/chime-7.wav': 'Double Click',
-    '/chime-8.wav': 'High Pitch Pip',
-    '/click-low.wav': 'Click Low',
-    '/click-high.wav': 'Click High',
+    '/Sound effects/notification.mp3': 'Default Bell',
+    '/Sound effects/universfield-system-notification-02-352442.mp3': 'System Ping',
+    '/Sound effects/dragon-studio-notification-bell-sound-1-376885.mp3': 'Bell Sound 01',
+    '/Sound effects/universfield-new-notification-03-323602.mp3': 'Notification 03',
+    '/Sound effects/universfield-new-notification-09-352705.mp3': 'Notification 09',
+    '/Sound effects/universfield-new-notification-030-480567.mp3': 'Notification 30',
+    '/Sound effects/universfield-new-notification-032-480570.mp3': 'Notification 32',
+    '/Sound effects/universfield-new-notification-040-493469.mp3': 'Notification 40',
+    '/Sound effects/universfield-new-notification-056-494256.mp3': 'Notification 56',
     'custom': 'Custom/Other URL...'
 };
 
@@ -1019,6 +1062,7 @@ interface AudioDropdownProps {
     displayLabels: Record<string, string>;
     onChange: (value: string) => void;
     triggerClassName?: string;
+    customUrl?: string;
 }
 
 const AudioDropdown: React.FC<AudioDropdownProps> = ({
@@ -1026,7 +1070,8 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
     value,
     displayLabels,
     onChange,
-    triggerClassName = ''
+    triggerClassName = '',
+    customUrl = ''
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -1035,12 +1080,16 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
     const [playingUrl, setPlayingUrl] = useState<string | null>(null);
     const audioRef = useRef<{ stop: () => void } | null>(null);
     
-    const [position, setPosition] = useState({ 
+    const [position, setPosition] = useState<{ 
+        top: number; 
+        left: number; 
+        width: number; 
+        direction: 'up' | 'down';
+    }>({ 
         top: 0, 
         left: 0, 
         width: 0, 
-        minWidth: 0,
-        direction: 'down' as 'up' | 'down' 
+        direction: 'down' 
     });
 
     const calculatePosition = (triggerEl: HTMLButtonElement, lockedWidth?: number) => {
@@ -1069,14 +1118,11 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
             });
 
             const hasScrollbar = options.length > 6;
-            const contentNeededWidth = Math.ceil(maxCharLength * 7.5 + 64 + (hasScrollbar ? 16 : 0));
-            const desiredWidth = Math.max(rect.width, contentNeededWidth);
+            // Play button (~18px) + Label (~7px/char) + Checkmark (~16px) + Padding (~20px)
+            const contentNeededWidth = Math.ceil(maxCharLength * 7.0 + 54 + (hasScrollbar ? 12 : 0));
             const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
-            panelWidth = Math.min(desiredWidth, maxAllowedScreenWidth);
+            panelWidth = Math.min(Math.max(contentNeededWidth, 110), maxAllowedScreenWidth);
         }
-
-        const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
-        const minWidth = Math.min(rect.width, maxAllowedScreenWidth);
 
         let left = rect.left;
         if (left + panelWidth > window.innerWidth - 12) {
@@ -1090,7 +1136,6 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
             top,
             left,
             width: panelWidth,
-            minWidth,
             direction
         };
     };
@@ -1169,7 +1214,12 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
 
     const handlePlayPause = async (e: React.MouseEvent, url: string) => {
         e.stopPropagation();
-        if (url === 'custom') return;
+
+        let playUrl = url;
+        if (url === 'custom') {
+            if (!customUrl || !customUrl.trim()) return;
+            playUrl = customUrl.trim();
+        }
 
         if (playingUrl === url) {
             if (audioRef.current) {
@@ -1183,11 +1233,9 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
             audioRef.current.stop();
         }
 
-        let finalUrl = url;
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(url)}&_t=${Date.now()}`;
-        } else if (url.startsWith('/')) {
-            finalUrl = `${url}?_t=${Date.now()}`;
+        let finalUrl = playUrl;
+        if (playUrl.startsWith('http://') || playUrl.startsWith('https://') || playUrl.startsWith('/')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(playUrl)}&_t=${Date.now()}`;
         }
 
         setPlayingUrl(url);
@@ -1216,7 +1264,6 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
                 bottom: position.direction === 'up' ? window.innerHeight - position.top + 4 : 'auto',
                 left: position.left,
                 width: position.width ? `${position.width}px` : 'auto',
-                minWidth: position.minWidth ? `${position.minWidth}px` : undefined,
                 maxWidth: 'calc(100vw - 24px)',
                 zIndex: 999999
             }}
@@ -1238,7 +1285,7 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
                         }`}
                     >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {option !== 'custom' ? (
+                            {option !== 'custom' || (customUrl && customUrl.trim()) ? (
                                 <button
                                     type="button"
                                     onClick={(e) => handlePlayPause(e, option)}
@@ -1250,7 +1297,14 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
                                     {isPlaying ? <Pause size={10} fill="currentColor" /> : <Play size={10} fill="currentColor" />}
                                 </button>
                             ) : (
-                                <div className="w-5 shrink-0" />
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="p-1 rounded text-[var(--text-secondary)] opacity-30 shrink-0 flex items-center justify-center cursor-not-allowed"
+                                    title="No custom URL entered yet"
+                                >
+                                    <Play size={10} fill="currentColor" />
+                                </button>
                             )}
                             <span className="truncate">{label}</span>
                         </div>
@@ -1301,8 +1355,8 @@ const AudioSettingsManager: React.FC = () => {
         const saved = localStorage.getItem('admin_audio_completion_enabled');
         return saved !== null ? saved === 'true' : true;
     });
-    const [notifSound, setNotifSound] = useState(() =>  (localStorage.getItem('admin_audio_notifications_url') || '/notification.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav'));
-    const [completionSound, setCompletionSound] = useState(() =>  (localStorage.getItem('admin_audio_completion_url') || '/universfield-system-notification-02-352442.mp3').replace(/\/chime-(\d)\.mp3$/, '/chime-$1.wav').replace(/\/click-(low|high)\.mp3$/, '/click-$1.wav'));
+    const [notifSound, setNotifSound] = useState(() => normalizeAudioUrl(localStorage.getItem('admin_audio_notifications_url') || '/Sound effects/notification.mp3'));
+    const [completionSound, setCompletionSound] = useState(() => normalizeAudioUrl(localStorage.getItem('admin_audio_completion_url') || '/Sound effects/universfield-system-notification-02-352442.mp3'));
 
     const [editingNotif, setEditingNotif] = useState(false);
     const [notifInputUrl, setNotifInputUrl] = useState('');
@@ -1324,25 +1378,21 @@ const AudioSettingsManager: React.FC = () => {
         localStorage.setItem('admin_audio_completion_enabled', String(newVal));
     };
 
-    const testNotifSound = () => {
-        let finalUrl = notifSound;
-        if (notifSound.startsWith('http://') || notifSound.startsWith('https://')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(notifSound)}&_t=${Date.now()}`;
-        } else if (notifSound.startsWith('/')) {
-            finalUrl = `${notifSound}?_t=${Date.now()}`;
+    const playTestUrl = (url: string) => {
+        if (!url || !url.trim()) return;
+        let finalUrl = normalizeAudioUrl(url.trim());
+        if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('/')) {
+            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(finalUrl)}&_t=${Date.now()}`;
         }
-        console.log("Testing audio with Web Audio API:", finalUrl);
         playAudio(finalUrl, 0.5);
     };
 
+    const testNotifSound = () => {
+        playTestUrl(notifSound);
+    };
+
     const testCompletionSound = () => {
-        let finalUrl = completionSound;
-        if (completionSound.startsWith('http://') || completionSound.startsWith('https://')) {
-            finalUrl = `/api/audio-proxy?url=${encodeURIComponent(completionSound)}&_t=${Date.now()}`;
-        } else if (completionSound.startsWith('/')) {
-            finalUrl = `${completionSound}?_t=${Date.now()}`;
-        }
-        playAudio(finalUrl, 0.5);
+        playTestUrl(completionSound);
     };
 
     const startEditingNotif = () => {
@@ -1386,16 +1436,22 @@ const AudioSettingsManager: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${editingNotif ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
-                    <div className="flex items-start gap-2 sm:gap-3 flex-1">
-                        <div className={`mt-[2px] p-1.5 sm:p-2 rounded-lg transition-colors shrink-0 ${notifEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-[var(--subtle-bg)] text-[var(--text-secondary)]'}`}>
-                            {notifEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                    <div className="mb-2">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">Notification Bell</h4>
+                            {!editingNotif && (
+                                <button 
+                                    onClick={testNotifSound}
+                                    className="p-1 -mt-1 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-[3px] transition-colors shrink-0"
+                                    title="Test sound"
+                                >
+                                    <Music size={12} />
+                                </button>
+                            )}
                         </div>
-                        <div className="min-w-0 w-full mb-2">
-                            <p className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">Notification Bell</p>
-                            <ExpandablePath path={notifSound} />
-                        </div>
+                        <p className="text-[10px] text-[var(--text-secondary)] line-clamp-2 leading-snug">Sound played when a new real-time notification is received</p>
                     </div>
-                    <div className="mt-auto pt-2 border-t border-[var(--border-color)]">
+                    <div className="mt-auto">
                         {editingNotif ? (
                             <div className="flex flex-col gap-1.5 w-full min-w-0">
                                 <div className="flex items-center gap-1 w-full">
@@ -1408,42 +1464,49 @@ const AudioSettingsManager: React.FC = () => {
                                                 setNotifDropdownVal(val);
                                                 if (val !== 'custom') setNotifInputUrl(val);
                                             }}
-                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px]"
+                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px] !rounded-[3px]"
+                                            customUrl={notifInputUrl}
                                         />
                                     </div>
-                                    <button onClick={saveNotifInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
+                                    <button onClick={saveNotifInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-[3px] transition-colors" title="Save">
                                         <Check size={12} strokeWidth={3} />
                                     </button>
-                                    <button onClick={() => setEditingNotif(false)} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded border border-[var(--border-color)] transition-colors" title="Cancel">
+                                    <button onClick={() => setEditingNotif(false)} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded-[3px] border border-[var(--border-color)] transition-colors" title="Cancel">
                                         <X size={12} strokeWidth={3} />
                                     </button>
                                 </div>
                                 {notifDropdownVal === 'custom' && (
-                                    <input 
-                                        value={notifInputUrl} 
-                                        onChange={e => setNotifInputUrl(e.target.value)} 
-                                        className="w-full text-[10px] border border-[var(--border-color)] rounded px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner" 
-                                        autoFocus 
-                                        placeholder="Enter generic .mp3 or .wav URL"
-                                    />
+                                    <div className="flex items-center gap-1 w-full">
+                                        <button 
+                                            type="button"
+                                            onClick={() => playTestUrl(notifInputUrl)} 
+                                            className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-indigo-600 rounded-[3px] border border-[var(--border-color)] transition-colors" 
+                                            title="Test custom sound URL"
+                                        >
+                                            <Music size={12} />
+                                        </button>
+                                        <input 
+                                            value={notifInputUrl} 
+                                            onChange={e => setNotifInputUrl(e.target.value)} 
+                                            className="flex-1 min-w-0 text-[10px] border border-[var(--border-color)] rounded-[3px] px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner" 
+                                            autoFocus 
+                                            placeholder="Enter generic .mp3 or .wav URL"
+                                        />
+                                    </div>
                                 )}
                             </div>
                         ) : (
                             <div className="flex items-center justify-between">
                                 <button 
                                     onClick={startEditingNotif}
-                                    className="p-1 px-1.5 bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-[4px] text-[10px] font-semibold transition-colors flex items-center gap-1 border border-transparent"
+                                    className="inline-flex items-center bg-[var(--subtle-bg)] px-1.5 py-0.5 rounded-[3px] border border-[var(--border-color)] w-fit max-w-[140px] sm:max-w-[180px] hover:bg-[var(--sidebar-link-hover-bg)] dark:hover:bg-[#111] transition-colors text-left"
+                                    title="Change sound effect"
                                 >
-                                    Change sound effect
+                                    <code className="text-[10px] text-[var(--text-primary)] font-mono truncate leading-tight">
+                                        {AUDIO_LABELS[notifSound] || notifSound}
+                                    </code>
                                 </button>
                                 <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={testNotifSound}
-                                        className="p-1 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition-colors"
-                                        title="Test sound"
-                                    >
-                                        <Music size={12} />
-                                    </button>
                                     <button 
                                         onClick={toggleNotif}
                                         className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full transition-colors focus:outline-none shadow-inner ${notifEnabled ? 'bg-indigo-600' : 'bg-[var(--border-color)]'}`}
@@ -1457,16 +1520,22 @@ const AudioSettingsManager: React.FC = () => {
                 </div>
 
                 <div className={`group flex flex-col justify-between p-3 sm:p-4 bg-[var(--card-bg)] rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 relative h-full ${editingCompletion ? 'z-20 border-indigo-500 ring-1 ring-indigo-500' : 'z-0 border-[var(--border-color)] hover:border-indigo-500/30'}`}>
-                    <div className="flex items-start gap-2 sm:gap-3 flex-1">
-                        <div className={`mt-[2px] p-1.5 sm:p-2 rounded-lg transition-colors shrink-0 ${completionEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-[var(--subtle-bg)] text-[var(--text-secondary)]'}`}>
-                            {completionEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                    <div className="mb-2">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">Update Completion</h4>
+                            {!editingCompletion && (
+                                <button 
+                                    onClick={testCompletionSound}
+                                    className="p-1 -mt-1 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-[3px] transition-colors shrink-0"
+                                    title="Test sound"
+                                >
+                                    <Music size={12} />
+                                </button>
+                            )}
                         </div>
-                        <div className="min-w-0 w-full mb-2">
-                            <p className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate">Update Completion</p>
-                            <ExpandablePath path={completionSound} />
-                        </div>
+                        <p className="text-[10px] text-[var(--text-secondary)] line-clamp-2 leading-snug">Sound played when a news auto-update finishes</p>
                     </div>
-                    <div className="mt-auto pt-2 border-t border-[var(--border-color)]">
+                    <div className="mt-auto">
                         {editingCompletion ? (
                             <div className="flex flex-col gap-1.5 w-full min-w-0">
                                 <div className="flex items-center gap-1 w-full">
@@ -1479,42 +1548,49 @@ const AudioSettingsManager: React.FC = () => {
                                                 setCompDropdownVal(val);
                                                 if (val !== 'custom') setCompInputUrl(val);
                                             }}
-                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px]"
+                                            triggerClassName="bg-[var(--subtle-bg)] border-[var(--border-color)] shadow-inner !py-1 !px-2 flex items-center h-[26px] !rounded-[3px]"
+                                            customUrl={compInputUrl}
                                         />
                                     </div>
-                                    <button onClick={saveCompletionInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors" title="Save">
+                                    <button onClick={saveCompletionInput} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-[3px] transition-colors" title="Save">
                                         <Check size={12} strokeWidth={3} />
                                     </button>
-                                    <button onClick={() => setEditingCompletion(false)} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded border border-[var(--border-color)] transition-colors" title="Cancel">
+                                    <button onClick={() => setEditingCompletion(false)} className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-red-500 rounded-[3px] border border-[var(--border-color)] transition-colors" title="Cancel">
                                         <X size={12} strokeWidth={3} />
                                     </button>
                                 </div>
                                 {compDropdownVal === 'custom' && (
-                                    <input 
-                                        value={compInputUrl} 
-                                        onChange={e => setCompInputUrl(e.target.value)} 
-                                        className="w-full text-[10px] border border-[var(--border-color)] rounded px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner" 
-                                        autoFocus 
-                                        placeholder="Enter generic .mp3 or .wav URL"
-                                    />
+                                    <div className="flex items-center gap-1 w-full">
+                                        <button 
+                                            type="button"
+                                            onClick={() => playTestUrl(compInputUrl)} 
+                                            className="shrink-0 h-[26px] w-[26px] flex items-center justify-center bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-indigo-600 rounded-[3px] border border-[var(--border-color)] transition-colors" 
+                                            title="Test custom sound URL"
+                                        >
+                                            <Music size={12} />
+                                        </button>
+                                        <input 
+                                            value={compInputUrl} 
+                                            onChange={e => setCompInputUrl(e.target.value)} 
+                                            className="flex-1 min-w-0 text-[10px] border border-[var(--border-color)] rounded-[3px] px-1.5 py-1 max-h-[26px] bg-[var(--subtle-bg)] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500 shadow-inner" 
+                                            autoFocus 
+                                            placeholder="Enter generic .mp3 or .wav URL"
+                                        />
+                                    </div>
                                 )}
                             </div>
                         ) : (
                             <div className="flex items-center justify-between">
                                 <button 
                                     onClick={startEditingCompletion}
-                                    className="p-1 px-1.5 bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-[4px] text-[10px] font-semibold transition-colors flex items-center gap-1 border border-transparent"
+                                    className="inline-flex items-center bg-[var(--subtle-bg)] px-1.5 py-0.5 rounded-[3px] border border-[var(--border-color)] w-fit max-w-[140px] sm:max-w-[180px] hover:bg-[var(--sidebar-link-hover-bg)] dark:hover:bg-[#111] transition-colors text-left"
+                                    title="Change sound effect"
                                 >
-                                    Change sound effect
+                                    <code className="text-[10px] text-[var(--text-primary)] font-mono truncate leading-tight">
+                                        {AUDIO_LABELS[completionSound] || completionSound}
+                                    </code>
                                 </button>
                                 <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={testCompletionSound}
-                                        className="p-1 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition-colors"
-                                        title="Test sound"
-                                    >
-                                        <Music size={12} />
-                                    </button>
                                     <button 
                                         onClick={toggleCompletion}
                                         className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full transition-colors focus:outline-none shadow-inner ${completionEnabled ? 'bg-indigo-600' : 'bg-[var(--border-color)]'}`}

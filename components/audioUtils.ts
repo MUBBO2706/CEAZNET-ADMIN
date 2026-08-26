@@ -1,5 +1,17 @@
 const activeAudios = new Set<HTMLAudioElement>();
 
+export function normalizeAudioUrl(url: string | null | undefined): string {
+    if (!url) return '/Sound effects/notification.mp3';
+    if (url === '/notification.mp3') return '/Sound effects/notification.mp3';
+    if (url.startsWith('/universfield-') && !url.includes('/Sound effects/')) {
+        return `/Sound effects${url}`;
+    }
+    if (url.startsWith('/dragon-studio-') && !url.includes('/Sound effects/')) {
+        return `/Sound effects${url}`;
+    }
+    return url;
+}
+
 export async function playAudio(url: string, volume: number = 0.5, onEnded?: () => void) {
     try {
         const audio = new Audio(url);

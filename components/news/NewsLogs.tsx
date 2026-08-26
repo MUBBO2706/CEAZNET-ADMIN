@@ -9,31 +9,31 @@ const ExpandedSummary: React.FC<{ log: NewsLog, onShowDetails: (id: number) => v
     const duration = (log.duration_ms / 1000).toFixed(2);
 
     return (
-        <div className="px-4 py-4 bg-[var(--subtle-bg)] border-t border-[var(--border-color)]">
-            <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 divide-x divide-[var(--border-color)]">
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--subtle-bg)] border-t border-[var(--border-color)]">
+            <div className="grid grid-cols-4 gap-2 mb-2.5 divide-x divide-[var(--border-color)]">
                 <div className="flex flex-col items-center text-center">
-                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Duration</div>
-                    <div className="text-xs sm:text-sm font-mono font-bold text-[var(--text-primary)]">{duration}s</div>
+                    <div className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider font-bold mb-0.5">Duration</div>
+                    <div className="text-xs font-mono font-bold text-[var(--text-primary)]">{duration}s</div>
                 </div>
-                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
-                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Articles</div>
-                    <div className="text-xs sm:text-sm font-mono font-bold text-indigo-500">{articlesUpdated}</div>
+                <div className="flex flex-col items-center text-center pl-2">
+                    <div className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider font-bold mb-0.5">Articles</div>
+                    <div className="text-xs font-mono font-bold text-indigo-500">{articlesUpdated}</div>
                 </div>
-                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
-                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Errors</div>
-                    <div className="text-xs sm:text-sm font-mono font-bold text-red-500">{errors}</div>
+                <div className="flex flex-col items-center text-center pl-2">
+                    <div className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider font-bold mb-0.5">Errors</div>
+                    <div className="text-xs font-mono font-bold text-red-500">{errors}</div>
                 </div>
-                <div className="flex flex-col items-center text-center pl-2 sm:pl-4">
-                    <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Status</div>
-                    <div className={`text-xs sm:text-sm font-mono font-bold uppercase tracking-wider ${log.status === 'SUCCESS' ? 'text-emerald-500' : 'text-red-500'}`}>{log.status}</div>
+                <div className="flex flex-col items-center text-center pl-2">
+                    <div className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider font-bold mb-0.5">Status</div>
+                    <div className={`text-xs font-mono font-bold uppercase tracking-wider ${log.status === 'SUCCESS' ? 'text-emerald-500' : 'text-red-500'}`}>{log.status}</div>
                 </div>
             </div>
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-1">
                 <button 
                     onClick={(e) => { e.stopPropagation(); onShowDetails(log.id); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold rounded-md transition-colors shadow-sm"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] sm:text-[11px] font-semibold rounded-[3px] transition-colors shadow-sm"
                 >
-                    <Terminal size={12} />
+                    <Terminal size={11} />
                     View Full Logs
                 </button>
             </div>
@@ -146,7 +146,7 @@ const NewsLogs: React.FC<{
 
     return (
         <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
-            <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between gap-4">
+            <div className="py-2.5 sm:py-3 px-3 sm:px-4 border-b border-[var(--border-color)] flex items-center justify-between gap-4">
                 <button 
                     onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
@@ -173,55 +173,55 @@ const NewsLogs: React.FC<{
                 {/* Header Row */}
                 <div 
                     ref={headerRef}
-                    className={`bg-[var(--card-bg)] flex items-center px-4 pr-24 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-3`}
+                    className={`bg-[var(--card-bg)] flex items-center py-2 sm:py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
                 >
                     {isSelectionMode && (
-                        <div className="shrink-0 flex justify-center mr-3 min-w-[24px]">
+                        <div className="shrink-0 flex justify-center mr-2 min-w-[20px]">
                             <input
                                 ref={selectAllCheckboxRef}
                                 type="checkbox"
-                                className="h-4 w-4 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                className="h-3.5 w-3.5 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                 checked={isAllSelected}
                                 onChange={onSelectAll}
                                 aria-label="Select all logs"
                             />
                         </div>
                     )}
-                    <div className="flex-1 min-w-[120px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Date</div>
-                    <div className="flex-1 min-w-[150px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Time</div>
-                    <div className="flex-1 min-w-[150px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Status</div>
-                    <div className="flex-1 min-w-[120px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Duration</div>
-                    <div className="flex-1 min-w-[140px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Articles Updated</div>
-                    <div className="flex-1 min-w-[80px] text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Delete</div>
+                    <div className="w-24 sm:w-28 shrink-0 pr-2 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Date</div>
+                    <div className="w-20 sm:w-24 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Time</div>
+                    <div className="w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Status</div>
+                    <div className="w-16 sm:w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Duration</div>
+                    <div className="w-24 sm:w-28 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Articles Updated</div>
+                    <div className="w-14 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Delete</div>
                 </div>
                 
                 {/* Data Rows */}
                 <div className="flex flex-col">
                     {isLoading ? (
                         Array.from({ length: 5 }).map((_, idx) => (
-                            <div key={idx} className="flex items-center py-4 px-4 pr-24 border-b border-[var(--border-color)] animate-pulse">
+                            <div key={idx} className="flex items-center py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] animate-pulse">
                                 {isSelectionMode && (
-                                    <div className="shrink-0 flex justify-center mr-3 min-w-[24px]">
-                                        <div className="h-4 w-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                    <div className="shrink-0 flex justify-center mr-2 min-w-[20px]">
+                                        <div className="h-3.5 w-3.5 bg-slate-200 dark:bg-zinc-800 rounded"></div>
                                     </div>
                                 )}
-                                <div className="flex-1 min-w-[120px]">
-                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-2/3"></div>
+                                <div className="w-24 sm:w-28 shrink-0 pr-2">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-2/3"></div>
                                 </div>
-                                <div className="flex-1 min-w-[150px]">
-                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/2"></div>
+                                <div className="w-20 sm:w-24 shrink-0 px-1">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-1/2"></div>
                                 </div>
-                                <div className="flex-1 min-w-[150px]">
-                                    <div className="h-6 bg-slate-200 dark:bg-zinc-800 rounded-full w-20"></div>
+                                <div className="w-20 shrink-0 px-1 flex justify-center">
+                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded-full w-14"></div>
                                 </div>
-                                <div className="flex-1 min-w-[120px]">
-                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/3"></div>
+                                <div className="w-16 sm:w-20 shrink-0 px-1 flex justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-1/2"></div>
                                 </div>
-                                <div className="flex-1 min-w-[140px] flex justify-center">
-                                    <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-8"></div>
+                                <div className="w-24 sm:w-28 shrink-0 px-1 flex justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-8"></div>
                                 </div>
-                                <div className="flex-1 min-w-[80px] flex justify-center">
-                                    <div className="h-6 bg-slate-200 dark:bg-zinc-800 rounded w-6"></div>
+                                <div className="w-14 shrink-0 px-1 flex justify-center">
+                                    <div className="h-5 bg-slate-200 dark:bg-zinc-800 rounded w-5"></div>
                                 </div>
                             </div>
                         ))
@@ -249,7 +249,7 @@ const NewsLogs: React.FC<{
                                 >
                                     <div className="relative">
                                         <div 
-                                            className={`flex items-center py-4 px-4 pr-24 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
+                                            className={`flex items-center py-2 sm:py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
                                             onClick={() => handleRowClick(log.id)}
                                             onPointerDown={(e) => handlePointerDown(e, log.id)}
                                             onPointerMove={handlePointerMove}
@@ -258,67 +258,67 @@ const NewsLogs: React.FC<{
                                             onScroll={handleRowScroll}
                                         >
                                             {isSelectionMode && (
-                                                <div className="shrink-0 flex justify-center mr-3 min-w-[24px]">
+                                                <div className="shrink-0 flex justify-center mr-2 min-w-[20px]">
                                                     <button 
-                                                        className="p-1"
+                                                        className="p-0.5"
                                                         aria-label={isSelected ? 'Deselect log' : 'Select log'}
                                                     >
-                                                        {isSelected ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} className="text-slate-400" />}
+                                                        {isSelected ? <CheckSquare size={15} className="text-indigo-600" /> : <Square size={15} className="text-slate-400" />}
                                                     </button>
                                                 </div>
                                             )}
                                             
-                                            <div className="flex-1 min-w-[120px] font-sans text-sm text-[var(--text-primary)] whitespace-nowrap">
+                                            <div className="w-24 sm:w-28 shrink-0 pr-2 font-sans text-xs text-[var(--text-primary)] truncate">
                                                 {dateStr}
                                             </div>
                                             
-                                            <div className="flex-1 min-w-[150px] font-sans text-sm text-[var(--text-primary)] whitespace-nowrap">
+                                            <div className="w-20 sm:w-24 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] truncate">
                                                 {timeAgo(log.created_at)}
                                             </div>
                                             
-                                            <div className="flex-1 min-w-[150px] flex items-center whitespace-nowrap">
-                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
-                                                    isSuccess ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 
-                                                    isFailure ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 
-                                                    isWarn ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
-                                                    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                            <div className="w-20 shrink-0 px-1 flex justify-center items-center">
+                                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide transition-colors ${
+                                                    isSuccess ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300' : 
+                                                    isFailure ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300' : 
+                                                    isWarn ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300' :
+                                                    'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300'
                                                 }`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                                    <span className={`w-1 h-1 rounded-full ${
                                                         isSuccess ? 'bg-emerald-500' : 
-                                                        isFailure ? 'bg-red-500' : 
+                                                        isFailure ? 'bg-rose-500' : 
                                                         isWarn ? 'bg-amber-500' :
                                                         'bg-blue-500'
-                                                    }`}></div>
+                                                    }`} />
                                                     {log.status}
-                                                </div>
+                                                </span>
                                             </div>
                                             
-                                            <div className="flex-1 min-w-[120px] font-sans text-sm text-[var(--text-primary)] whitespace-nowrap">
-                                                {(log.duration_ms / 1000).toFixed(2)} s
+                                            <div className="w-16 sm:w-20 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] text-center truncate">
+                                                {(log.duration_ms / 1000).toFixed(2)}s
                                             </div>
                                             
-                                            <div className="flex-1 min-w-[140px] font-sans text-sm text-[var(--text-primary)] whitespace-nowrap text-center">
+                                            <div className="w-24 sm:w-28 shrink-0 px-1 font-sans text-xs text-[var(--text-primary)] font-medium text-center truncate">
                                                 {log.summary?.find(s => s.includes('Total Articles Updated'))?.split(': ')[1] || '0'}
                                             </div>
                                             
-                                            <div className="flex-1 min-w-[80px] flex items-center justify-center whitespace-nowrap">
+                                            <div className="w-14 shrink-0 px-1 flex items-center justify-center">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         onDelete(log.id);
                                                     }}
-                                                    className="text-red-500 hover:text-red-700 transition-all p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30"
+                                                    className="text-red-500 hover:text-red-700 transition-all p-1 rounded-[3px] hover:bg-red-100 dark:hover:bg-red-900/30"
                                                     data-tooltip="Delete Log"
                                                     aria-label="Delete log"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={13} />
                                                 </button>
                                             </div>
                                         </div>
                                         
-                                        <div className={`absolute right-0 top-0 bottom-0 flex justify-end items-center w-24 bg-gradient-to-l from-40% to-transparent transition-colors pr-4 pointer-events-none z-10 ${maskFromClass}`}>
-                                            <ChevronRight size={16} className={`text-[var(--text-secondary)] opacity-70 transition-transform duration-300 ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                                        <div className={`absolute right-0 top-0 bottom-0 flex justify-end items-center w-16 bg-gradient-to-l from-40% to-transparent transition-colors pr-3 pointer-events-none z-10 ${maskFromClass}`}>
+                                            <ChevronRight size={14} className={`text-[var(--text-secondary)] opacity-70 transition-transform duration-300 ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-0.5'}`} />
                                         </div>
                                     </div>
                                     
@@ -335,12 +335,12 @@ const NewsLogs: React.FC<{
                 </div>
                 
                 {/* Footer / Load More */}
-                <div className="p-3 px-4 border-t border-[var(--border-color)] flex items-center justify-between bg-[var(--card-bg)] rounded-b-lg">
+                <div className="py-2.5 sm:py-3 px-3 sm:px-4 border-t border-[var(--border-color)] flex items-center justify-between bg-[var(--card-bg)] rounded-b-lg">
                     <div>
                         {visibleCount < logs.length && (
                             <button 
                                 onClick={() => setVisibleCount(prev => prev + 30)}
-                                className="btn btn-secondary px-3 py-1.5 text-xs"
+                                className="btn btn-secondary px-2.5 py-1 text-xs"
                             >
                                 Load Older
                             </button>

@@ -13,7 +13,8 @@ import {
     Newspaper, 
     ScrollText, 
     SlidersHorizontal, 
-    ChevronsLeft 
+    ChevronsLeft,
+    Radio
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
@@ -184,6 +185,10 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                         <NavLink to="/advanced-analytics" className={() => getNavLinkClass('/advanced-analytics')} onClick={closeSidebar}>
                             <BarChart3 size={18} className="shrink-0 w-5 text-center" />
                             <span className="truncate">Insights</span>
+                        </NavLink>
+                        <NavLink to="/broadcast" className={() => getNavLinkClass('/broadcast')} onClick={closeSidebar}>
+                            <Radio size={18} className="shrink-0 w-5 text-center" />
+                            <span className="truncate">Broadcast</span>
                         </NavLink>
                     </div>
                     
