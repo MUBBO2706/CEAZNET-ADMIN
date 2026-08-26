@@ -73,7 +73,15 @@ const useBroadcastState = () => {
 };
 
 
-export const BroadcastTab: React.FC = () => {
+export interface BroadcastTabProps {
+    showHistory?: boolean;
+    setShowHistory?: (show: boolean) => void;
+}
+
+export const BroadcastTab: React.FC<BroadcastTabProps> = ({
+    showHistory: externalShowHistory,
+    setShowHistory: externalSetShowHistory
+}) => {
     const {
         prompt, setPrompt,
         stylePrompt, setStylePrompt,
@@ -90,7 +98,9 @@ export const BroadcastTab: React.FC = () => {
         aiModel, setAiModel
     } = useBroadcastState();
 
-    const [showHistory, setShowHistory] = useState(false);
+    const [internalShowHistory, setInternalShowHistory] = useState(false);
+    const showHistory = externalShowHistory !== undefined ? externalShowHistory : internalShowHistory;
+    const setShowHistory = externalSetShowHistory || setInternalShowHistory;
     const [broadcastList, setBroadcastList] = useState<any[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -284,8 +294,182 @@ export const BroadcastTab: React.FC = () => {
     return (
         <div className="flex flex-col flex-1 h-full bg-white dark:bg-zinc-950 overflow-hidden relative">
             
+            {/* Preview Section - Top Immersive Canvas */}
+            <div className="flex-1 relative flex flex-col min-h-[300px] bg-slate-100/40 dark:bg-black/30 overflow-hidden pattern-diagonal-lines pattern-slate-200 dark:pattern-zinc-800/40 pattern-size-4 pattern-opacity-40 border-b border-slate-200 dark:border-zinc-800">
+                
+                {/* Floating Status Header */}
+                <div className="absolute top-3 inset-x-3 z-30 flex justify-between items-start pointer-events-none">
+                    <div className="flex flex-col gap-2 pointer-events-auto">
+                        <AnimatePresence>
+                            {statusData && (
+                                <motion.div 
+                                    initial={{ opacity: 0, x: -10 }} 
+                                    animate={{ opacity: 1, x: 0 }} 
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className={`px-3 py-2 rounded-xl flex items-start gap-2 shadow-lg backdrop-blur-md border max-w-[200px] ${statusData.type === 'success' ? 'bg-emerald-500/90 border-emerald-600/50 text-white' : 'bg-red-500/90 border-red-600/50 text-white'}`}
+                                >
+                                    {statusData.type === 'success' ? <CheckCircle2 size={14} className="mt-0.5 shrink-0" /> : <AlertCircle size={14} className="mt-0.5 shrink-0" />}
+                                    <p className="text-[11px] font-medium leading-snug">{statusData.msg}</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+                {/* Floating Push Live Button (Bottom Right) */}
+                {generatedHtml && (
+                    <div className="absolute bottom-4 right-4 z-30 pointer-events-auto origin-bottom-right">
+                        <AnimatePresence mode="wait">
+                            {!isSending ? (
+                                <motion.button 
+                                    key="send"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleSend}
+                                    className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-bold text-[12px] transition-all shadow-[0_8px_20px_-4px_rgba(16,185,129,0.5)] border border-emerald-400/30"
+                                >
+                                    <Send size={14} className="shrink-0 -mb-[1px]" />
+                                    Push Live
+                                </motion.button>
+                            ) : (
+                                <motion.div 
+                                    key="loading"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex items-center gap-2 pl-3 pr-4 py-2.5 bg-emerald-600/80 text-white rounded-2xl font-bold text-[12px] shadow-sm backdrop-blur-sm"
+                                >
+                                    <Loader size={14} className="animate-spin" />
+                                    Deploying...
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+                
+                {/* Canvas Content */}
+                <div className="flex-1 w-full h-full p-6 pt-16 pb-20 flex items-center justify-center relative">
+                    {isGenerating ? (
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 overflow-hidden bg-slate-900 z-10 flex items-center justify-center pointer-events-auto"
+                        >
+                            <motion.div
+                                drag
+                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
+                                dragElastic={0.5}
+                                className="absolute mix-blend-screen filter blur-[50px] sm:blur-[80px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
+                                style={{ width: '60vw', height: '60vw', maxWidth: '500px', maxHeight: '500px', background: '#38bdf8' }}
+                                animate={{ 
+                                    x: ['-20%', '20%', '-10%', '-20%'], 
+                                    y: ['-20%', '10%', '20%', '-20%'],
+                                    scale: [1, 1.2, 0.9, 1],
+                                }}
+                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <motion.div
+                                drag
+                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
+                                dragElastic={0.5}
+                                className="absolute mix-blend-screen filter blur-[60px] sm:blur-[90px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
+                                style={{ width: '50vw', height: '50vw', maxWidth: '400px', maxHeight: '400px', background: '#a855f7' }}
+                                animate={{ 
+                                    x: ['20%', '-10%', '20%', '20%'], 
+                                    y: ['20%', '-20%', '-10%', '20%'],
+                                    scale: [1, 0.8, 1.1, 1],
+                                }}
+                                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <motion.div
+                                drag
+                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
+                                dragElastic={0.5}
+                                className="absolute mix-blend-screen filter blur-[55px] sm:blur-[85px] opacity-70 rounded-full cursor-grab active:cursor-grabbing"
+                                style={{ width: '70vw', height: '70vw', maxWidth: '600px', maxHeight: '600px', background: '#ec4899' }}
+                                animate={{ 
+                                    x: ['0%', '15%', '-15%', '0%'], 
+                                    y: ['10%', '-15%', '10%', '10%'],
+                                    scale: [0.9, 1.2, 0.9, 0.9],
+                                }}
+                                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                        </motion.div>
+                    ) : broadcastType === 'system_banner' ? (
+                        <div className="w-full flex flex-col items-center justify-start py-10 h-full relative cursor-default">
+                                <div className="absolute top-0 inset-x-0 w-full h-8 bg-slate-200 dark:bg-zinc-800 flex items-center px-4 rounded-t-xl gap-1.5 opacity-50 scale-90 -translate-y-4">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                </div>
+                                
+                                <div className="w-[90%] max-w-[600px] bg-white dark:bg-black rounded-lg shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden relative mt-10">
+                                    {/* Preview Fake Header */}
+                                    <div className="h-12 border-b border-slate-100 dark:border-zinc-800 flex items-center px-4 bg-slate-50 dark:bg-zinc-900/50">
+                                        <div className="w-24 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                        <div className="ml-auto flex gap-3">
+                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* System Banner Mock */}
+                                    <AnimatePresence>
+                                        {isActive && (
+                                            <motion.div 
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className={`
+                                                    px-4 py-2 text-center text-xs font-medium flex items-center justify-center gap-2
+                                                    ${bannerType === 'maintenance' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/50' : ''}
+                                                    ${bannerType === 'development' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/50' : ''}
+                                                    ${bannerType === 'testing' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/50' : ''}
+                                                    ${bannerType === 'alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-b border-red-100 dark:border-red-900/50' : ''}
+                                                `}>
+                                                    {bannerType === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> System Maintenance in Progress</span>}
+                                                    {bannerType === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Under Development - Some features may be unstable</span>}
+                                                    {bannerType === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Testing Environment - Data may be reset</span>}
+                                                    {bannerType === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Critical System Alert</span>}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+ 
+                                    <div className="p-6 space-y-4">
+                                        <div className="w-2/3 h-6 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
+                                        <div className="w-full h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
+                                        <div className="w-1/2 h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
+                                    </div>
+                                </div>
+                                <div className="mt-8 text-center px-4">
+                                    <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">System Banner Preview</p>
+                                    <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[280px] mx-auto">This is a mock representation. The actual banner rendering will be handled natively by the client application on all pages.</p>
+                                </div>
+                        </div>
+                    ) : generatedHtml ? (
+                        <AutoScaledPreview html={generatedHtml} />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center gap-3 opacity-40 grayscale pointer-events-none hover:grayscale-0 hover:opacity-70 transition-all duration-500 cursor-default">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-indigo-500/10">
+                                <Radio size={28} className="text-indigo-600 dark:text-indigo-400 drop-shadow-sm -rotate-[15deg]" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">Blank Canvas</p>
+                                <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[200px]">Provide a prompt above to generate your custom broadcast popup.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+            </div>
+
             {/* Input Composer Section */}
-            <div className="flex flex-col shrink-0 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all duration-300 relative focus-within:shadow-[0_4px_20px_-10px_rgba(79,70,229,0.15)] z-10 px-[4px]">
+            <div className="flex flex-col shrink-0 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all duration-300 relative focus-within:shadow-[0_-4px_20px_-10px_rgba(79,70,229,0.15)] z-10">
                 {broadcastType === 'popup' ? (
                         <>
                             <div className="relative">
@@ -293,27 +477,27 @@ export const BroadcastTab: React.FC = () => {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder={history.length > 0 ? "Adjust the broadcast... (e.g. 'Make it shorter')" : "Design a broadcast popup... (e.g. 'Servers down in 15 mins')"}
-                                    className="w-full bg-transparent text-[13px] px-[4px] py-3 min-h-[64px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
+                                    className="w-full bg-transparent text-[13px] px-4 py-3 min-h-[64px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
                                     disabled={isGenerating}
                                 />
                             </div>
 
                             <div className="relative border-t border-slate-100 dark:border-zinc-800/80">
-                                <div className="flex items-center px-[4px]">
+                                <div className="flex items-center px-4">
                                     <Palette size={13} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                     <input
                                         type="text"
                                         value={stylePrompt}
                                         onChange={(e) => setStylePrompt(e.target.value)}
                                         placeholder="Styling instructions (e.g. 'Dark mode, rounded corners, modern')"
-                                        className="w-full bg-transparent text-[12px] px-[4px] py-2.5 focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
+                                        className="w-full bg-transparent text-[12px] px-4 py-2.5 focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
                                         disabled={isGenerating}
                                     />
                                 </div>
                             </div>
                         </>
                     ) : (
-                <div className="p-[4px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4 w-full sm:w-auto">
                                 <div className="flex flex-col w-full sm:w-auto flex-1">
                                     <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Banner Variant</label>
@@ -321,7 +505,7 @@ export const BroadcastTab: React.FC = () => {
                                         options={['maintenance', 'development', 'testing', 'alert']}
                                         value={bannerType}
                                         onChange={(v) => setBannerType(v as any)}
-                                        triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-[4px] !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
+                                        triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-3 !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
                                         displayLabels={{
                                             maintenance: 'Maintenance',
                                             development: 'Development',
@@ -353,18 +537,10 @@ export const BroadcastTab: React.FC = () => {
                         </div>
                     )}
                     
-                    <div className="flex justify-between items-center px-[4px] py-2 border-t border-slate-100 dark:border-zinc-800/80">
+                    <div className="flex justify-between items-center px-4 py-2 border-t border-slate-100 dark:border-zinc-800/80">
                         {/* Compact Settings */}
                         {/* Adding full width and overflow handling so it actually scrolls gracefully */}
                         <div className="flex items-center gap-4 opacity-90 transition-opacity overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full min-w-0 pr-2">
-                            <button 
-                                onClick={() => setShowHistory(true)}
-                                className="flex items-center gap-1.5 px-2 py-1 hover:bg-slate-200/60 dark:hover:bg-zinc-800/80 rounded-md transition-colors text-slate-500 dark:text-zinc-400 group shrink-0"
-                            >
-                                <History size={12} className="group-hover:text-slate-700 dark:group-hover:text-zinc-200 transition-colors" />
-                                <span className="text-[10px] font-semibold uppercase tracking-wider group-hover:text-slate-700 dark:group-hover:text-zinc-200 transition-colors whitespace-nowrap">History</span>
-                            </button>
-                            
                             {broadcastType === 'popup' && (
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     <Cpu size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
@@ -542,180 +718,6 @@ export const BroadcastTab: React.FC = () => {
                         )}
                     </div>
             </div>
-
-            {/* Preview Section - Bottom Immersive Canvas */}
-            <div className="flex-1 relative flex flex-col min-h-[300px] bg-slate-100/40 dark:bg-black/30 overflow-hidden pattern-diagonal-lines pattern-slate-200 dark:pattern-zinc-800/40 pattern-size-4 pattern-opacity-40">
-                
-                {/* Floating Status Header */}
-                <div className="absolute top-3 inset-x-3 z-30 flex justify-between items-start pointer-events-none">
-                    <div className="flex flex-col gap-2 pointer-events-auto">
-                        <AnimatePresence>
-                            {statusData && (
-                                <motion.div 
-                                    initial={{ opacity: 0, x: -10 }} 
-                                    animate={{ opacity: 1, x: 0 }} 
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className={`px-3 py-2 rounded-xl flex items-start gap-2 shadow-lg backdrop-blur-md border max-w-[200px] ${statusData.type === 'success' ? 'bg-emerald-500/90 border-emerald-600/50 text-white' : 'bg-red-500/90 border-red-600/50 text-white'}`}
-                                >
-                                    {statusData.type === 'success' ? <CheckCircle2 size={14} className="mt-0.5 shrink-0" /> : <AlertCircle size={14} className="mt-0.5 shrink-0" />}
-                                    <p className="text-[11px] font-medium leading-snug">{statusData.msg}</p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                </div>
-
-                {/* Floating Push Live Button (Bottom Right) */}
-                {generatedHtml && (
-                    <div className="absolute bottom-4 right-4 z-30 pointer-events-auto origin-bottom-right">
-                        <AnimatePresence mode="wait">
-                            {!isSending ? (
-                                <motion.button 
-                                    key="send"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={handleSend}
-                                    className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-bold text-[12px] transition-all shadow-[0_8px_20px_-4px_rgba(16,185,129,0.5)] border border-emerald-400/30"
-                                >
-                                    <Send size={14} className="shrink-0 -mb-[1px]" />
-                                    Push Live
-                                </motion.button>
-                            ) : (
-                                <motion.div 
-                                    key="loading"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="flex items-center gap-2 pl-3 pr-4 py-2.5 bg-emerald-600/80 text-white rounded-2xl font-bold text-[12px] shadow-sm backdrop-blur-sm"
-                                >
-                                    <Loader size={14} className="animate-spin" />
-                                    Deploying...
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                )}
-                
-                {/* Canvas Content */}
-                <div className="flex-1 w-full h-full p-6 pt-16 pb-20 flex items-center justify-center relative">
-                    {isGenerating ? (
-                        <motion.div 
-                            initial={{ opacity: 0 }} 
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 overflow-hidden bg-slate-900 z-10 flex items-center justify-center pointer-events-auto"
-                        >
-                            <motion.div
-                                drag
-                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
-                                dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[50px] sm:blur-[80px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
-                                style={{ width: '60vw', height: '60vw', maxWidth: '500px', maxHeight: '500px', background: '#38bdf8' }}
-                                animate={{ 
-                                    x: ['-20%', '20%', '-10%', '-20%'], 
-                                    y: ['-20%', '10%', '20%', '-20%'],
-                                    scale: [1, 1.2, 0.9, 1],
-                                }}
-                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <motion.div
-                                drag
-                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
-                                dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[60px] sm:blur-[90px] opacity-80 rounded-full cursor-grab active:cursor-grabbing"
-                                style={{ width: '50vw', height: '50vw', maxWidth: '400px', maxHeight: '400px', background: '#a855f7' }}
-                                animate={{ 
-                                    x: ['20%', '-10%', '20%', '20%'], 
-                                    y: ['20%', '-20%', '-10%', '20%'],
-                                    scale: [1, 0.8, 1.1, 1],
-                                }}
-                                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <motion.div
-                                drag
-                                dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
-                                dragElastic={0.5}
-                                className="absolute mix-blend-screen filter blur-[55px] sm:blur-[85px] opacity-70 rounded-full cursor-grab active:cursor-grabbing"
-                                style={{ width: '70vw', height: '70vw', maxWidth: '600px', maxHeight: '600px', background: '#ec4899' }}
-                                animate={{ 
-                                    x: ['0%', '15%', '-15%', '0%'], 
-                                    y: ['10%', '-15%', '10%', '10%'],
-                                    scale: [0.9, 1.2, 0.9, 0.9],
-                                }}
-                                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                        </motion.div>
-                    ) : broadcastType === 'system_banner' ? (
-                        <div className="w-full flex flex-col items-center justify-start py-10 h-full relative cursor-default">
-                                <div className="absolute top-0 inset-x-0 w-full h-8 bg-slate-200 dark:bg-zinc-800 flex items-center px-4 rounded-t-xl gap-1.5 opacity-50 scale-90 -translate-y-4">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                                </div>
-                                
-                                <div className="w-[90%] max-w-[600px] bg-white dark:bg-black rounded-lg shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden relative mt-10">
-                                    {/* Preview Fake Header */}
-                                    <div className="h-12 border-b border-slate-100 dark:border-zinc-800 flex items-center px-4 bg-slate-50 dark:bg-zinc-900/50">
-                                        <div className="w-24 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                        <div className="ml-auto flex gap-3">
-                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* System Banner Mock */}
-                                    <AnimatePresence>
-                                        {isActive && (
-                                            <motion.div 
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className={`
-                                                    px-4 py-2 text-center text-xs font-medium flex items-center justify-center gap-2
-                                                    ${bannerType === 'maintenance' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/50' : ''}
-                                                    ${bannerType === 'development' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/50' : ''}
-                                                    ${bannerType === 'testing' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/50' : ''}
-                                                    ${bannerType === 'alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-b border-red-100 dark:border-red-900/50' : ''}
-                                                `}>
-                                                    {bannerType === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> System Maintenance in Progress</span>}
-                                                    {bannerType === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Under Development - Some features may be unstable</span>}
-                                                    {bannerType === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Testing Environment - Data may be reset</span>}
-                                                    {bannerType === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Critical System Alert</span>}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    <div className="p-6 space-y-4">
-                                        <div className="w-2/3 h-6 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
-                                        <div className="w-full h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
-                                        <div className="w-1/2 h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
-                                    </div>
-                                </div>
-                                <div className="mt-8 text-center px-4">
-                                    <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">System Banner Preview</p>
-                                    <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[280px] mx-auto">This is a mock representation. The actual banner rendering will be handled natively by the client application on all pages.</p>
-                                </div>
-                        </div>
-                    ) : generatedHtml ? (
-                        <AutoScaledPreview html={generatedHtml} />
-                    ) : (
-                        <div className="flex flex-col items-center justify-center gap-3 opacity-40 grayscale pointer-events-none hover:grayscale-0 hover:opacity-70 transition-all duration-500 cursor-default">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-indigo-500/10">
-                                <Radio size={28} className="text-indigo-600 dark:text-indigo-400 drop-shadow-sm -rotate-[15deg]" />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">Blank Canvas</p>
-                                <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[200px]">Provide a prompt above to generate your custom broadcast popup.</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-            </div>
             
             {/* History Panel Overlay */}
             <AnimatePresence>
@@ -725,21 +727,8 @@ export const BroadcastTab: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute inset-0 z-50 bg-white dark:bg-black flex flex-col"
+                        className="absolute inset-0 z-50 bg-white dark:bg-black flex flex-col border-t border-slate-100 dark:border-zinc-900"
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-zinc-900 bg-white dark:bg-black">
-                            <div className="flex items-center gap-2">
-                                <History size={16} className="text-indigo-500" />
-                                <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Broadcast History</h3>
-                            </div>
-                            <button 
-                                onClick={() => setShowHistory(false)}
-                                className="p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 rounded-lg transition-colors"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                        
                         <div className="flex-1 overflow-y-auto sleek-scrollbar bg-slate-50 dark:bg-black flex flex-col">
                             {isLoadingHistory ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-80 min-h-[300px]">

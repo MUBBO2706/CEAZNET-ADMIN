@@ -1,30 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BroadcastTab } from '../components/BroadcastTab';
-import { Radio } from 'lucide-react';
+import { History, X } from 'lucide-react';
 
 const BroadcastPage: React.FC = () => {
+    const [showHistory, setShowHistory] = useState(false);
+
     return (
-        <div className="flex-1 flex flex-col h-[calc(100vh-50px)] overflow-hidden p-3 pb-3 sm:p-4 sm:pb-4 lg:p-6 lg:pb-6">
+        <div className="flex-1 flex flex-col h-[calc(100vh-50px)] overflow-hidden">
             {/* Page Header */}
-            <div className="flex items-center justify-between mb-4 sm:mb-5 shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center shrink-0 shadow-sm">
-                        <Radio className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50" id="broadcast-title">
-                            Broadcast Control
-                        </h1>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            Create and manage live popups and system-wide banners.
-                        </p>
-                    </div>
+            <div className="px-4 pt-4 pb-2 sm:px-6 sm:pt-6 shrink-0">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50" id="broadcast-title">
+                        {showHistory ? 'Broadcast History' : 'Broadcast Control'}
+                    </h1>
+                    <button
+                        onClick={() => setShowHistory(prev => !prev)}
+                        className="text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors p-1"
+                        title={showHistory ? 'Close History' : 'Broadcast History'}
+                        aria-label={showHistory ? 'Close History' : 'Broadcast History'}
+                    >
+                        {showHistory ? <X size={18} /> : <History size={18} />}
+                    </button>
                 </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 w-full">
+                    {showHistory
+                        ? 'View, manage, and restore previously generated broadcasts.'
+                        : 'Create and manage live popups and system-wide banners.'}
+                </p>
             </div>
 
-            {/* Broadcast App Interface Card */}
-            <div className="flex-1 min-h-0 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-                <BroadcastTab />
+            {/* Broadcast App Interface - Containerless */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <BroadcastTab showHistory={showHistory} setShowHistory={setShowHistory} />
             </div>
         </div>
     );
