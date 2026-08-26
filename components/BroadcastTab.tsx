@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
-import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, deleteBroadcast, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
+import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, EyeOff, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
+import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, deleteBroadcast, toggleBroadcastActive, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
 
@@ -72,6 +72,74 @@ const useBroadcastState = () => {
     };
 };
 
+
+const AutoScaledPreview = React.memo(({ html }: { html: string }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+        let animationFrameId: number;
+        const updateScale = () => {
+            if (containerRef.current && contentRef.current) {
+                const containerWidth = containerRef.current.clientWidth;
+                const containerHeight = containerRef.current.clientHeight;
+                
+                const contentWidth = contentRef.current.offsetWidth;
+                const contentHeight = contentRef.current.offsetHeight;
+
+                let newScale = 1;
+                if (contentWidth > 0 && contentHeight > 0) {
+                    const paddingX = 40; // horizontal padding
+                    const paddingY = 40; // vertical padding
+                    const scaleX = (containerWidth - paddingX) / contentWidth;
+                    const scaleY = (containerHeight - paddingY) / contentHeight;
+                    newScale = Math.min(scaleX, scaleY, 1);
+                }
+                setScale(newScale);
+            }
+        };
+
+        const resizeObserver = new ResizeObserver(() => {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(updateScale);
+        });
+        
+        if (containerRef.current) resizeObserver.observe(containerRef.current);
+        if (contentRef.current) resizeObserver.observe(contentRef.current);
+        
+        updateScale();
+
+        return () => {
+            resizeObserver.disconnect();
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [html]);
+
+    return (
+        <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
+            <div 
+                style={{ 
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'center center',
+                    transition: 'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+                className="flex justify-center items-center"
+            >
+                <div 
+                    ref={contentRef}
+                    className="pointer-events-none isolate"
+                    style={{ 
+                        width: 'max-content',
+                        maxWidth: '400px', 
+                    }}
+                    dangerouslySetInnerHTML={{ __html: html }}
+                />
+            </div>
+        </div>
+    );
+});
+AutoScaledPreview.displayName = 'AutoScaledPreview';
 
 export interface BroadcastTabProps {
     showHistory?: boolean;
@@ -159,73 +227,6 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
         }
     };
 
-    const AutoScaledPreview = ({ html }: { html: string }) => {
-        const containerRef = useRef<HTMLDivElement>(null);
-        const contentRef = useRef<HTMLDivElement>(null);
-        const [scale, setScale] = useState(1);
-
-        useEffect(() => {
-            let animationFrameId: number;
-            const updateScale = () => {
-                if (containerRef.current && contentRef.current) {
-                    const containerWidth = containerRef.current.clientWidth;
-                    const containerHeight = containerRef.current.clientHeight;
-                    
-                    const contentWidth = contentRef.current.offsetWidth;
-                    const contentHeight = contentRef.current.offsetHeight;
-
-                    let newScale = 1;
-                    if (contentWidth > 0 && contentHeight > 0) {
-                        const paddingX = 40; // horizontal padding
-                        const paddingY = 40; // vertical padding
-                        const scaleX = (containerWidth - paddingX) / contentWidth;
-                        const scaleY = (containerHeight - paddingY) / contentHeight;
-                        newScale = Math.min(scaleX, scaleY, 1);
-                    }
-                    setScale(newScale);
-                }
-            };
-
-            const resizeObserver = new ResizeObserver(() => {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(updateScale);
-            });
-            
-            if (containerRef.current) resizeObserver.observe(containerRef.current);
-            if (contentRef.current) resizeObserver.observe(contentRef.current);
-            
-            updateScale();
-
-            return () => {
-                resizeObserver.disconnect();
-                cancelAnimationFrame(animationFrameId);
-            };
-        }, [html]);
-
-        return (
-            <div ref={containerRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
-                <div 
-                    style={{ 
-                        transform: `scale(${scale})`,
-                        transformOrigin: 'center center',
-                        transition: 'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}
-                    className="flex justify-center items-center"
-                >
-                    <div 
-                        ref={contentRef}
-                        className="pointer-events-none isolate"
-                        style={{ 
-                            width: 'max-content',
-                            maxWidth: '400px', 
-                        }}
-                        dangerouslySetInnerHTML={{ __html: html }}
-                    />
-                </div>
-            </div>
-        );
-    };
-
     const handleSend = async () => {
         setIsSending(true);
         setStatusData(null);
@@ -276,6 +277,16 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
 
     const handleDeleteBroadcast = async (id: string) => {
         setDeleteConfirmId(id);
+    };
+
+    const handleToggleActive = async (id: string, currentActiveState: boolean) => {
+        const nextState = !currentActiveState;
+        setBroadcastList(prev => prev.map(item => item.id === id ? { ...item, is_active: nextState } : item));
+        const success = await toggleBroadcastActive(id, nextState);
+        if (!success) {
+            setBroadcastList(prev => prev.map(item => item.id === id ? { ...item, is_active: currentActiveState } : item));
+            alert("Failed to update broadcast status.");
+        }
     };
 
     const confirmDeleteBroadcast = async () => {
@@ -344,25 +355,25 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             {!isSending ? (
                                 <motion.button 
                                     key="send"
-                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.96 }}
                                     onClick={handleSend}
-                                    className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-bold text-[12px] transition-all shadow-[0_8px_20px_-4px_rgba(16,185,129,0.5)] border border-emerald-400/30"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs transition-colors shrink-0 border border-emerald-500/30"
                                 >
-                                    <Send size={14} className="shrink-0 -mb-[1px]" />
-                                    Push Live
+                                    <Send size={13} className="shrink-0" />
+                                    <span>Push Live</span>
                                 </motion.button>
                             ) : (
                                 <motion.div 
                                     key="loading"
-                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="flex items-center gap-2 pl-3 pr-4 py-2.5 bg-emerald-600/80 text-white rounded-2xl font-bold text-[12px] shadow-sm backdrop-blur-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/90 text-white rounded-lg font-semibold text-xs backdrop-blur-sm"
                                 >
-                                    <Loader size={14} className="animate-spin" />
-                                    Deploying...
+                                    <Loader size={13} className="animate-spin" />
+                                    <span>Deploying...</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -847,6 +858,11 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                                 ) : (
                                                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-400 shrink-0">Popup</span>
                                                 )}
+                                                {item.is_active === false ? (
+                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 shrink-0">Inactive</span>
+                                                ) : (
+                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0">Live</span>
+                                                )}
                                                 <div className="flex items-center gap-1.5 ml-2">
                                                     <Clock size={11} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                                     <p className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 truncate">
@@ -856,6 +872,18 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                             </div>
 
                                             <div className="flex items-center gap-2 justify-end ml-auto shrink-0">
+                                                <button 
+                                                    onClick={() => handleToggleActive(item.id, item.is_active !== false)}
+                                                    className={`px-2.5 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
+                                                        item.is_active !== false 
+                                                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' 
+                                                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                                                    }`}
+                                                    title={item.is_active !== false ? 'Unpublish Broadcast' : 'Publish Broadcast'}
+                                                >
+                                                    {item.is_active !== false ? <EyeOff size={13} /> : <Eye size={13} />}
+                                                    <span>{item.is_active !== false ? 'Unpublish' : 'Publish'}</span>
+                                                </button>
                                                 <button 
                                                     onClick={() => handleDeleteBroadcast(item.id)}
                                                     className="px-2.5 py-1.5 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 rounded-lg text-xs font-semibold transition-all shrink-0 border border-red-200 dark:border-red-500/30"

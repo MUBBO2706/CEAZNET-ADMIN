@@ -146,6 +146,24 @@ export async function generateBroadcastHtml(
     return cleanHtml;
 }
 
+export async function toggleBroadcastActive(id: string, isActive: boolean): Promise<boolean> {
+    try {
+        const { error } = await dbMain
+            .from('broadcasts')
+            .update({ is_active: isActive })
+            .eq('id', id);
+
+        if (error) {
+            console.error("Error toggling broadcast active:", error);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error("Exception toggling broadcast active:", e);
+        return false;
+    }
+}
+
 export async function deleteBroadcast(id: string): Promise<boolean> {
     try {
         const { error } = await dbMain
@@ -236,6 +254,7 @@ export async function publishBroadcast(rawHtml: string, title: string = 'AI Gene
                 title,
                 raw_html: rawHtml,
                 status: 'sent',
+                is_active: true,
                 type: type,
                 sent_at: new Date().toISOString(),
                 ...(expiresAt ? { expires_at: expiresAt } : {})
