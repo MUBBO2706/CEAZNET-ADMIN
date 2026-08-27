@@ -181,9 +181,11 @@ const ArticleModal: React.FC<{
     );
 };
 
+let cachedArticles: NewsArticle[] | null = null;
+
 const NewsContentManager: React.FC = () => {
-    const [articles, setArticles] = useState<NewsArticle[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [articles, setArticles] = useState<NewsArticle[]>(cachedArticles || []);
+    const [loading, setLoading] = useState(!cachedArticles);
     const [search, setSearch] = useState('');
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -201,10 +203,13 @@ const NewsContentManager: React.FC = () => {
         }
     };
 
-    const loadArticles = async () => {
-        setLoading(true);
+    const loadArticles = async (isSilent = false) => {
+        if (!isSilent && !cachedArticles) {
+            setLoading(true);
+        }
         try {
             const data = await fetchNewsArticles();
+            cachedArticles = data;
             setArticles(data);
         } catch (error) {
             console.error("Failed to fetch articles:", error);
@@ -214,7 +219,7 @@ const NewsContentManager: React.FC = () => {
     };
 
     useEffect(() => {
-        loadArticles();
+        loadArticles(!!cachedArticles);
     }, []);
 
     const handleDelete = async () => {
@@ -268,7 +273,7 @@ const NewsContentManager: React.FC = () => {
 
     return (
         <>
-            <div className="flex flex-col w-full pb-24 animate-fade-in-up">
+            <div className="flex flex-col w-full pb-24">
                 {loading ? (
                     <div className="flex flex-col justify-center items-center min-h-[50vh] w-full">
                         <LoadingSpinner message="Loading your articles..." />
@@ -392,7 +397,7 @@ const NewsContentManager: React.FC = () => {
             {(!isModalOpen && !deleteId) && ReactDOM.createPortal(
                 <button 
                     onClick={openCreateModal}
-                    className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-40 flex items-center justify-center w-14 h-14 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--accent-color)]/30 group animate-fade-in-up"
+                    className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-40 flex items-center justify-center w-14 h-14 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white rounded-full shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[var(--accent-color)]/30 group"
                     title="Add New Article"
                 >
                     <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />

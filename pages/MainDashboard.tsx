@@ -54,7 +54,7 @@ const SystemHealthBanner: React.FC<{ successRate: number }> = ({ successRate }) 
     const currentStyle = styles[status];
 
     return (
-        <div className={`p-3 mb-6 rounded-lg border ${currentStyle.bg} animate-fade-in-up`}>
+        <div className={`p-3 mb-6 rounded-lg border ${currentStyle.bg}`}>
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative flex h-2.5 w-2.5 shrink-0">
@@ -91,7 +91,7 @@ const SystemHealthBanner: React.FC<{ successRate: number }> = ({ successRate }) 
 };
 
 const QuickActions: React.FC = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <Link to="/news#settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-amber-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
             <div className="p-2.5 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-all duration-200 shrink-0">
                 <Settings size={18} />
@@ -734,7 +734,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                             {isTimeDropdownOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setIsTimeDropdownOpen(false)} />
-                                    <div className="absolute left-0 mt-1 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-lg z-20 overflow-hidden">
+                                    <div className="absolute left-0 mt-1 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg z-20 overflow-hidden">
                                         {[
                                             { label: 'Last 1 Hour', value: '1h' },
                                             { label: 'Last 12 Hours', value: '12h' },
@@ -1040,19 +1040,22 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
     );
 };
 
+let cachedMainDashboardData: MainDashboardData | null = null;
+
 const MainDashboard: React.FC = () => {
-    const [data, setData] = useState<MainDashboardData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<MainDashboardData | null>(cachedMainDashboardData);
+    const [loading, setLoading] = useState<boolean>(!cachedMainDashboardData);
     const { refreshTrigger } = useAutoRefresh();
     const location = useLocation();
 
     useEffect(() => {
         const loadData = async () => {
-            if (!data) {
+            if (!cachedMainDashboardData) {
                 setLoading(true);
             }
             try {
                 const fetchedData = await fetchMainDashboardData();
+                cachedMainDashboardData = fetchedData;
                 setData(fetchedData);
             } catch (error) {
                 console.error("Failed to fetch main dashboard data:", error);
@@ -1113,7 +1116,7 @@ const MainDashboard: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-0">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-fade-in-up">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">Welcome back, Admin 👋</h1>
                     <p className="text-[var(--text-secondary)] mt-1 font-medium">{currentDate}</p>
@@ -1124,7 +1127,7 @@ const MainDashboard: React.FC = () => {
                 <h2 className="text-lg font-bold text-[var(--text-primary)] mb-3">Overview</h2>
                 
                 {/* 4 Stats Group 1 */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                     <StatCard
                         title="Total Users"
                         value={data.totalUsers}
@@ -1164,7 +1167,7 @@ const MainDashboard: React.FC = () => {
                 </div>
 
                 {/* 2 Charts Group 1 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                     <PanelCard className="rounded-xl p-5 shadow-sm h-full" borderColor="border-amber-500">
                         <div className="flex justify-between items-center mb-4 w-full">
                             <h3 className="font-bold text-base text-[var(--text-primary)]">Articles by Category</h3>
@@ -1190,7 +1193,7 @@ const MainDashboard: React.FC = () => {
                 </div>
 
                 {/* 4 Stats Group 2 */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                     <StatCard
                         title="Gallery Items"
                         value={data.totalGalleryItems || 0}
@@ -1230,7 +1233,7 @@ const MainDashboard: React.FC = () => {
                 </div>
 
                 {/* 2 Charts Group 2 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                     <PanelCard className="rounded-xl p-5 shadow-sm h-full" borderColor="border-emerald-500">
                         <div className="flex justify-between items-center mb-4 w-full">
                             <h3 className="font-bold text-base text-[var(--text-primary)]">Activity by Method</h3>
@@ -1292,7 +1295,7 @@ const MainDashboard: React.FC = () => {
                 </div>
             </div>
             
-            <div id="activity-section" className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div id="activity-section">
                 <LiveDatabaseLogs initialActivity={data.recentActivity} />
             </div>
         </div>

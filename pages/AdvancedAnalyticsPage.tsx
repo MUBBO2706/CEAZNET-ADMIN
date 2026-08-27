@@ -10,21 +10,31 @@ import { useAutoRefresh } from '../components/AutoRefreshContext';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4', '#f43f5e'];
 
+let cachedDbStats: DatabaseAnalyticsStats[] | null = null;
+let cachedActivityLogs: RecentActivityLog[] | null = null;
+let cachedNewsStats: any = null;
+
 const AdvancedAnalyticsPage: React.FC = () => {
-    const [dbStats, setDbStats] = useState<DatabaseAnalyticsStats[]>([]);
-    const [activityLogs, setActivityLogs] = useState<RecentActivityLog[]>([]);
-    const [newsStats, setNewsStats] = useState<any>({});
-    const [loading, setLoading] = useState(true);
+    const [dbStats, setDbStats] = useState<DatabaseAnalyticsStats[]>(cachedDbStats || []);
+    const [activityLogs, setActivityLogs] = useState<RecentActivityLog[]>(cachedActivityLogs || []);
+    const [newsStats, setNewsStats] = useState<any>(cachedNewsStats || {});
+    const [loading, setLoading] = useState(!cachedDbStats);
     const { refreshTrigger } = useAutoRefresh();
 
     useEffect(() => {
         const loadData = async () => {
+            if (!cachedDbStats) {
+                setLoading(true);
+            }
             try {
                 const [dbData, logsData, newsData] = await Promise.all([
                     fetchDatabaseAnalytics(),
                     fetchLiveActivityLogs(),
                     fetchAndCalculateNewsAnalytics()
                 ]);
+                cachedDbStats = dbData;
+                cachedActivityLogs = logsData;
+                cachedNewsStats = newsData;
                 setDbStats(dbData);
                 setActivityLogs(logsData);
                 setNewsStats(newsData);
@@ -201,7 +211,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                 </div>
 
                 {/* DB Row 2: Chart */}
-                <PanelCard className="rounded-xl p-5 shadow-sm mb-6 animate-fade-in-up" borderColor="border-indigo-500" style={{ animationDelay: '0.2s' }}>
+                <PanelCard className="rounded-xl p-5 shadow-sm mb-6" borderColor="border-indigo-500">
                     <div className="flex justify-between items-center mb-6 w-full">
                         <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                             <Database size={18} className="text-indigo-500" />
@@ -247,7 +257,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                 </PanelCard>
 
                 {/* DB Row 3: Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                     <StatCard 
                         title="DB Success Rate" 
                         value={`${successRate24h}%`} 
@@ -289,7 +299,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                 {/* Combined Row 1: Operations by Source & System API Activity */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-8">
                     {/* Left: Operations by Source */}
-                    <PanelCard className="rounded-xl p-5 shadow-sm h-full flex flex-col animate-fade-in-up" borderColor="border-emerald-500" style={{ animationDelay: '0.4s' }}>
+                    <PanelCard className="rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-emerald-500">
                         <div className="flex justify-between items-center mb-6 w-full">
                             <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                                 <Activity size={18} className="text-emerald-500" />
@@ -330,7 +340,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                     </PanelCard>
 
                     {/* Right: System API Cards */}
-                    <div className="flex flex-col h-full animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                    <div className="flex flex-col h-full">
                         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                             <Server className="text-violet-500" size={20} />
                             System & API Activity
@@ -380,7 +390,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
             <div>
                 {/* Combined Row 2: Activity by Operation Type & System Activity Timeline */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <PanelCard className="lg:col-span-1 rounded-xl p-5 shadow-sm h-full flex flex-col animate-fade-in-up" borderColor="border-violet-500" style={{ animationDelay: '0.6s' }}>
+                    <PanelCard className="lg:col-span-1 rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-violet-500">
                         <div className="flex justify-between items-center mb-6 w-full">
                             <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                                 <Cpu size={18} className="text-violet-500" />
@@ -420,7 +430,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                         </div>
                     </PanelCard>
 
-                    <PanelCard className="lg:col-span-2 rounded-xl p-5 shadow-sm h-full flex flex-col animate-fade-in-up" borderColor="border-sky-500" style={{ animationDelay: '0.8s' }}>
+                    <PanelCard className="lg:col-span-2 rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-sky-500">
                         <div className="flex justify-between items-center mb-6 w-full">
                             <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                                 <Activity size={18} className="text-sky-500" />

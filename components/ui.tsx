@@ -21,27 +21,73 @@ import {
 
 export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ info, className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [coords, setCoords] = useState({ left: 0, top: 0, bottom: 0, right: 0 });
+    const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({
+        position: 'fixed',
+        opacity: 0,
+        pointerEvents: 'none',
+        top: -9999,
+        left: -9999,
+    });
+    const [tailStyle, setTailStyle] = useState<React.CSSProperties>({});
+    const [isPlacedAbove, setIsPlacedAbove] = useState(true);
+
     const triggerRef = useRef<HTMLButtonElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
 
     const updatePosition = useCallback(() => {
-        if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setCoords({ 
-                left: rect.left, 
-                top: rect.top, 
-                bottom: rect.bottom, 
-                right: rect.right 
-            });
-        }
+        if (!triggerRef.current || !popoverRef.current) return;
+
+        const triggerRect = triggerRef.current.getBoundingClientRect();
+        const popoverEl = popoverRef.current;
+        const popoverWidth = popoverEl.offsetWidth || 240;
+        const popoverHeight = popoverEl.offsetHeight || 60;
+
+        const triggerX = triggerRect.left + triggerRect.width / 2;
+        const triggerTop = triggerRect.top;
+        const triggerBottom = triggerRect.bottom;
+
+        const margin = 12;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        const maxLeft = Math.max(margin, viewportWidth - popoverWidth - margin);
+        const left = Math.max(margin, Math.min(triggerX - popoverWidth / 2, maxLeft));
+
+        const placeAbove = triggerTop - popoverHeight - 8 > 0;
+        const top = placeAbove 
+            ? Math.max(margin, triggerTop - popoverHeight - 8)
+            : Math.min(viewportHeight - popoverHeight - margin, triggerBottom + 8);
+
+        const rawTailX = triggerX - left;
+        const tailX = Math.max(12, Math.min(rawTailX, popoverWidth - 12));
+
+        setIsPlacedAbove(placeAbove);
+        setTailStyle({
+            left: `${tailX}px`,
+            transform: 'translateX(-50%) rotate(45deg)',
+        });
+        setPopoverStyle({
+            position: 'fixed',
+            top: `${top}px`,
+            left: `${left}px`,
+            opacity: 1,
+            pointerEvents: 'auto',
+        });
     }, []);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (isOpen) {
             updatePosition();
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
+        } else {
+            setPopoverStyle({
+                position: 'fixed',
+                opacity: 0,
+                pointerEvents: 'none',
+                top: -9999,
+                left: -9999,
+            });
         }
         return () => {
             window.removeEventListener('resize', updatePosition);
@@ -74,7 +120,12 @@ export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ in
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="text-slate-400 hover:text-indigo-500 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-0.5"
+                className={`transition-colors outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 border-none p-0.5 shrink-0 inline-flex items-center justify-center ${
+                    isOpen 
+                        ? 'text-indigo-500 dark:text-indigo-400' 
+                        : 'text-slate-400 hover:text-indigo-500 dark:text-slate-400 dark:hover:text-indigo-400'
+                }`}
+                style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
                 aria-label="More information"
             >
                 <Info size={14} />
@@ -82,14 +133,17 @@ export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ in
             {isOpen && ReactDOM.createPortal(
                 <div 
                     ref={popoverRef}
-                    className="fixed z-[9999] mb-1.5 w-60 p-2 text-[11px] font-medium bg-slate-800 text-slate-100 rounded-md shadow-2xl border border-slate-700/50 break-words leading-tight shadow-black/20"
-                    style={{ 
-                        left: `${coords.left + (coords.right - coords.left) / 2}px`, 
-                        top: `${coords.top}px`,
-                        transform: 'translate(-50%, -100%)',
-                    }}
+                    className="fixed z-[9999] w-max max-w-[240px] sm:max-w-[280px] p-2 text-[11px] font-medium bg-slate-800 text-slate-100 rounded-md shadow-2xl border border-slate-700/50 break-words leading-tight shadow-black/20 transition-opacity duration-150"
+                    style={popoverStyle}
                 >
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-slate-800 border-b border-r border-slate-700/50 rotate-45"></div>
+                    <div 
+                        className={`absolute w-2.5 h-2.5 bg-slate-800 border-slate-700/50 ${
+                            isPlacedAbove 
+                                ? '-bottom-1 border-b border-r' 
+                                : '-top-1 border-t border-l'
+                        }`}
+                        style={tailStyle}
+                    ></div>
                     <span className="relative z-10 block">{info}</span>
                 </div>,
                 document.body
@@ -437,7 +491,7 @@ export const CustomDropdown: React.FC<{
                 .custom-dropdown-panel {
                     border: 1px solid var(--border-color);
                     border-radius: 0.5rem;
-                    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+                    box-shadow: none;
                     overflow-y: auto;
                     overflow-x: auto;
                     max-height: 240px;
@@ -448,6 +502,9 @@ export const CustomDropdown: React.FC<{
                     pointer-events: none;
                     visibility: hidden;
                     background-color: var(--card-bg);
+                }
+                html.dark .custom-dropdown-panel {
+                    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.3);
                 }
                 .custom-dropdown-panel.open {
                     opacity: 1;
@@ -1020,7 +1077,7 @@ export const ActionPopover: React.FC<{
             let top = placeTop ? rect.top - popoverHeight - 8 : rect.bottom + 8; // 8px gap for the tail
             let left = rect.right - popoverWidth + 12; // Adjust to align the tail with the 3 dots
 
-            left = Math.max(left, 10);
+            left = Math.max(10, Math.min(left, window.innerWidth - popoverWidth - 10));
 
             popoverEl.style.position = 'fixed';
             popoverEl.style.top = `${top}px`;
@@ -1066,7 +1123,7 @@ export const ActionPopover: React.FC<{
             {/* The Tail */}
             <div ref={tailRef} className="absolute -top-1.5 right-4 w-3 h-3 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-0"></div>
             {/* The Content */}
-            <div className="relative bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-lg overflow-hidden z-10">
+            <div className="relative bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg overflow-hidden z-10">
                 <div className="p-1">
                     {children}
                 </div>

@@ -172,6 +172,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
     const [broadcastList, setBroadcastList] = useState<any[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [showStyleInput, setShowStyleInput] = useState(Boolean(stylePrompt));
 
     useEffect(() => {
         if (showHistory) {
@@ -430,66 +431,68 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             />
                         </motion.div>
                     ) : broadcastType === 'system_banner' ? (
-                        <div className="w-full flex flex-col items-center justify-start py-10 h-full relative cursor-default">
-                                <div className="absolute top-0 inset-x-0 w-full h-8 bg-slate-200 dark:bg-zinc-800 flex items-center px-4 rounded-t-xl gap-1.5 opacity-50 scale-90 -translate-y-4">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 relative cursor-default">
+                            <div className="w-full max-w-[540px] bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col shrink-0">
+                                {/* Mock Browser Window Bar */}
+                                <div className="h-8 bg-slate-100 dark:bg-zinc-800/80 border-b border-slate-200/80 dark:border-zinc-800 flex items-center px-3 gap-1.5 shrink-0">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
                                     <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
                                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                    <div className="ml-2 text-[10px] text-slate-400 dark:text-zinc-500 font-mono truncate">ceaznet.com</div>
                                 </div>
                                 
-                                <div className="w-[90%] max-w-[600px] bg-white dark:bg-black rounded-lg border border-slate-200 dark:border-zinc-800 overflow-hidden relative mt-10">
-                                    {/* Preview Fake Header */}
-                                    <div className="h-12 border-b border-slate-100 dark:border-zinc-800 flex items-center px-4 bg-slate-50 dark:bg-zinc-900/50">
-                                        <div className="w-24 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                        <div className="ml-auto flex gap-3">
-                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                            <div className="w-10 h-4 bg-slate-200 dark:bg-zinc-800 rounded"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* System Banner Mock */}
-                                    <AnimatePresence>
-                                        {isActive && (
-                                            <motion.div 
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className={`
-                                                    px-4 py-2 text-center text-xs font-medium flex items-center justify-center gap-2
-                                                    ${bannerType === 'maintenance' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/50' : ''}
-                                                    ${bannerType === 'development' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/50' : ''}
-                                                    ${bannerType === 'testing' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/50' : ''}
-                                                    ${bannerType === 'alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-b border-red-100 dark:border-red-900/50' : ''}
-                                                `}>
-                                                    {bannerType === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> System Maintenance in Progress</span>}
-                                                    {bannerType === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Under Development - Some features may be unstable</span>}
-                                                    {bannerType === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Testing Environment - Data may be reset</span>}
-                                                    {bannerType === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Critical System Alert</span>}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
- 
-                                    <div className="p-6 space-y-4">
-                                        <div className="w-2/3 h-6 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
-                                        <div className="w-full h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
-                                        <div className="w-1/2 h-20 bg-slate-100 dark:bg-zinc-800/50 rounded-md"></div>
+                                {/* System Banner Mock - Positioned at top of client view */}
+                                <AnimatePresence>
+                                    {isActive && (
+                                        <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden shrink-0"
+                                        >
+                                            <div className={`
+                                                px-3 py-2 text-center text-xs font-semibold flex items-center justify-center gap-2 transition-colors
+                                                ${bannerType === 'maintenance' ? 'bg-blue-600 text-white' : ''}
+                                                ${bannerType === 'development' ? 'bg-purple-600 text-white' : ''}
+                                                ${bannerType === 'testing' ? 'bg-amber-500 text-zinc-950 font-bold' : ''}
+                                                ${bannerType === 'alert' ? 'bg-rose-600 text-white' : ''}
+                                            `}>
+                                                {bannerType === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> System Maintenance in Progress</span>}
+                                                {bannerType === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Under Development - Features may be unstable</span>}
+                                                {bannerType === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Testing Environment - Data may be reset</span>}
+                                                {bannerType === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Critical System Alert</span>}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Preview Mock Header */}
+                                <div className="h-10 border-b border-slate-100 dark:border-zinc-800/80 flex items-center px-4 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
+                                    <div className="w-20 h-3.5 bg-slate-300 dark:bg-zinc-700 rounded-md"></div>
+                                    <div className="ml-auto flex gap-2">
+                                        <div className="w-8 h-3 bg-slate-200 dark:bg-zinc-800 rounded"></div>
+                                        <div className="w-8 h-3 bg-slate-200 dark:bg-zinc-800 rounded"></div>
                                     </div>
                                 </div>
-                                <div className="mt-8 text-center px-4">
-                                    <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">System Banner Preview</p>
-                                    <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[280px] mx-auto">This is a mock representation. The actual banner rendering will be handled natively by the client application on all pages.</p>
+
+                                {/* Mock Page Content */}
+                                <div className="p-4 space-y-3">
+                                    <div className="w-1/2 h-4 bg-slate-200 dark:bg-zinc-800 rounded-md"></div>
+                                    <div className="w-full h-12 bg-slate-100 dark:bg-zinc-800/40 rounded-lg"></div>
+                                    <div className="w-3/4 h-8 bg-slate-100 dark:bg-zinc-800/40 rounded-lg"></div>
                                 </div>
+                            </div>
+
+                            <div className="mt-4 text-center px-4 shrink-0">
+                                <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">System Banner Preview</p>
+                                <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-0.5 max-w-[320px] mx-auto">This is a mock representation. Actual banner will render natively at top of client pages.</p>
+                            </div>
                         </div>
                     ) : generatedHtml ? (
                         <AutoScaledPreview html={generatedHtml} />
                     ) : (
-                        <div className="flex flex-col items-center justify-center gap-3 opacity-40 grayscale pointer-events-none hover:grayscale-0 hover:opacity-70 transition-all duration-500 cursor-default">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-indigo-500/10">
-                                <Radio size={28} className="text-indigo-600 dark:text-indigo-400 drop-shadow-sm -rotate-[15deg]" />
-                            </div>
+                        <div className="flex flex-col items-center justify-center gap-2 opacity-50 pointer-events-none transition-all duration-300 cursor-default">
+                            <Radio size={32} className="text-slate-400 dark:text-zinc-500" />
                             <div className="text-center">
                                 <p className="text-[12px] font-bold text-slate-700 dark:text-zinc-300">Blank Canvas</p>
                                 <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-500 mt-1 max-w-[200px]">Provide a prompt above to generate your custom broadcast popup.</p>
@@ -502,252 +505,283 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
 
             {/* Input Composer Section */}
             <div className="flex flex-col shrink-0 border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all duration-300 relative focus-within:shadow-[0_-4px_20px_-10px_rgba(79,70,229,0.15)] z-10">
-                {broadcastType === 'popup' ? (
-                        <>
-                            <div className="relative">
-                                <textarea
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder={history.length > 0 ? "Adjust the broadcast... (e.g. 'Make it shorter')" : "Design a broadcast popup... (e.g. 'Servers down in 15 mins')"}
-                                    className="w-full bg-transparent text-[13px] px-4 py-3 min-h-[64px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
-                                    disabled={isGenerating}
-                                />
-                            </div>
-
-                            <div className="relative border-t border-slate-100 dark:border-zinc-800/80">
-                                <div className="flex items-center px-4">
-                                    <Palette size={13} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                                    <input
-                                        type="text"
-                                        value={stylePrompt}
-                                        onChange={(e) => setStylePrompt(e.target.value)}
-                                        placeholder="Styling instructions (e.g. 'Dark mode, rounded corners, modern')"
-                                        className="w-full bg-transparent text-[12px] px-4 py-2.5 focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
-                                        disabled={isGenerating}
-                                    />
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 w-full sm:w-auto">
-                                <div className="flex flex-col w-full sm:w-auto flex-1">
-                                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Banner Variant</label>
-                                    <CustomDropdown
-                                        options={['maintenance', 'development', 'testing', 'alert']}
-                                        value={bannerType}
-                                        onChange={(v) => setBannerType(v as any)}
-                                        triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-3 !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
-                                        displayLabels={{
-                                            maintenance: 'Maintenance',
-                                            development: 'Development',
-                                            testing: 'Testing',
-                                            alert: 'Alert'
-                                        }}
-                                    />
-                                </div>
-                                <div className="flex flex-col ml-2 sm:ml-4">
-                                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Status</label>
-                                    <div className="flex items-center bg-slate-100 dark:bg-zinc-800/80 rounded-lg p-1 w-fit">
-                                        <button 
-                                            onClick={() => setIsActive(true)}
-                                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all flex items-center gap-1.5 ${isActive ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
-                                        >
-                                            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-400 dark:bg-zinc-600'}`} />
-                                            Active
-                                        </button>
-                                        <button 
-                                            onClick={() => setIsActive(false)}
-                                            className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all flex items-center gap-1.5 ${!isActive ? 'bg-white dark:bg-zinc-700 text-rose-600 dark:text-rose-400 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
-                                        >
-                                            <div className={`w-1.5 h-1.5 rounded-full ${!isActive ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-slate-400 dark:bg-zinc-600'}`} />
-                                            Hidden
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center px-4 py-2 border-t border-slate-100 dark:border-zinc-800/80">
-                        {/* Compact Settings */}
-                        {/* Adding full width and overflow handling so it actually scrolls gracefully */}
-                        <div className="flex items-center gap-4 opacity-90 transition-opacity overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full min-w-0 pr-2">
-                            {broadcastType === 'popup' && (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <Cpu size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                                    <CustomDropdown
-                                        options={['gemini-3.7-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
-                                        value={aiModel}
-                                        onChange={(v) => setAiModel(v as string)}
-                                        triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
-                                        className="w-auto [&_.custom-dropdown-panel]:w-48"
-                                        displayLabels={{
-                                            'gemini-3.7-flash': 'Gemini 3.7 Flash',
-                                            'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
-                                            'gemini-3.1-flash-lite': 'Gemini 3.1 Flash Lite',
-                                            'gemini-2.5-pro': 'Gemini 2.5 Pro',
-                                            'gemini-2.5-flash': 'Gemini 2.5 Flash',
-                                            'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite'
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <LayoutDashboard size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                {/* Top Selectors Toolbar (Shifted to Top above input) */}
+                <div className="flex justify-between items-center px-2.5 sm:px-4 py-1.5 sm:py-2 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/30">
+                    <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-4 opacity-90 transition-opacity w-full min-w-0">
+                        {broadcastType === 'popup' && (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Cpu size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <CustomDropdown
-                                    options={['popup', 'system_banner']}
-                                    value={broadcastType}
-                                    onChange={(v) => setBroadcastType(v as 'popup' | 'system_banner')}
+                                    options={['gemini-3.7-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
+                                    value={aiModel}
+                                    onChange={(v) => setAiModel(v as string)}
                                     triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
-                                    className="w-auto [&_.custom-dropdown-panel]:w-40"
+                                    className="w-auto [&_.custom-dropdown-panel]:w-48"
                                     displayLabels={{
-                                        popup: 'Fullscreen Popup',
-                                        system_banner: 'System Banner'
+                                        'gemini-3.7-flash': 'Gemini 3.7',
+                                        'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+                                        'gemini-3.1-flash-lite': 'Gemini 3.1 Lite',
+                                        'gemini-2.5-pro': 'Gemini 2.5 Pro',
+                                        'gemini-2.5-flash': 'Gemini 2.5 Flash',
+                                        'gemini-2.5-flash-lite': 'Gemini 2.5 Lite'
                                     }}
                                 />
                             </div>
-                            
-                            {/* Hide popup-specific settings if system banner is selected */}
-                            {broadcastType === 'popup' && (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <Clock size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                                    <CustomDropdown
-                                        options={['0', '1', '6', '24', '72', '168']}
-                                        value={expireDuration.toString()}
-                                        onChange={(v) => setExpireDuration(Number(v))}
-                                        triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
-                                        className="w-auto [&_.custom-dropdown-panel]:w-32"
-                                        displayLabels={{
-                                            '0': 'Permanent',
-                                            '1': '1 HR Expire',
-                                            '6': '6 HR Expire',
-                                            '24': '24 HR Expire',
-                                            '72': '3 Day Expire',
-                                            '168': '1 Wk Expire'
-                                        }}
-                                    />
-                                </div>
-                            )}
-                            
+                        )}
+
+                        <div className="flex items-center gap-1 shrink-0">
+                            <LayoutDashboard size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                            <CustomDropdown
+                                options={['popup', 'system_banner']}
+                                value={broadcastType}
+                                onChange={(v) => setBroadcastType(v as 'popup' | 'system_banner')}
+                                triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
+                                className="w-auto [&_.custom-dropdown-panel]:w-40"
+                                displayLabels={{
+                                    popup: 'Popup',
+                                    system_banner: 'System Banner'
+                                }}
+                            />
                         </div>
                         
-                        {/* Actions visible only for popup generation */}
                         {broadcastType === 'popup' && (
-                            <div className="flex items-center gap-2 pl-2 shrink-0 border-l border-slate-200 dark:border-zinc-800">
-                                {history.length > 0 && (
-                                    <button 
-                                        onClick={() => { setHistory([]); setGeneratedHtml(null); setPrompt(''); setStylePrompt(''); setStatusData(null); }}
-                                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-200/50 dark:hover:bg-zinc-800 rounded-lg transition-colors tooltip-trigger"
-                                        title="Reset"
-                                        disabled={isGenerating || isSending}
-                                    >
-                                        <RotateCcw size={14} />
-                                    </button>
-                                )}
-                                <motion.button 
-                                    layout
-                                    whileHover={!isGenerating && !isSending && prompt.trim() ? { scale: 1.02, filter: "brightness(1.1)" } : {}}
-                                    whileTap={!isGenerating && !isSending && prompt.trim() ? { scale: 0.96 } : {}}
-                                    onClick={handleGenerate}
-                                    disabled={!prompt.trim() || isGenerating || isSending}
-                                    className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-4 py-1.5 transition-all text-white rounded-lg font-semibold text-[11px] h-[28px] shrink-0 border ${
-                                        isGenerating 
-                                            ? 'bg-indigo-50 border-indigo-200/80 text-indigo-950 dark:bg-slate-900 dark:border-transparent dark:text-white cursor-wait shadow-[0_0_12px_rgba(99,102,241,0.25)] dark:shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
-                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-[0_2px_10px_-2px_rgba(79,70,229,0.4)] border-transparent disabled:bg-indigo-600/50 disabled:text-white/50 disabled:shadow-none'
-                                    }`}
-                                >
-                                    <AnimatePresence mode="wait">
-                                        {isGenerating ? (
-                                            <motion.div 
-                                                key="generating"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.15 }}
-                                                className="flex flex-row items-center justify-center z-10 min-w-[60px]"
-                                            >
-                                                <div className="flex gap-1 items-center justify-center h-3 drop-shadow-md mix-blend-normal">
-                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
-                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.15 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
-                                                    <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
-                                                </div>
-                                            </motion.div>
-                                        ) : (
-                                            <motion.div 
-                                                key="idle"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.15 }}
-                                                className="flex flex-row items-center gap-1.5 z-10"
-                                            >
-                                                <Sparkles size={12} />
-                                                <span>{history.length > 0 ? 'Refine' : 'Generate'}</span>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                    
-                                    {/* Fluid AI-like Loading Background (ChatGPT Image Gen style) */}
-                                    {isGenerating && (
-                                        <div className="absolute inset-0 z-0 bg-indigo-50/90 dark:bg-slate-950 overflow-hidden pointer-events-none rounded-lg">
-                                            <motion.div
-                                                className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[8px] opacity-80 dark:opacity-90 rounded-full"
-                                                style={{ width: '140%', height: '200%', background: '#38bdf8', left: '-25%', top: '-50%' }}
-                                                animate={{ 
-                                                    x: ['0%', '15%', '-5%', '0%'], 
-                                                    y: ['0%', '25%', '-10%', '0%'],
-                                                    scale: [1, 1.25, 0.9, 1],
-                                                    rotate: [0, 90, 180, 360]
-                                                }}
-                                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                            />
-                                            <motion.div
-                                                className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[10px] opacity-80 dark:opacity-90 rounded-full"
-                                                style={{ width: '120%', height: '180%', background: '#a855f7', right: '-10%', top: '-20%' }}
-                                                animate={{ 
-                                                    x: ['0%', '-20%', '10%', '0%'], 
-                                                    y: ['0%', '-15%', '25%', '0%'],
-                                                    scale: [1, 0.85, 1.15, 1],
-                                                    rotate: [360, 180, 90, 0]
-                                                }}
-                                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                                            />
-                                            <motion.div
-                                                className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[6px] opacity-70 dark:opacity-80 rounded-full"
-                                                style={{ width: '100%', height: '150%', background: '#ec4899', left: '20%', top: '-30%' }}
-                                                animate={{ 
-                                                    x: ['0%', '20%', '-10%', '0%'], 
-                                                    y: ['0%', '15%', '-20%', '0%'],
-                                                    scale: [0.9, 1.3, 0.85, 0.9],
-                                                    rotate: [0, -90, -180, -360]
-                                                }}
-                                                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                                            />
-                                            <div className="absolute inset-0 bg-indigo-500/5 dark:bg-black/10 mix-blend-overlay"></div>
-                                            <div className="absolute inset-0 shadow-[inset_0_0_6px_rgba(99,102,241,0.2)] dark:shadow-[inset_0_0_8px_rgba(0,0,0,0.6)] rounded-lg border border-indigo-200/50 dark:border-white/5"></div>
-                                        </div>
-                                    )}
-                                </motion.button>
-                            </div>
-                        )}
-                        {/* Actions visible only for system banner */}
-                        {broadcastType === 'system_banner' && (
-                            <div className="flex items-center gap-2 pl-2 shrink-0 border-l border-slate-200 dark:border-zinc-800">
-                                <motion.button 
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.96 }}
-                                    onClick={handleSend}
-                                    disabled={isSending}
-                                    className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-[11px] transition-colors disabled:opacity-50 h-[28px]"
-                                >
-                                    {isSending ? <Loader size={14} className="animate-spin" /> : <Check size={14} />}
-                                    Save Banner
-                                </motion.button>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Clock size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <CustomDropdown
+                                    options={['0', '1', '6', '24', '72', '168']}
+                                    value={expireDuration.toString()}
+                                    onChange={(v) => setExpireDuration(Number(v))}
+                                    triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
+                                    className="w-auto [&_.custom-dropdown-panel]:w-32"
+                                    displayLabels={{
+                                        '0': 'Permanent',
+                                        '1': '1 HR Expire',
+                                        '6': '6 HR Expire',
+                                        '24': '24 HR Expire',
+                                        '72': '3 Days Expire',
+                                        '168': '1 Wk Expire'
+                                    }}
+                                />
                             </div>
                         )}
                     </div>
+                    
+                    {broadcastType === 'popup' && history.length > 0 && (
+                        <button 
+                            onClick={() => { setHistory([]); setGeneratedHtml(null); setPrompt(''); setStylePrompt(''); setStatusData(null); }}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-200/50 dark:hover:bg-zinc-800 rounded-lg transition-colors shrink-0 ml-2"
+                            title="Reset"
+                            disabled={isGenerating || isSending}
+                        >
+                            <RotateCcw size={14} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Main Input Composer Body */}
+                {broadcastType === 'popup' ? (
+                    <div className="p-3 flex flex-col gap-2">
+                        {/* Prompt Textarea */}
+                        <div className="relative">
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder={history.length > 0 ? "Adjust the broadcast... (e.g. 'Make it shorter')" : "Design a broadcast popup... (e.g. 'Servers down in 15 mins')"}
+                                className="w-full bg-transparent text-[13px] px-3 py-2 min-h-[60px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
+                                disabled={isGenerating}
+                            />
+                        </div>
+
+                        {/* Conditional Styling Input with Close Icon */}
+                        <AnimatePresence>
+                            {showStyleInput && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg">
+                                        <Palette size={13} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
+                                        <input
+                                            type="text"
+                                            value={stylePrompt}
+                                            onChange={(e) => setStylePrompt(e.target.value)}
+                                            placeholder="Styling instructions (e.g. 'Dark mode, rounded corners, modern')"
+                                            className="w-full bg-transparent text-[12px] focus:outline-none text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-opacity disabled:opacity-50"
+                                            disabled={isGenerating}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStyleInput(false)}
+                                            className="p-1 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 rounded hover:bg-slate-200/50 dark:hover:bg-zinc-800 shrink-0 transition-colors"
+                                            title="Hide styling input"
+                                        >
+                                            <X size={13} />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Bottom Row inside Input Box (Styling Toggle on Left, Generate Button on Right) */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800/60 mt-0.5">
+                            {/* Left Side: Toggle Styling Button */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowStyleInput(!showStyleInput)}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all shrink-0 ${
+                                        showStyleInput
+                                            ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60'
+                                            : 'bg-slate-100 hover:bg-slate-200/70 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200/70 dark:border-zinc-700/50'
+                                    }`}
+                                    disabled={isGenerating}
+                                >
+                                    <Palette size={12} className={showStyleInput ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-zinc-400'} />
+                                    <span>{showStyleInput ? 'Styling' : '+ Add Style'}</span>
+                                </button>
+                            </div>
+
+                            {/* Right Side: Generate Button placed inside bottom right */}
+                            <motion.button 
+                                layout
+                                whileHover={!isGenerating && !isSending && prompt.trim() ? { scale: 1.02, filter: "brightness(1.1)" } : {}}
+                                whileTap={!isGenerating && !isSending && prompt.trim() ? { scale: 0.96 } : {}}
+                                onClick={handleGenerate}
+                                disabled={!prompt.trim() || isGenerating || isSending}
+                                className={`relative overflow-hidden flex items-center justify-center gap-1.5 px-4 py-1.5 transition-all text-white rounded-lg font-semibold text-[11px] h-[28px] shrink-0 border ${
+                                    isGenerating 
+                                        ? 'bg-indigo-50 border-indigo-200/80 text-indigo-950 dark:bg-slate-900 dark:border-transparent dark:text-white cursor-wait shadow-[0_0_12px_rgba(99,102,241,0.25)] dark:shadow-[0_0_15px_rgba(56,189,248,0.3)] scale-[0.98]' 
+                                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-[0_2px_10px_-2px_rgba(79,70,229,0.4)] border-transparent disabled:bg-indigo-600/50 disabled:text-white/50 disabled:shadow-none'
+                                }`}
+                            >
+                                <AnimatePresence mode="wait">
+                                    {isGenerating ? (
+                                        <motion.div 
+                                            key="generating"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="flex flex-row items-center justify-center z-10 min-w-[60px]"
+                                        >
+                                            <div className="flex gap-1 items-center justify-center h-3 drop-shadow-md mix-blend-normal">
+                                                <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
+                                                <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.15 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
+                                                <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }} className="w-1 h-1 bg-indigo-950 dark:bg-white rounded-full" />
+                                            </div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div 
+                                            key="idle"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="flex flex-row items-center gap-1.5 z-10"
+                                        >
+                                            <Sparkles size={12} />
+                                            <span>{history.length > 0 ? 'Refine' : 'Generate'}</span>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                                
+                                {isGenerating && (
+                                    <div className="absolute inset-0 z-0 bg-indigo-50/90 dark:bg-slate-950 overflow-hidden pointer-events-none rounded-lg">
+                                        <motion.div
+                                            className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[8px] opacity-80 dark:opacity-90 rounded-full"
+                                            style={{ width: '140%', height: '200%', background: '#38bdf8', left: '-25%', top: '-50%' }}
+                                            animate={{ 
+                                                x: ['0%', '15%', '-5%', '0%'], 
+                                                y: ['0%', '25%', '-10%', '0%'],
+                                                scale: [1, 1.25, 0.9, 1],
+                                                rotate: [0, 90, 180, 360]
+                                            }}
+                                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                        />
+                                        <motion.div
+                                            className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[10px] opacity-80 dark:opacity-90 rounded-full"
+                                            style={{ width: '120%', height: '180%', background: '#a855f7', right: '-10%', top: '-20%' }}
+                                            animate={{ 
+                                                x: ['0%', '-20%', '10%', '0%'], 
+                                                y: ['0%', '-15%', '25%', '0%'],
+                                                scale: [1, 0.85, 1.15, 1],
+                                                rotate: [360, 180, 90, 0]
+                                            }}
+                                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                                        />
+                                        <motion.div
+                                            className="absolute mix-blend-multiply dark:mix-blend-screen filter blur-[6px] opacity-70 dark:opacity-80 rounded-full"
+                                            style={{ width: '100%', height: '150%', background: '#ec4899', left: '20%', top: '-30%' }}
+                                            animate={{ 
+                                                x: ['0%', '20%', '-10%', '0%'], 
+                                                y: ['0%', '15%', '-20%', '0%'],
+                                                scale: [0.9, 1.3, 0.85, 0.9],
+                                                rotate: [0, -90, -180, -360]
+                                            }}
+                                            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+                                        />
+                                        <div className="absolute inset-0 bg-indigo-500/5 dark:bg-black/10 mix-blend-overlay"></div>
+                                        <div className="absolute inset-0 shadow-[inset_0_0_6px_rgba(99,102,241,0.2)] dark:shadow-[inset_0_0_8px_rgba(0,0,0,0.6)] rounded-lg border border-indigo-200/50 dark:border-white/5"></div>
+                                    </div>
+                                )}
+                            </motion.button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <div className="flex flex-col w-full sm:w-auto flex-1">
+                                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Banner Variant</label>
+                                <CustomDropdown
+                                    options={['maintenance', 'development', 'testing', 'alert']}
+                                    value={bannerType}
+                                    onChange={(v) => setBannerType(v as any)}
+                                    triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-3 !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
+                                    displayLabels={{
+                                        maintenance: 'Maintenance',
+                                        development: 'Development',
+                                        testing: 'Testing',
+                                        alert: 'Alert'
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col ml-2 sm:ml-4">
+                                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Status</label>
+                                <div className="flex items-center bg-slate-100 dark:bg-zinc-800/80 rounded-lg p-1 w-fit">
+                                    <button 
+                                        onClick={() => setIsActive(true)}
+                                        className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all flex items-center gap-1.5 ${isActive ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-400 dark:bg-zinc-600'}`} />
+                                        Active
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsActive(false)}
+                                        className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all flex items-center gap-1.5 ${!isActive ? 'bg-white dark:bg-zinc-700 text-rose-600 dark:text-rose-400 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-zinc-300'}`}
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${!isActive ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-slate-400 dark:bg-zinc-600'}`} />
+                                        Hidden
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="ml-auto">
+                            <motion.button 
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={handleSend}
+                                disabled={isSending}
+                                className="relative flex items-center justify-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-[11px] transition-colors disabled:opacity-50 h-[28px]"
+                            >
+                                {isSending ? <Loader size={14} className="animate-spin" /> : <Check size={14} />}
+                                <span>Save Banner</span>
+                            </motion.button>
+                        </div>
+                    </div>
+                )}
             </div>
             
             {/* History Panel Overlay */}

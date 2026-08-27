@@ -222,7 +222,7 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
     };
 
     return (
-        <div className="animate-fade-in-up">
+        <div>
             <div className="mb-4 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
                 <div className="flex items-center gap-3 md:gap-4 min-w-0 w-full sm:w-auto">
                     <button onClick={onBack} className="btn btn-secondary px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm shrink-0">

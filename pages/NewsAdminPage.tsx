@@ -25,15 +25,19 @@ const BouncingDots = () => {
     );
 };
 
+let cachedNewsLogs: NewsLog[] | null = null;
+let cachedNewsConfig: NewsConfig | null = null;
+let cachedEngagementData: ArticleEngagementData | null = null;
+
 const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false }) => {
     const location = useLocation();
     const [view, setView] = useState('engagement');
     const { refreshTrigger } = useAutoRefresh();
 
-    const [logs, setLogs] = useState<NewsLog[]>([]);
-    const [config, setConfig] = useState<NewsConfig>({ gnews_api_keys: [], gemini_api_keys: [] });
-    const [engagementData, setEngagementData] = useState<ArticleEngagementData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [logs, setLogs] = useState<NewsLog[]>(cachedNewsLogs || []);
+    const [config, setConfig] = useState<NewsConfig>(cachedNewsConfig || { gnews_api_keys: [], gemini_api_keys: [] });
+    const [engagementData, setEngagementData] = useState<ArticleEngagementData | null>(cachedEngagementData);
+    const [loading, setLoading] = useState(!cachedNewsLogs);
     
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ ids: number[]; isBatch: boolean } | null>(null);
     const [runConfirmationOpen, setRunConfirmationOpen] = useState(false);
@@ -73,12 +77,17 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
     }, [isUpdatingNews]);
     
     const loadData = useCallback(async () => {
-        setLoading(true);
+        if (!cachedNewsLogs) {
+            setLoading(true);
+        }
         try {
             const [{ logs, config }, engagementData] = await Promise.all([
                 fetchNewsAdminData(),
                 fetchNewsEngagementData()
             ]);
+            cachedNewsLogs = logs as NewsLog[];
+            cachedNewsConfig = config;
+            cachedEngagementData = engagementData;
             setLogs(logs as NewsLog[]);
             setConfig(config);
             setEngagementData(engagementData);

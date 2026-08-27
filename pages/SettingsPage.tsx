@@ -63,6 +63,10 @@ const formatTimeAgo = (dateString: string | null | undefined): string => {
     return `${years}y ago`;
 };
 
+const tableDetailsCache = new Map<string, TableDetails>();
+let cachedDynamicTables: TableInfo[] | null = null;
+let cachedSettingsDbAnalytics: DatabaseAnalyticsStats[] | null = null;
+
 const SettingsPage: React.FC = () => {
     const location = useLocation();
     const { tableName } = useParams();
@@ -81,12 +85,12 @@ const SettingsPage: React.FC = () => {
     const [passwordInput, setPasswordInput] = useState('');
     const [dropTableStep, setDropTableStep] = useState<1 | 2>(1);
     const [activePopover, setActivePopover] = useState<{ tableName: string; anchorEl: HTMLElement } | null>(null);
-    const [tableDetails, setTableDetails] = useState<TableDetails | null>(null);
+    const [tableDetails, setTableDetails] = useState<TableDetails | null>(() => tableDetailsCache.get(selectedTable) || null);
     const [isFetchingDetails, setIsFetchingDetails] = useState(false);
     
-    const [dynamicTables, setDynamicTables] = useState<TableInfo[]>(databases[0].tables);
-    const [dbAnalytics, setDbAnalytics] = useState<DatabaseAnalyticsStats[]>([]);
-    const [isLoadingTables, setIsLoadingTables] = useState(true);
+    const [dynamicTables, setDynamicTables] = useState<TableInfo[]>(cachedDynamicTables || databases[0].tables);
+    const [dbAnalytics, setDbAnalytics] = useState<DatabaseAnalyticsStats[]>(cachedSettingsDbAnalytics || []);
+    const [isLoadingTables, setIsLoadingTables] = useState(!cachedDynamicTables);
     const [tableFetchError, setTableFetchError] = useState<string | null>(null);
     const { refreshTrigger } = useAutoRefresh();
     const prevRefreshTriggerTablesRef = useRef(refreshTrigger);
@@ -109,7 +113,7 @@ const SettingsPage: React.FC = () => {
 
     useEffect(() => {
         async function loadTables(isAutoRefresh = false) {
-            if (dynamicTables.length === 0 && !isAutoRefresh) {
+            if (!cachedDynamicTables && !isAutoRefresh) {
                 setIsLoadingTables(true);
             }
             const [{ data, error }, analyticsData] = await Promise.all([
@@ -117,6 +121,7 @@ const SettingsPage: React.FC = () => {
                 fetchDatabaseAnalytics()
             ]);
             
+            cachedSettingsDbAnalytics = analyticsData;
             setDbAnalytics(analyticsData);
 
             if (error) {
@@ -133,10 +138,11 @@ const SettingsPage: React.FC = () => {
                 });
                 
                 mergedTables.sort((a, b) => a.name.localeCompare(b.name));
+                cachedDynamicTables = mergedTables;
                 setDynamicTables(mergedTables);
                 setTableFetchError(null);
             }
-            if (!isAutoRefresh) setIsLoadingTables(false);
+            setIsLoadingTables(false);
         }
         const isAutoRefresh = prevRefreshTriggerTablesRef.current !== refreshTrigger;
         loadTables(isAutoRefresh);
@@ -167,27 +173,34 @@ const SettingsPage: React.FC = () => {
 
     const getDetails = async (isAutoRefresh = false) => {
         if (!selectedTableInfo) return;
-        if (!isAutoRefresh) {
+        const cached = tableDetailsCache.get(selectedTableInfo.name);
+        if (cached) {
+            setTableDetails(cached);
+        } else if (!isAutoRefresh) {
             setIsFetchingDetails(true);
-            setTableDetails(null); 
         }
         const { data, error } = await fetchTableDetails(selectedTableInfo.name);
         if (error) {
             console.error(`Failed to fetch details for ${selectedTableInfo.name}`, error);
-            if (!isAutoRefresh) alert(`Could not load details for table: ${selectedTableInfo.name}`);
+            if (!isAutoRefresh && !cached) alert(`Could not load details for table: ${selectedTableInfo.name}`);
         } else {
             const analytics = dbAnalytics.find(a => a.table_name === selectedTableInfo.name);
-            setTableDetails(data ? { ...data, lastUsed: analytics?.last_used || null } : null);
+            const fullDetails = data ? { ...data, lastUsed: analytics?.last_used || null } : null;
+            if (fullDetails) {
+                tableDetailsCache.set(selectedTableInfo.name, fullDetails);
+            }
+            setTableDetails(fullDetails);
         }
-        if (!isAutoRefresh) {
-            setIsFetchingDetails(false);
-        }
+        setIsFetchingDetails(false);
     };
 
     useEffect(() => {
         if (view !== 'db' || !selectedTableInfo) {
-            setTableDetails(null);
             return;
+        }
+        const cached = tableDetailsCache.get(selectedTableInfo.name);
+        if (cached) {
+            setTableDetails(cached);
         }
         const isAutoRefresh = prevRefreshTriggerDetailsRef.current !== refreshTrigger;
         getDetails(isAutoRefresh);

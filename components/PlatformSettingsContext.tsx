@@ -5,12 +5,14 @@ export interface PlatformSettings {
     support_email: string;
     platform_logo_url: string;
     platform_favicon_url: string;
+    activity_logs_max_limit: number;
 }
 
 const defaultSettings: PlatformSettings = {
     support_email: 'Support@ceaznet.com',
     platform_logo_url: '/logo.png',
     platform_favicon_url: '/logo.png',
+    activity_logs_max_limit: 1000,
 };
 
 interface PlatformSettingsContextType {
@@ -52,6 +54,10 @@ export const PlatformSettingsProvider: React.FC<{ children: ReactNode }> = ({ ch
                     if (row.setting_key === 'support_email') newSettings.support_email = val;
                     if (row.setting_key === 'platform_logo_url') newSettings.platform_logo_url = val;
                     if (row.setting_key === 'platform_favicon_url') newSettings.platform_favicon_url = val;
+                    if (row.setting_key === 'activity_logs_max_limit') {
+                        const parsed = parseInt(val, 10);
+                        if (!isNaN(parsed)) newSettings.activity_logs_max_limit = parsed;
+                    }
                 });
                 setSettings(newSettings);
                 

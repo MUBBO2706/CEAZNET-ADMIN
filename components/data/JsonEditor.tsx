@@ -134,7 +134,7 @@ const CustomTypeDropdown: React.FC<{ value: string, onChange: (val: any) => void
             {isOpen && (
                 <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                <div className="absolute bottom-full left-0 mb-1 w-full bg-white dark:bg-zinc-800 border border-[var(--border-color)] rounded-md shadow-xl z-20 py-1">
+                <div className="absolute bottom-full left-0 mb-1 w-full bg-white dark:bg-zinc-800 border border-[var(--border-color)] rounded-md shadow-none dark:shadow-xl z-20 py-1">
                     {options.map(opt => (
                         <div 
                             key={opt.value}

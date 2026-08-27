@@ -11,11 +11,9 @@ import Header from './components/Header';
 import { LoadingSpinner } from './components/skeletons';
 
 import SupportInboxPage from './pages/SupportInboxPage';
+import AdvancedAnalyticsPage from './pages/AdvancedAnalyticsPage';
+import BroadcastPage from './pages/BroadcastPage';
 import { verifyAdminBackend } from './services/supabaseService';
-
-// Lazy load new pages
-const AdvancedAnalyticsPage = React.lazy(() => import('./pages/AdvancedAnalyticsPage'));
-const BroadcastPage = React.lazy(() => import('./pages/BroadcastPage'));
 
 
 // --- Error Boundary Component ---
@@ -240,12 +238,13 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
     useEffect(() => {
         const handleScroll = () => {
             if (mainRef.current) {
-                setIsScrolled(mainRef.current.scrollTop > 10);
+                const scrolled = mainRef.current.scrollTop > 10;
+                setIsScrolled(prev => prev === scrolled ? prev : scrolled);
             }
         };
         const main = mainRef.current;
         if (main) {
-            main.addEventListener('scroll', handleScroll);
+            main.addEventListener('scroll', handleScroll, { passive: true });
         }
         return () => {
             if (main) {
@@ -301,21 +300,19 @@ const PageLayout: React.FC<{ theme: string, toggleTheme: () => void }> = ({ them
                     className={`flex-1 flex flex-col overflow-y-auto ${location.pathname.startsWith('/support-inbox') || location.pathname.startsWith('/broadcast') ? '' : ((location.pathname === '/' || location.pathname.startsWith('/users') || location.pathname.startsWith('/news')) ? 'px-3 pb-0 sm:px-4 sm:pb-0 lg:px-6 lg:pb-0' : 'px-3 pb-3 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6')}`}
                 >
                     <div className={`h-[50px] shrink-0 w-full ${location.pathname.startsWith('/support-inbox') || location.pathname.startsWith('/broadcast') ? '' : 'mb-4 sm:mb-5 lg:mb-6'}`}></div>
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <Routes>
-                            <Route path="/" element={<MainDashboard />} />
-                            <Route path="/news" element={<NewsAdminPage isScrolled={isScrolled} />} />
-                            <Route path="/news/:logId" element={<NewsAdminPage isScrolled={isScrolled} />} />
-                            <Route path="/users" element={<UsersPage />} />
-                            <Route path="/users/:userId" element={<UsersPage />} />
-                            <Route path="/settings" element={<SettingsPage />} />
-                            <Route path="/settings/:tableName" element={<SettingsPage />} />
-                            <Route path="/support-inbox" element={<SupportInboxPage />} />
-                            <Route path="/support-inbox/:convId" element={<SupportInboxPage />} />
-                            <Route path="/advanced-analytics" element={<AdvancedAnalyticsPage />} />
-                            <Route path="/broadcast" element={<BroadcastPage />} />
-                        </Routes>
-                    </Suspense>
+                    <Routes>
+                        <Route path="/" element={<MainDashboard />} />
+                        <Route path="/news" element={<NewsAdminPage isScrolled={isScrolled} />} />
+                        <Route path="/news/:logId" element={<NewsAdminPage isScrolled={isScrolled} />} />
+                        <Route path="/users" element={<UsersPage />} />
+                        <Route path="/users/:userId" element={<UsersPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/settings/:tableName" element={<SettingsPage />} />
+                        <Route path="/support-inbox" element={<SupportInboxPage />} />
+                        <Route path="/support-inbox/:convId" element={<SupportInboxPage />} />
+                        <Route path="/advanced-analytics" element={<AdvancedAnalyticsPage />} />
+                        <Route path="/broadcast" element={<BroadcastPage />} />
+                    </Routes>
                 </main>
             </div>
         </div>

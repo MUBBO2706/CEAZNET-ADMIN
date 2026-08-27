@@ -215,7 +215,7 @@ const ApiKeyRow: React.FC<{
                                 <MoreVertical size={13} />
                             </button>
                             {isMenuOpen && (
-                                <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-48 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-lg overflow-hidden`}>
+                                <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-48 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg overflow-hidden`}>
                                 <div className="flex flex-col py-1">
                                     <button onClick={() => handleMenuAction(() => { setIsExpanded(true); setIsEditing(true); })} className={`${optionBaseClass} ${optionHoverClass}`}>
                                         <Edit2 size={14} /> Edit Key
@@ -1251,7 +1251,7 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative border border-[var(--border-color)] rounded-lg shadow-none dark:shadow-lg max-h-60 overflow-y-auto`}
             role="listbox"
             style={{
                 position: 'fixed',
