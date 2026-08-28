@@ -321,6 +321,26 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 
             {log.payload && (
                 <div className="flex flex-col gap-5 sm:gap-6">
+                    {/* Containerless Metadata Summary Bar */}
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 py-1.5 text-xs font-mono border-b border-[var(--border-color)]/60 pb-3">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-bold">Source:</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{log.source || 'Client API'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-bold">Record ID:</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{log.record_id ? `#${log.record_id}` : '—'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-bold">Changed By:</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{log.changed_by_name || log.changed_by || 'System'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-bold">Timestamp:</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{new Date(log.timestamp).toLocaleString()}</span>
+                        </div>
+                    </div>
+
                     <div>
                         <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-bold flex items-center gap-2 mb-2 opacity-70">
                             <Database size={12} /> Action Details
@@ -896,7 +916,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
             <div className="border-b border-[var(--border-color)] bg-[var(--subtle-bg)]/80 dark:bg-[var(--card-bg)] sticky top-0 z-10 backdrop-blur-sm">
                 <div 
                     ref={headerRef}
-                    className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-2 sm:gap-2.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none font-mono overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-2 sm:gap-2.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none font-mono overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 >
                     <input 
                         type="checkbox" 
@@ -908,6 +928,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     <span className="w-10 sm:w-12 shrink-0 text-center">Status</span>
                     <span className="w-12 sm:w-14 shrink-0 text-center">Method</span>
                     <span className="w-[105px] sm:w-[125px] shrink-0 text-center">Source</span>
+                    <span className="w-28 sm:w-36 shrink-0 text-left">Changed By</span>
                     <span className="flex-grow min-w-[140px] truncate">Description</span>
                     <span className="hidden lg:block w-32 shrink-0 text-left">Affected Module</span>
                     <span className="hidden xl:block w-20 shrink-0 text-center">Operation Class</span>
@@ -929,35 +950,51 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     const opClass = getOperationClass(log.method);
                     const nodeCtx = getNodeContext(log.table);
 
-                    // Determine proper source info (Admin Dashboard vs Client API vs Edge Function vs Database Trigger)
+                    // Determine proper source info prioritizing raw database source
                     const getProperSourceInfo = (l: RecentActivityLog) => {
                         const rawSource = (l.source || '').trim();
                         const table = (l.table || '').toLowerCase();
-                        const adminTables = ['update_news_logs', 'update_news_config', 'public_news_articles', 'public_content', 'public_article_cache', 'admin_users', 'news_api_keys', 'news_system_config', 'platform_settings', 'broadcast_messages', 'support_conversations'];
                         const srcLower = rawSource.toLowerCase();
 
-                        if (srcLower === 'admin' || srcLower === 'admin dashboard' || srcLower === 'admin side' || srcLower.includes('admin')) {
+                        if (srcLower.includes('admin')) {
                             return {
-                                label: 'Admin Dashboard',
+                                label: rawSource || 'Admin Dashboard',
                                 badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40'
                             };
                         }
-                        if (srcLower === 'client' || srcLower === 'client api' || srcLower === 'client side' || srcLower.includes('client') || srcLower.includes('mobile')) {
+                        if (srcLower.includes('client') || srcLower.includes('mobile')) {
                             return {
-                                label: 'Client API',
+                                label: rawSource || 'Client API',
                                 badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40'
                             };
                         }
-                        if (srcLower === 'edge function' || srcLower.includes('edge')) {
+                        if (srcLower.includes('edge')) {
                             return {
-                                label: 'Edge Function',
+                                label: rawSource || 'Edge Function',
                                 badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40'
                             };
                         }
-                        if (srcLower === 'database trigger' || srcLower === 'system job' || srcLower.includes('trigger') || srcLower.includes('system')) {
+                        if (srcLower.includes('trigger') || srcLower.includes('system') || srcLower.includes('cron')) {
                             return {
                                 label: rawSource || 'Database Trigger',
                                 badgeClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40'
+                            };
+                        }
+
+                        if (rawSource) {
+                            return {
+                                label: rawSource,
+                                badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40'
+                            };
+                        }
+
+                        const adminTables = ['update_news_logs', 'update_news_config', 'public_news_articles', 'public_content', 'public_article_cache', 'admin_users', 'news_api_keys', 'news_system_config', 'platform_settings', 'broadcast_messages', 'support_conversations'];
+                        const edgeTables = ['update_news_logs', 'update_news_config'];
+
+                        if (edgeTables.some(t => table.includes(t))) {
+                            return {
+                                label: 'Edge Function',
+                                badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40'
                             };
                         }
                         if (adminTables.some(t => table.includes(t))) {
@@ -967,17 +1004,24 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                             };
                         }
                         return {
-                            label: rawSource || 'Client API',
+                            label: 'Client API',
                             badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40'
                         };
                     };
 
                     const sourceInfo = getProperSourceInfo(log);
 
+                    const recordIdVal = log.record_id || log.payload?.response?.new_data?.id || log.payload?.response?.deleted_record?.id || log.payload?.response?.id || '';
+                    const recordIdDisplay = recordIdVal ? String(recordIdVal) : '—';
+
+                    const changedByVal = log.changed_by_name || (log.changed_by 
+                        ? (String(log.changed_by).length > 10 ? `${String(log.changed_by).slice(0, 8)}…` : String(log.changed_by))
+                        : (sourceInfo.label === 'Edge Function' ? 'System Cron' : sourceInfo.label === 'Admin Dashboard' ? 'Admin User' : 'System'));
+
                     return (
                         <div key={log.id} className={`group flex flex-col hover:bg-[var(--subtle-bg)] transition-colors ${isSelected ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : ''}`}>
                             <div 
-                                className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                                 onScroll={(e) => {
                                     if (headerRef.current) {
                                         headerRef.current.scrollLeft = e.currentTarget.scrollLeft;
@@ -1018,6 +1062,17 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                         {sourceInfo.label}
                                     </span>
                                 </div>
+
+                                {/* Changed By Column (Without Badge) */}
+                                <div className="w-28 sm:w-36 shrink-0 flex items-center text-left truncate font-mono text-[11px]">
+                                    <span 
+                                        className="truncate text-[var(--text-primary)] font-medium text-[11px]" 
+                                        title={log.changed_by ? `${log.changed_by_name || 'User'} (${log.changed_by})` : (log.changed_by_name || 'System')}
+                                    >
+                                        {changedByVal}
+                                    </span>
+                                </div>
+
                                 <span className="text-[var(--text-primary)] font-mono text-[10px] sm:text-xs truncate flex-grow min-w-[140px]">
                                     {log.description}
                                 </span>

@@ -167,6 +167,36 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
         const { data: auditLogs, error: auditError } = await query;
 
         if (!auditError && auditLogs) {
+            // Fetch users map (admin_users, profiles, users) to resolve changed_by UUIDs to real user names
+            const userMap = new Map<string, string>();
+            try {
+                const [adminRes, profileRes, usersRes] = await Promise.all([
+                    dbMain.from('admin_users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null })),
+                    dbMain.from('profiles').select('id, full_name, username, email').then(r => r, () => ({ data: null })),
+                    dbMain.from('users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null }))
+                ]);
+                if (adminRes.data) {
+                    adminRes.data.forEach((u: any) => {
+                        const name = u.full_name || u.name || u.username || u.email;
+                        if (u.id && name) userMap.set(String(u.id), name);
+                    });
+                }
+                if (profileRes.data) {
+                    profileRes.data.forEach((p: any) => {
+                        const name = p.full_name || p.username || p.email;
+                        if (p.id && name) userMap.set(String(p.id), name);
+                    });
+                }
+                if (usersRes.data) {
+                    usersRes.data.forEach((u: any) => {
+                        const name = u.full_name || u.name || u.username || u.email;
+                        if (u.id && name) userMap.set(String(u.id), name);
+                    });
+                }
+            } catch (e) {
+                // Ignore lookup errors
+            }
+
             auditLogs.forEach(item => {
                 // Introduce pseudo-random variation based on timestamp or ID for uniqueness
                 const numFromId = item.id.charCodeAt(0) + item.id.charCodeAt(3) || 5;
@@ -175,8 +205,9 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                 const recordId = item.record_id || item.new_data?.id || item.old_data?.id || item.new_data?.article_id || item.old_data?.article_id;
                 const op = (item.operation || item.action_type || 'DB_EVENT').toUpperCase();
 
-                let source = item.source || item.new_data?.source || item.old_data?.source;
-                if (!source || source === 'Client' || source === 'Admin') {
+                // Use database source directly if available, fallback to table categorization if null
+                let source = (item.source || item.new_data?.source || item.old_data?.source || '').trim();
+                if (!source) {
                     const adminTables = ['admin_users', 'news_api_keys', 'news_system_config', 'platform_settings', 'broadcast_messages', 'support_conversations', 'public_news_articles', 'public_content', 'public_article_cache'];
                     const edgeTables = ['update_news_logs', 'update_news_config'];
                     
@@ -186,6 +217,24 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                         source = 'Admin Dashboard';
                     } else {
                         source = 'Client API';
+                    }
+                }
+
+                // Resolve human readable user name from changed_by
+                const rawChangedBy = item.changed_by ? String(item.changed_by) : undefined;
+                let changedByName: string | undefined = undefined;
+                if (rawChangedBy && userMap.has(rawChangedBy)) {
+                    changedByName = userMap.get(rawChangedBy);
+                } else {
+                    const storedName = item.new_data?.user_name || item.new_data?.admin_name || item.old_data?.user_name || item.new_data?.full_name || item.new_data?.author || item.old_data?.author || item.new_data?.email || item.old_data?.email;
+                    if (storedName && typeof storedName === 'string') {
+                        changedByName = storedName;
+                    } else if (source === 'Edge Function') {
+                        changedByName = 'System Cron';
+                    } else if (source === 'Admin Dashboard') {
+                        changedByName = 'Admin User';
+                    } else if (source === 'Client API') {
+                        changedByName = 'Client User';
                     }
                 }
 
@@ -204,6 +253,9 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                     description,
                     status: isError ? 'FAILURE' : 'SUCCESS',
                     source,
+                    record_id: recordId ? String(recordId) : undefined,
+                    changed_by: rawChangedBy,
+                    changed_by_name: changedByName,
                     duration_ms: item.duration_ms || Math.floor(Math.random() * 45) + 5,
                     payload: {
                         query: `${op} operation on ${item.table_name}${recordId ? ` (ID: ${recordId})` : ''}`,

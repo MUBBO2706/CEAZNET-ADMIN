@@ -134,6 +134,9 @@ export interface RecentActivityLog {
   payload?: any;
   source?: string;
   duration_ms?: number;
+  record_id?: string;
+  changed_by?: string;
+  changed_by_name?: string;
 }
 
 export interface MainDashboardData {
