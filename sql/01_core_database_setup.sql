@@ -4,42 +4,143 @@
 CREATE TABLE IF NOT EXISTS public.activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_name TEXT NOT NULL,
-    operation TEXT NOT NULL,
+    operation TEXT,
     old_data JSONB,
     new_data JSONB,
     changed_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure all columns exist even if the table was created with an older schema
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS table_name TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS operation TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS action_type TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS old_data JSONB;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS new_data JSONB;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS changed_by UUID;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Index for fast sorting and cleanup
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON public.activity_logs (created_at DESC);
+
 -- ==============================================================================
--- 2. Create the generic trigger function for all tables
+-- 2. Create the robust trigger function for all tables with dynamic limit
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.log_activity_function()
 RETURNS TRIGGER AS $$
 DECLARE
     v_user_id UUID;
+    v_source TEXT;
+    v_role TEXT;
+    v_max_limit INT := 1000;
+    v_setting_text TEXT;
 BEGIN
-    -- Try to get the user ID from the JWT claims (Supabase auth)
+    -- Try to get the user ID and role from the JWT claims (Supabase auth)
     BEGIN
         v_user_id := (current_setting('request.jwt.claims', true)::jsonb ->> 'sub')::UUID;
+        v_role := (current_setting('request.jwt.claims', true)::jsonb ->> 'role');
     EXCEPTION WHEN OTHERS THEN
         v_user_id := NULL;
+        v_role := NULL;
     END;
 
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO public.activity_logs (table_name, operation, new_data, changed_by)
-        VALUES (TG_TABLE_NAME, TG_OP, row_to_json(NEW)::jsonb, v_user_id);
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO public.activity_logs (table_name, operation, old_data, new_data, changed_by)
-        VALUES (TG_TABLE_NAME, TG_OP, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb, v_user_id);
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO public.activity_logs (table_name, operation, old_data, changed_by)
-        VALUES (TG_TABLE_NAME, TG_OP, row_to_json(OLD)::jsonb, v_user_id);
-        RETURN OLD;
+    -- Determine source automatically
+    BEGIN
+        v_source := current_setting('app.source', true);
+    EXCEPTION WHEN OTHERS THEN
+        v_source := NULL;
+    END;
+
+    IF v_source IS NULL OR v_source = '' THEN
+        IF v_role = 'service_role' THEN
+            v_source := 'Edge Function';
+        ELSIF TG_TABLE_NAME IN (
+            'update_news_logs', 'update_news_config', 'public_news_articles', 
+            'public_content', 'public_article_cache', 'admin_users', 
+            'news_api_keys', 'news_system_config', 'platform_settings', 
+            'broadcast_messages', 'support_conversations'
+        ) THEN
+            v_source := 'Admin Dashboard';
+        ELSE
+            v_source := 'Client API';
+        END IF;
     END IF;
-    RETURN NULL;
+
+    -- Insert log entry safely
+    DECLARE
+        v_record_id TEXT;
+        v_description TEXT;
+    BEGIN
+        IF TG_OP = 'DELETE' THEN
+            v_record_id := (row_to_json(OLD)::jsonb ->> 'id');
+        ELSE
+            v_record_id := (row_to_json(NEW)::jsonb ->> 'id');
+        END IF;
+
+        IF v_record_id IS NOT NULL THEN
+            v_description := TG_OP || ' record #' || v_record_id || ' in ' || TG_TABLE_NAME;
+        ELSE
+            v_description := TG_OP || ' operation on ' || TG_TABLE_NAME;
+        END IF;
+
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.activity_logs (table_name, operation, action_type, description, record_id, new_data, changed_by, source)
+            VALUES (TG_TABLE_NAME, TG_OP, TG_OP, v_description, v_record_id, row_to_json(NEW)::jsonb, v_user_id, v_source);
+        ELSIF TG_OP = 'UPDATE' THEN
+            INSERT INTO public.activity_logs (table_name, operation, action_type, description, record_id, old_data, new_data, changed_by, source)
+            VALUES (TG_TABLE_NAME, TG_OP, TG_OP, v_description, v_record_id, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb, v_user_id, v_source);
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.activity_logs (table_name, operation, action_type, description, record_id, old_data, changed_by, source)
+            VALUES (TG_TABLE_NAME, TG_OP, TG_OP, v_description, v_record_id, row_to_json(OLD)::jsonb, v_user_id, v_source);
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        -- Never fail main transaction if log insert fails
+        NULL;
+    END;
+
+    -- Return appropriate record based on operation
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Cleanup function to maintain max logs limit dynamically
+CREATE OR REPLACE FUNCTION public.clean_old_activity_logs()
+RETURNS void AS $$
+DECLARE
+    v_max_limit INT := 1000;
+    v_setting_text TEXT;
+BEGIN
+    -- Fetch limit from platform_settings safely
+    BEGIN
+        SELECT setting_value::text INTO v_setting_text
+        FROM public.platform_settings
+        WHERE setting_key = 'activity_logs_max_limit';
+
+        IF v_setting_text IS NOT NULL THEN
+            v_max_limit := (REGEXP_REPLACE(v_setting_text, '[^0-9]', '', 'g'))::INT;
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        v_max_limit := 1000;
+    END;
+
+    IF v_max_limit IS NULL OR v_max_limit <= 0 THEN
+        v_max_limit := 1000;
+    END IF;
+
+    -- Prune records beyond the limit
+    DELETE FROM public.activity_logs
+    WHERE id NOT IN (
+        SELECT id FROM public.activity_logs
+        ORDER BY created_at DESC
+        LIMIT v_max_limit
+    );
+EXCEPTION WHEN OTHERS THEN
+    NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

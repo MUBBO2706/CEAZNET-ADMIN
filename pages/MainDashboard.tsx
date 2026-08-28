@@ -383,6 +383,13 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
     // Stateful cleared logs list to allow "clear visible" functionality
     const [clearedLogIds, setClearedLogIds] = useState<Set<string | number>>(new Set());
 
+    const headerRef = useRef<HTMLDivElement>(null);
+
+    // Keep state in sync with initialActivity when it changes on manual refresh or auto-refresh
+    useEffect(() => {
+        setActivity(initialActivity);
+    }, [initialActivity]);
+
     const fetchLogs = async (overrideRange?: string, overrideCustom?: {start: string, end: string}) => {
         setIsRefreshing(true);
         try {
@@ -489,12 +496,20 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 
     const filteredActivity = activity.filter(log => {
         const logTime = new Date(log.timestamp).getTime();
-        return logTime >= oldestTime && logTime <= newestTime;
+        if (timeRange === 'custom') {
+            const hasStart = !!customRange.start;
+            const hasEnd = !!customRange.end;
+            if (hasStart && logTime < oldestTime) return false;
+            if (hasEnd && logTime > newestTime) return false;
+            return true;
+        }
+        // Allow slightly-future timestamps from real-time events (prevent filtering due to clock skew/drift)
+        return logTime >= oldestTime;
     });
 
     filteredActivity.forEach(log => {
         const logTime = new Date(log.timestamp).getTime();
-        const diff = newestTime - logTime;
+        const diff = Math.max(0, newestTime - logTime);
         let bucketIndex = BUCKET_COUNT - 1 - Math.floor(diff / bucketDuration);
         bucketIndex = Math.max(0, Math.min(BUCKET_COUNT - 1, bucketIndex));
         
@@ -877,30 +892,33 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                 </div>
             )}
 
-            {/* Table Header Row with container layout */}
-            <div className="border-b border-[var(--border-color)] bg-[var(--subtle-bg)]/40">
-                <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-3 sm:gap-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none font-mono">
+            {/* Table Header Row with Sticky Sync Scroll */}
+            <div className="border-b border-[var(--border-color)] bg-[var(--subtle-bg)]/80 dark:bg-[var(--card-bg)] sticky top-0 z-10 backdrop-blur-sm">
+                <div 
+                    ref={headerRef}
+                    className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-2 sm:gap-2.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none font-mono overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
                     <input 
                         type="checkbox" 
                         className="rounded border-[var(--border-color)] bg-transparent w-3.5 h-3.5 accent-[var(--success)] cursor-pointer hidden sm:block shrink-0" 
                         checked={isAllSelected}
                         onChange={handleSelectAllToggle}
                     />
-                    <span className="w-24 sm:w-[125px] shrink-0">Timestamp</span>
+                    <span className="w-[105px] sm:w-[118px] shrink-0">Timestamp</span>
                     <span className="w-10 sm:w-12 shrink-0 text-center">Status</span>
-                    <span className="w-10 sm:w-12 shrink-0 text-center">Method</span>
-                    <span className="w-16 sm:w-[70px] shrink-0 text-center">Source</span>
-                    <span className="flex-1 min-w-[150px] truncate">Description</span>
-                    <span className="hidden lg:block w-36 shrink-0 text-left">Affected Module</span>
-                    <span className="hidden xl:block w-24 shrink-0 text-center">Operation Class</span>
-                    <span className="hidden xl:block w-32 shrink-0 text-left">Node Context</span>
-                    <span className="hidden xl:block w-16 shrink-0 text-right">Latency</span>
-                    <span className="w-12 shrink-0 text-right">Actions</span>
+                    <span className="w-12 sm:w-14 shrink-0 text-center">Method</span>
+                    <span className="w-[105px] sm:w-[125px] shrink-0 text-center">Source</span>
+                    <span className="flex-grow min-w-[140px] truncate">Description</span>
+                    <span className="hidden lg:block w-32 shrink-0 text-left">Affected Module</span>
+                    <span className="hidden xl:block w-20 shrink-0 text-center">Operation Class</span>
+                    <span className="hidden xl:block w-28 shrink-0 text-left">Node Context</span>
+                    <span className="hidden xl:block w-14 shrink-0 text-right">Latency</span>
+                    <span className="w-10 shrink-0 text-right">Actions</span>
                 </div>
             </div>
 
-            {/* Logs List Container */}
-            <div className="flex-grow overflow-y-auto bg-[var(--card-bg)] custom-scrollbar">
+            {/* Logs List Container with Independent Row Scrolling */}
+            <div className="flex-grow overflow-y-auto bg-[var(--card-bg)] custom-scrollbar divide-y divide-[var(--border-color)]">
                 {displayedActivity.length > 0 ? displayedActivity.map((log) => {
                     const httpMethod = getHttpMethod(log.method);
                     const statusCode = getHttpStatusCode(log.method, log.status);
@@ -911,10 +929,60 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     const opClass = getOperationClass(log.method);
                     const nodeCtx = getNodeContext(log.table);
 
+                    // Determine proper source info (Admin Dashboard vs Client API vs Edge Function vs Database Trigger)
+                    const getProperSourceInfo = (l: RecentActivityLog) => {
+                        const rawSource = (l.source || '').trim();
+                        const table = (l.table || '').toLowerCase();
+                        const adminTables = ['update_news_logs', 'update_news_config', 'public_news_articles', 'public_content', 'public_article_cache', 'admin_users', 'news_api_keys', 'news_system_config', 'platform_settings', 'broadcast_messages', 'support_conversations'];
+                        const srcLower = rawSource.toLowerCase();
+
+                        if (srcLower === 'admin' || srcLower === 'admin dashboard' || srcLower === 'admin side' || srcLower.includes('admin')) {
+                            return {
+                                label: 'Admin Dashboard',
+                                badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40'
+                            };
+                        }
+                        if (srcLower === 'client' || srcLower === 'client api' || srcLower === 'client side' || srcLower.includes('client') || srcLower.includes('mobile')) {
+                            return {
+                                label: 'Client API',
+                                badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40'
+                            };
+                        }
+                        if (srcLower === 'edge function' || srcLower.includes('edge')) {
+                            return {
+                                label: 'Edge Function',
+                                badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40'
+                            };
+                        }
+                        if (srcLower === 'database trigger' || srcLower === 'system job' || srcLower.includes('trigger') || srcLower.includes('system')) {
+                            return {
+                                label: rawSource || 'Database Trigger',
+                                badgeClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40'
+                            };
+                        }
+                        if (adminTables.some(t => table.includes(t))) {
+                            return {
+                                label: 'Admin Dashboard',
+                                badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40'
+                            };
+                        }
+                        return {
+                            label: rawSource || 'Client API',
+                            badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40'
+                        };
+                    };
+
+                    const sourceInfo = getProperSourceInfo(log);
+
                     return (
-                        <div key={log.id} className={`group flex flex-col border-b border-[var(--border-color)] hover:bg-[var(--subtle-bg)] transition-colors ${isSelected ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : ''}`}>
+                        <div key={log.id} className={`group flex flex-col hover:bg-[var(--subtle-bg)] transition-colors ${isSelected ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : ''}`}>
                             <div 
-                                className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3 sm:gap-4 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                onScroll={(e) => {
+                                    if (headerRef.current) {
+                                        headerRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                                    }
+                                }}
                                 onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                             >
                                 <input 
@@ -934,7 +1002,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                     }}
                                     onClick={e => e.stopPropagation()} 
                                 />
-                                <span className="text-[var(--text-secondary)] font-mono text-[10px] sm:text-xs whitespace-nowrap shrink-0 w-24 sm:w-[125px]">
+                                <span className="text-[var(--text-secondary)] font-mono text-[10px] sm:text-xs whitespace-nowrap shrink-0 w-[105px] sm:w-[118px]">
                                     {formatLogDate(log.timestamp)}
                                 </span>
                                 <div className="w-10 sm:w-12 shrink-0 flex justify-center">
@@ -942,21 +1010,20 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                         {statusCode}
                                     </span>
                                 </div>
-                                <span className={`font-mono text-[10px] sm:text-xs w-10 sm:w-12 text-center shrink-0 font-bold ${getMethodTextColor(httpMethod)}`}>
+                                <span className={`font-mono text-[10px] sm:text-xs w-12 sm:w-14 text-center shrink-0 font-bold ${getMethodTextColor(httpMethod)}`}>
                                     {httpMethod}
                                 </span>
-                                <div className="w-16 sm:w-[70px] shrink-0 flex justify-center">
-                                    <span className={`w-fit px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono shrink-0 text-center truncate ${log.source === 'Admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/30' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30'}`}>
-                                        {log.source || 'Client'}
+                                <div className="w-[105px] sm:w-[125px] shrink-0 flex justify-center">
+                                    <span className={`w-fit px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono shrink-0 text-center truncate ${sourceInfo.badgeClass}`} title={sourceInfo.label}>
+                                        {sourceInfo.label}
                                     </span>
                                 </div>
-                                <span className="text-[var(--text-primary)] font-mono text-[10px] sm:text-xs truncate flex-1 min-w-[150px]">
+                                <span className="text-[var(--text-primary)] font-mono text-[10px] sm:text-xs truncate flex-grow min-w-[140px]">
                                     {log.description}
                                 </span>
 
-                                {/* Rich relevant details added to empty space on desktop */}
                                 {/* Affected Module (Table Name) */}
-                                <div className="hidden lg:flex w-36 shrink-0 items-center">
+                                <div className="hidden lg:flex w-32 shrink-0 items-center">
                                     <div className="w-fit max-w-full flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--subtle-bg)] text-[var(--text-secondary)] border border-[var(--border-color)] text-[11px] font-mono shrink-0 truncate">
                                         <Database size={11} className="opacity-60 shrink-0" />
                                         <span className="truncate">{log.table}</span>
@@ -964,25 +1031,25 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                                 </div>
 
                                 {/* Dynamic Operation Class */}
-                                <div className="hidden xl:flex w-24 shrink-0 justify-center items-center">
+                                <div className="hidden xl:flex w-20 shrink-0 justify-center items-center">
                                     <div className={`w-fit px-1.5 py-0.5 rounded text-[10px] font-bold font-mono shrink-0 ${opClass === 'MUTATION' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' : opClass === 'DESTRUCTIVE' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400' : 'bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'}`}>
                                         {opClass}
                                     </div>
                                 </div>
 
                                 {/* Dynamic Node Context */}
-                                <div className="hidden xl:flex w-32 shrink-0 items-center text-left opacity-80 truncate text-[var(--text-secondary)] font-mono text-[11px]">
+                                <div className="hidden xl:flex w-28 shrink-0 items-center text-left opacity-80 truncate text-[var(--text-secondary)] font-mono text-[11px]">
                                     <span className="truncate">{nodeCtx}</span>
                                 </div>
 
                                 {/* Metric Latency */}
-                                <div className="hidden xl:flex items-center gap-1 text-[var(--text-secondary)] font-mono text-[11px] shrink-0 w-16 justify-end">
+                                <div className="hidden xl:flex items-center gap-1 text-[var(--text-secondary)] font-mono text-[11px] shrink-0 w-14 justify-end">
                                     <Clock size={11} className="opacity-50" />
                                     <span>{latency}ms</span>
                                 </div>
 
                                 {/* Inline Shortcuts Hover actions */}
-                                <div className="flex items-center justify-end w-12 shrink-0" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-end w-10 shrink-0" onClick={e => e.stopPropagation()}>
                                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={() => handleCopyLog(log)}

@@ -172,28 +172,45 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                 const numFromId = item.id.charCodeAt(0) + item.id.charCodeAt(3) || 5;
                 const isError = numFromId % 42 === 0; // ~2% error rate
                 
-                let source = item.source || item.new_data?.source;
-                if (!source) {
-                    const sources = ['Client API', 'Admin Dashboard', 'Edge Function', 'System Job', 'Database Trigger'];
-                    source = sources[numFromId % sources.length];
+                const recordId = item.record_id || item.new_data?.id || item.old_data?.id || item.new_data?.article_id || item.old_data?.article_id;
+                const op = (item.operation || item.action_type || 'DB_EVENT').toUpperCase();
+
+                let source = item.source || item.new_data?.source || item.old_data?.source;
+                if (!source || source === 'Client' || source === 'Admin') {
+                    const adminTables = ['admin_users', 'news_api_keys', 'news_system_config', 'platform_settings', 'broadcast_messages', 'support_conversations', 'public_news_articles', 'public_content', 'public_article_cache'];
+                    const edgeTables = ['update_news_logs', 'update_news_config'];
+                    
+                    if (edgeTables.includes(item.table_name)) {
+                        source = 'Edge Function';
+                    } else if (adminTables.includes(item.table_name)) {
+                        source = 'Admin Dashboard';
+                    } else {
+                        source = 'Client API';
+                    }
                 }
+
+                // Generate smart human-readable description if DB description is null
+                const description = item.description || (recordId 
+                    ? `${op} record #${recordId} in ${item.table_name}` 
+                    : `${op} operation on ${item.table_name}`
+                );
 
                 logs.push({
                     id: `audit-${item.id}`,
                     type: 'db_record',
                     table: item.table_name,
-                    method: (item.operation || item.action_type) as any,
+                    method: op as any,
                     timestamp: item.created_at,
-                    description: item.description || item.new_data?.description || `${item.operation || item.action_type} operation on ${item.table_name}`,
+                    description,
                     status: isError ? 'FAILURE' : 'SUCCESS',
                     source,
                     duration_ms: item.duration_ms || Math.floor(Math.random() * 45) + 5,
                     payload: {
-                        query: `${item.operation || item.action_type} operation on ${item.table_name}`,
+                        query: `${op} operation on ${item.table_name}${recordId ? ` (ID: ${recordId})` : ''}`,
                         response: {
-                            ...(item.old_data ? { old_data: item.old_data } : {}),
+                            ...(item.old_data ? { deleted_record: item.old_data } : {}),
                             ...(item.new_data ? { new_data: item.new_data?.payload || item.new_data } : {}),
-                            ...((item.operation === 'DELETE' || item.action_type === 'DELETE') && !item.old_data && !item.new_data ? { data: 'All data deleted (Truncate)' } : {})
+                            ...(op === 'DELETE' && !item.old_data && !item.new_data ? { status: 'Record purged from database' } : {})
                         }
                     }
                 });
@@ -238,10 +255,11 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                         let method = (adminTables.includes(tableName) ? 'SYSTEM' : ['GET', 'POST', 'UPDATE', 'INSERT'][numFromId % 4]) as any;
                         let status: 'SUCCESS' | 'FAILURE' = (numFromId % 30 === 0) ? 'FAILURE' : 'SUCCESS'; // ~3%
                         
-                        let sourceConfig = adminTables.includes(tableName) ? 'Admin' : 'Client';
-                        if (!adminTables.includes(tableName)) {
-                            const sources = ['Client API', 'Mobile App', 'Edge Function'];
-                            sourceConfig = sources[numFromId % 3];
+                        let sourceConfig = 'Client API';
+                        if (tableName === 'update_news_logs' || tableName === 'update_news_config') {
+                            sourceConfig = 'Edge Function';
+                        } else if (adminTables.includes(tableName)) {
+                            sourceConfig = 'Admin Dashboard';
                         }
 
                         // Determine a generic description based on table
