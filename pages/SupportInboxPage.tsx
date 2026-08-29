@@ -1832,11 +1832,23 @@ const SupportInboxPage: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="p-3 relative min-h-[130px]">
+                                                {isGeneratingAi && (
+                                                    <div className="absolute inset-0 z-10 flex flex-col gap-2.5 p-3 bg-white dark:bg-zinc-900 pt-4 pointer-events-none rounded-t-lg">
+                                                        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-3/4"></div>
+                                                        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-full"></div>
+                                                        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-5/6"></div>
+                                                        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-2/3"></div>
+                                                    </div>
+                                                )}
                                                 <div 
                                                     ref={richEditorRef}
                                                     contentEditable
-                                                    onInput={() => {
+                                                    onInput={(e) => {
                                                         if (richEditorRef.current) {
+                                                            const html = richEditorRef.current.innerHTML;
+                                                            if (html === '<br>' || html === '<div><br></div>' || html === '<p><br></p>') {
+                                                                richEditorRef.current.innerHTML = '';
+                                                            }
                                                             setReplyTextDebounced(richEditorRef.current.innerText || richEditorRef.current.innerHTML);
                                                         }
                                                         handleTyping();
@@ -1862,16 +1874,10 @@ const SupportInboxPage: React.FC = () => {
                                                     [&_blockquote]:border-l-2 [&_blockquote]:border-indigo-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-zinc-600 [&_blockquote]:dark:text-zinc-400 [&_blockquote]:my-1.5
                                                     [&_pre]:bg-zinc-100 [&_pre]:dark:bg-zinc-800 [&_pre]:p-2 [&_pre]:rounded [&_pre]:font-mono [&_pre]:text-xs [&_pre]:my-1.5
                                                     [&_code]:bg-zinc-100 [&_code]:dark:bg-zinc-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs
-                                                    [&_a]:text-indigo-600 [&_a]:underline"
+                                                    [&_a]:text-indigo-600 [&_a]:underline
+                                                    empty:before:content-[attr(data-placeholder)] empty:before:text-zinc-400 empty:before:dark:text-zinc-500 empty:before:pointer-events-none"
+                                                    data-placeholder="Write your response... Selected text will format live visually."
                                                 />
-                                                {(!replyText || !replyText.trim()) && (
-                                                    <div 
-                                                        onClick={() => richEditorRef.current?.focus()}
-                                                        className="absolute top-3 left-3 text-zinc-400 dark:text-zinc-500 pointer-events-none text-sm select-none"
-                                                    >
-                                                        Write your response... Selected text will format live visually.
-                                                    </div>
-                                                )}
                                             </div>
 
                                             {pendingAttachments.length > 0 && (
@@ -2116,6 +2122,12 @@ const SupportInboxPage: React.FC = () => {
                                                     </div>
                                                 )}
                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus-within:border-indigo-500 dark:focus-within:border-indigo-500 rounded-[22px] sm:rounded-2xl overflow-hidden transition-all duration-200 shadow-sm focus-within:shadow-md relative">
+                                                    {isGeneratingAi && (
+                                                        <div className="absolute inset-0 z-10 flex flex-col gap-2 justify-center px-4 bg-white dark:bg-zinc-900 pointer-events-none rounded-[22px] sm:rounded-2xl">
+                                                            <div className="h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-full max-w-[80%]"></div>
+                                                            <div className="h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-full max-w-[60%]"></div>
+                                                        </div>
+                                                    )}
                                                     <FastTextarea 
                                                         value={replyText}
                                                         onChange={(val) => {

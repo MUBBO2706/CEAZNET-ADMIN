@@ -599,9 +599,16 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
 
                 {/* Main Input Composer Body */}
                 {broadcastType === 'popup' ? (
-                    <div className="p-3 flex flex-col gap-2">
+                    <div className="p-1 flex flex-col gap-2">
                         {/* Prompt Textarea */}
                         <div className="relative">
+                            {isGenerating && (
+                                <div className="absolute inset-0 z-10 flex flex-col gap-2 p-1 bg-white dark:bg-zinc-950 pointer-events-none rounded-lg">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse w-full max-w-[80%]"></div>
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse w-full max-w-[60%]"></div>
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse w-full max-w-[40%]"></div>
+                                </div>
+                            )}
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
@@ -610,7 +617,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                         ? "Describe changes or adjustments to this broadcast... (e.g. 'Make it more compact', 'Change button text to Confirm', 'Make background darker')" 
                                         : "Design a broadcast popup... (e.g. 'Servers down in 15 mins for scheduled upgrade')"
                                 }
-                                className="w-full bg-transparent text-[13px] px-3 py-2 min-h-[60px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
+                                className="w-full bg-transparent text-[13px] px-1 py-1 min-h-[60px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
                                 disabled={isGenerating}
                             />
                         </div>

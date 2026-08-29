@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div contenteditable="true" id="editor" style="border:1px solid black; min-height: 50px;" placeholder="Type here..."></div>
+<script>
+document.getElementById('editor').addEventListener('input', function(e) {
+    if (this.innerHTML === '<br>' || this.innerHTML === '<div><br></div>' || this.innerHTML === '<p><br></p>') {
+        this.innerHTML = '';
+    }
+    console.log(JSON.stringify(this.innerHTML));
+});
+</script>
+</body>
+</html>
