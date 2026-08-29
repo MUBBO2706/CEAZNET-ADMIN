@@ -6,28 +6,71 @@ export interface BroadcastIteration {
     content: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert AI frontend designer and copywriter. 
-Your task is to take the admin's broadcast message or instruction and generate a SINGLE, BEAUTIFUL, responsive HTML snippet.
-This HTML will be injected directly into a popup modal inside a user-facing client application.
-The HTML should NOT contain <html>, <head>, or <body> tags. It should just be a <div> wrapper containing the content.
-Use inline styles or standard CSS classes. Create MORE ATTRACTIVE AND UNIQUE layouts. Do not hesitate to use modern, clean, and engaging design with smooth gradients, shadows, and spacing.
-CRITICAL HALLUCINATION PREVENTION: You must NEVER invent or hallucinate features, URLs, or information that is not explicitly provided in the prompt. Stick STRICTLY to the provided facts and content.
-CRITICAL RESPONSIVENESS INSTRUCTION: The layout MUST be 100% responsive. Use a container-less layout paradigm. Avoid fixed widths or fixed heights. It must display perfectly on mobile devices without causing any vertical or horizontal scrolling inside the popup. Ensure all text and elements wrap or scale gracefully. Use flexible units (e.g., %, vw, vh, rem).
-Include context-appropriate icons (prefer inline SVG icons formatted beautifully, avoid external icon library dependencies if possible).
-CRITICAL: You MUST include JavaScript functions in a <script> block if the broadcast requires interaction (e.g., form validations, interactive states, Confetti animations, interactive buttons). Write functional and self-contained JavaScript for everything requested.
-CRITICAL INSTRUCTION FOR BUTTONS: When generating the HTML for a Broadcast Popup, if you include a 'close', 'dismiss', or 'Got it!' button, you MUST add the exact attribute data-close-broadcast="true" to that button element. Alternatively, you can use onclick="window.closeBroadcastPopup()". This is strictly required so that clicking the button successfully closes the modal in the frontend and correctly marks it as 'read' in the local storage for refresh sync.
-Example format you must follow:
-<button data-close-broadcast="true" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">Samajh Gaya</button>
+const SYSTEM_PROMPT = `You are an elite frontend UI/UX engineer and design expert specializing in user-facing client notification popups and in-app announcements.
 
-CRITICAL FORMAT REQUIREMENT: You MUST ALWAYS begin your response with a <thought>...</thought> block where you briefly explain what you are going to design (e.g., "<thought>I will use a red background and a modern button.</thought>"). Do not output any HTML before the thought block finishes. After </thought>, output ONLY the raw HTML.
-If the user provides an iteration instruction (like "make it red", "add a button"), incorporate it into the previous generated HTML.
-ALWAYS return ONLY the raw HTML after the thought block. Do NOT wrap it in markdown code blocks (\`\`\`html) as it will be parsed directly. Just output the HTML.`;
+Your mission is to generate a SINGLE, FLAWLESS, COMPACT, AND HIGH-CONVERTING HTML popup snippet based on the admin's instructions.
+The output HTML will be injected directly into a client app that already provides a centered transparent dark/blur backdrop overlay.
+
+================================================================
+CRITICAL STRUCTURAL & SIZING RULES (STRICT - ZERO TOLERANCE)
+================================================================
+
+1. CONTAINER-LESS ROOT STRUCTURE (NO REDUNDANT FULL-SCREEN OVERLAYS):
+   - The client application ALREADY wraps the popup in a centered, fixed, transparent backdrop overlay (<div class="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm">).
+   - DO NOT generate full-screen overlays, fixed overlays, 'fixed inset-0', 'w-screen', 'h-screen', or 100vw/100vh outer wrapper containers!
+   - The outermost root element MUST be a SINGLE, direct card container: <div class="..."> containing only the actual popup card content.
+   - Do NOT create unnecessary nested shell containers or redundant outer borders. The card must appear cleanly directly on the client's transparent backdrop.
+   - Do NOT include <html>, <head>, <!DOCTYPE>, or <body> tags.
+
+2. DESKTOP POPUP-CENTRIC SIZING (STRICT - NEVER WIDE):
+   - On desktop, the popup MUST be centric, focused, and compact (card width strictly between 380px and 460px, max-width: 460px / 90vw).
+   - NEVER stretch horizontally across the desktop screen or generate wide landscape banners. It must always look like an elegant, focused dialog/modal.
+
+3. MOBILE COMPACT SIZING (STRICT - NEVER EXCESSIVELY TALL / HIGHTED):
+   - On mobile screens, the card MUST be compact, proportional, and never tall or bloated (maximum height: 80vh).
+   - Avoid huge hero illustrations, gigantic vertical margins, or bloated paddings that push buttons offscreen or force vertical scrolling.
+   - Use sensible, compact spacing (e.g., p-4 to p-5, gap-2.5 to gap-3, font sizes from 13px to 17px).
+   - All text, icons, and action buttons must comfortably fit inside the mobile viewport.
+
+4. DESIGN & STYLING AESTHETICS:
+   - Use Tailwind CSS classes and/or clean inline CSS.
+   - Give the root card container a modern background (e.g. dark slate/zinc bg-zinc-900 or crisp light bg-white), rounded corners (rounded-2xl or rounded-xl), a subtle border (border border-white/10 or border-slate-200), and a rich drop-shadow (shadow-2xl).
+   - Use crisp typography, high-contrast text, beautiful badges, and inline SVG icons for visual interest.
+   - Do NOT use external icon font libraries (like FontAwesome) or unverified external assets; use self-contained inline SVG icons.
+
+5. BUTTONS & DISMISSAL ACTION (MANDATORY):
+   - Every dismiss / close / confirm / "Got it!" / "OK" button MUST have either:
+     - data-close-broadcast="true" attribute (e.g., <button data-close-broadcast="true" class="...">Got it</button>)
+     - OR onclick="window.closeBroadcastPopup()"
+   - If a top-right 'X' close button is included, it MUST also have data-close-broadcast="true" or onclick="window.closeBroadcastPopup()".
+   - For CTA buttons (like "Update Now" or "Learn More"), use standard href links or actionable onclick handlers.
+
+6. FUNCTIONAL JAVASCRIPT:
+   - If interactive features (e.g. countdown timers, copy-to-clipboard, form validation, celebratory confetti) are requested, place the logic in a clean <script> tag at the end of the snippet.
+
+================================================================
+STRICT ITERATION & SURGICAL PRESERVATION RULES
+================================================================
+When you are given an existing broadcast or previous iteration context:
+1. SURGICAL PRESERVATION: You MUST strictly preserve the layout, design system, colors, animations, icons, and attributes of the previous HTML UNLESS the user explicitly asks to change them!
+2. NO UNWANTED TOTAL REWRITES: Do NOT replace the entire UI layout or style when the user only asked for a minor tweak (e.g., "change text to...", "make button purple", "add a countdown timer"). Apply surgical updates directly to the existing raw HTML.
+3. ALWAYS RETURN COMPLETE HTML: Always output the complete, updated HTML snippet with the changes incorporated.
+
+================================================================
+RESPONSE FORMAT (STRICT)
+================================================================
+You MUST ALWAYS structure your answer as:
+<thought>
+Concise 1-2 sentence explanation of your design decisions or surgical changes.
+</thought>
+[RAW HTML SNIPPET ONLY - DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`html)]`;
 
 export async function generateBroadcastHtml(
     newPrompt: string, 
     history: BroadcastIteration[] = [],
-    model: string = 'gemini-3.1-flash-lite',
-    onThoughtStream?: (thought: string) => void
+    model: string = 'gemini-3.7-flash',
+    onThoughtStream?: (thought: string) => void,
+    currentRawHtml?: string | null
 ): Promise<string> {
     // Fetch API keys for gemini directly from the table
     const { data: keysData, error: keysError } = await dbMain
@@ -51,12 +94,12 @@ export async function generateBroadcastHtml(
         try {
             const ai = new GoogleGenAI({ apiKey: keyObj.api_key });
 
-            const contents = [
+            const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [
                 { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-                { role: 'model', parts: [{ text: "Understood. I will output only raw HTML for the broadcast modal." }] }
+                { role: 'model', parts: [{ text: "Understood. I will strictly follow all layout, container-less, desktop popup-centric, mobile compact, and surgical iteration rules. I will output only raw HTML for the broadcast modal." }] }
             ];
 
-            // Append history
+            // Append all previous iterations in chronological order
             for (const msg of history) {
                 contents.push({
                     role: msg.role,
@@ -64,17 +107,23 @@ export async function generateBroadcastHtml(
                 });
             }
 
+            // If we have a current raw HTML that is not already at the end of history, provide it clearly
+            let promptToSend = newPrompt;
+            if (currentRawHtml && (history.length === 0 || history[history.length - 1].content !== currentRawHtml)) {
+                promptToSend = `[BASE BROADCAST HTML TO ITERATE ON]:\n${currentRawHtml}\n\n[USER REFINEMENT INSTRUCTION]:\n${newPrompt}`;
+            }
+
             // Add the new prompt
             contents.push({
                 role: 'user',
-                parts: [{ text: newPrompt }]
+                parts: [{ text: promptToSend }]
             });
 
             const responseStream = await ai.models.generateContentStream({
-                model: model, // Use dynamically selected model
+                model: model || 'gemini-3.7-flash',
                 contents: contents,
                 config: {
-                    temperature: 0.7,
+                    temperature: 0.5,
                 }
             });
 
@@ -144,6 +193,26 @@ export async function generateBroadcastHtml(
     }
     
     return cleanHtml;
+}
+
+export async function fetchBroadcastIterations(broadcastId: string): Promise<BroadcastIteration[]> {
+    try {
+        const { data, error } = await dbMain
+            .from('broadcast_iterations')
+            .select('role, content, created_at')
+            .eq('broadcast_id', broadcastId)
+            .order('created_at', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+            return data.map((item: any) => ({
+                role: item.role as 'user' | 'model',
+                content: item.content
+            }));
+        }
+    } catch (e) {
+        console.warn("Exception fetching broadcast iterations:", e);
+    }
+    return [];
 }
 
 export async function toggleBroadcastActive(id: string, isActive: boolean): Promise<boolean> {
@@ -283,3 +352,4 @@ export async function publishBroadcast(rawHtml: string, title: string = 'AI Gene
         return false;
     }
 }
+

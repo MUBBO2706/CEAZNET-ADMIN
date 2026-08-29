@@ -109,9 +109,9 @@ export const BroadcastPopup: React.FC = () => {
     const currentBroadcast = queue[0];
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm transition-opacity">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-sm transition-opacity">
             <div 
-                className="relative z-[105] pointer-events-auto max-w-[95vw] max-h-[90vh] overflow-y-auto scrollbar-hide"
+                className="relative z-[105] pointer-events-auto w-full max-w-[460px] max-h-[85vh] flex items-center justify-center overflow-y-auto scrollbar-hide"
                 dangerouslySetInnerHTML={{ __html: currentBroadcast.raw_html || '' }} 
             />
         </div>

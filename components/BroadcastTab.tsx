@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, EyeOff, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
-import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, deleteBroadcast, toggleBroadcastActive, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
+import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, fetchBroadcastIterations, deleteBroadcast, toggleBroadcastActive, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
 
@@ -207,14 +207,33 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
             : prompt;
 
         try {
-            const html = await generateBroadcastHtml(combinedPrompt, history, aiModel, (thought) => {
-                setCurrentThought(thought);
-            });
+            // Ensure full chronological iteration context
+            const effectiveHistory = [...history];
+            if (generatedHtml && effectiveHistory.length === 0) {
+                effectiveHistory.push({
+                    role: 'user',
+                    content: 'Initial broadcast design'
+                });
+                effectiveHistory.push({
+                    role: 'model',
+                    content: generatedHtml
+                });
+            }
+
+            const html = await generateBroadcastHtml(
+                combinedPrompt, 
+                effectiveHistory, 
+                aiModel, 
+                (thought) => {
+                    setCurrentThought(thought);
+                },
+                generatedHtml
+            );
             
-            // Update history
-            setHistory(prev => [
-                ...prev, 
-                { role: 'user', content: prompt },
+            // Update history with new user input and generated HTML
+            setHistory([
+                ...effectiveHistory, 
+                { role: 'user', content: combinedPrompt },
                 { role: 'model', content: html }
             ]);
             
@@ -586,7 +605,11 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder={history.length > 0 ? "Adjust the broadcast... (e.g. 'Make it shorter')" : "Design a broadcast popup... (e.g. 'Servers down in 15 mins')"}
+                                placeholder={
+                                    history.length > 0 || generatedHtml 
+                                        ? "Describe changes or adjustments to this broadcast... (e.g. 'Make it more compact', 'Change button text to Confirm', 'Make background darker')" 
+                                        : "Design a broadcast popup... (e.g. 'Servers down in 15 mins for scheduled upgrade')"
+                                }
                                 className="w-full bg-transparent text-[13px] px-3 py-2 min-h-[60px] max-h-[120px] resize-none focus:outline-none text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 tracking-tight leading-relaxed placeholder:font-light transition-opacity disabled:opacity-50"
                                 disabled={isGenerating}
                             />
@@ -929,10 +952,37 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                                 <button 
                                                     onClick={() => {
                                                         setGeneratedHtml(item.raw_html);
-                                                        setPrompt(item.title && !item.title.startsWith('Broadcast ') ? `Iterating on: ${item.title}` : 'Iterating on previous broadcast...');
+                                                        setPrompt(''); // Do not prefill text; keep it empty so user can type directly
                                                         setStylePrompt('');
-                                                        setHistory([]);
                                                         setShowHistory(false);
+                                                        
+                                                        // Load previous iteration history from DB or seed with the base broadcast
+                                                        fetchBroadcastIterations(item.id).then((savedHistory) => {
+                                                            if (savedHistory && savedHistory.length > 0) {
+                                                                setHistory(savedHistory);
+                                                            } else {
+                                                                setHistory([
+                                                                    { 
+                                                                        role: 'user', 
+                                                                        content: item.title && !item.title.startsWith('Broadcast ') 
+                                                                            ? `Broadcast design: ${item.title}` 
+                                                                            : 'Initial broadcast design' 
+                                                                    },
+                                                                    { role: 'model', content: item.raw_html }
+                                                                ]);
+                                                            }
+                                                        }).catch(() => {
+                                                            setHistory([
+                                                                { 
+                                                                    role: 'user', 
+                                                                    content: item.title && !item.title.startsWith('Broadcast ') 
+                                                                        ? `Broadcast design: ${item.title}` 
+                                                                        : 'Initial broadcast design' 
+                                                                },
+                                                                { role: 'model', content: item.raw_html }
+                                                            ]);
+                                                        });
+
                                                         if (item.type === 'system_banner') {
                                                             setBroadcastType('system_banner');
                                                             setBannerType(item.banner_type as any);
