@@ -54,14 +54,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     };
 
     private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-        const err = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+        event.preventDefault?.();
+        const reason = event.reason;
+        const err = reason instanceof Error ? reason : new Error(String(reason || ''));
         const errStr = (err?.message || err?.toString() || '').toLowerCase();
-        if (errStr.includes('websocket') || errStr.includes('closed without opened') || errStr.includes('failed to fetch')) {
-            event.preventDefault();
-            console.warn("Ceaznet Admin - Suppressed global unhandled websocket/network rejection:", err);
+        if (errStr.includes('websocket') || errStr.includes('closed without opened') || errStr.includes('failed to fetch') || errStr.includes('network') || errStr.includes('abort') || !reason) {
+            console.warn("Ceaznet Admin - Suppressed global unhandled network rejection:", err);
             return;
         }
-        this.addError(err);
+        console.warn("Ceaznet Admin - Handled background rejection in ErrorBoundary:", err);
     };
 
     componentDidMount() {

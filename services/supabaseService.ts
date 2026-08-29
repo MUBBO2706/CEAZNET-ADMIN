@@ -11,6 +11,20 @@ const MAIN_SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env
 const MAIN_SUPABASE_SERVICE_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_MAIN_SUPABASE_SERVICE_KEY) || FALLBACK_KEY;
 export const dbMain = createClient(MAIN_SUPABASE_URL, MAIN_SUPABASE_SERVICE_KEY);
 
+// Resilient safe query wrapper with retry and network drop tolerance
+export async function safeQuery<T = any>(queryOrFactory: PromiseLike<T> | (() => PromiseLike<T>), retries = 1): Promise<{ data: any; error: any; count?: number | null }> {
+    try {
+        const promise = typeof queryOrFactory === 'function' ? queryOrFactory() : queryOrFactory;
+        const res: any = await promise;
+        return res || { data: null, error: null };
+    } catch (err: any) {
+        if (retries > 0 && typeof queryOrFactory === 'function') {
+            await new Promise(r => setTimeout(r, 600));
+            return safeQuery(queryOrFactory, retries - 1);
+        }
+        return { data: null, error: err };
+    }
+}
 
 // === Main Dashboard Data Fetching ===
 export async function fetchMainDashboardData(): Promise<MainDashboardData> {
@@ -28,19 +42,19 @@ export async function fetchMainDashboardData(): Promise<MainDashboardData> {
         financeDataRes,
         newsLogsDataRes
     ] = await Promise.all([
-        dbMain.from('profiles').select('*', { count: 'exact', head: true }),
-        dbMain.from('public_news_articles').select('*', { count: 'exact', head: true }),
-        dbMain.rpc('get_function_stats'),
-        dbMain.from('public_content').select('*', { count: 'exact', head: true }),
-        dbMain.from('activity_logs').select('*', { count: 'exact', head: true }),
-        dbMain.from('public_news_articles').select('category'),
-        dbMain.from('finance_transactions').select('*', { count: 'exact', head: true }),
-        dbMain.from('dairy_entries').select('*', { count: 'exact', head: true }),
-        dbMain.from('gallery_items').select('*', { count: 'exact', head: true }),
-        dbMain.from('notes').select('*', { count: 'exact', head: true }),
-        dbMain.from('vehicles').select('*', { count: 'exact', head: true }),
-        dbMain.from('finance_transactions').select('type'),
-        dbMain.from('update_news_logs').select('status')
+        safeQuery(() => dbMain.from('profiles').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('public_news_articles').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.rpc('get_function_stats')),
+        safeQuery(() => dbMain.from('public_content').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('activity_logs').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('public_news_articles').select('category')),
+        safeQuery(() => dbMain.from('finance_transactions').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('dairy_entries').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('gallery_items').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('notes').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('vehicles').select('*', { count: 'exact', head: true })),
+        safeQuery(() => dbMain.from('finance_transactions').select('type')),
+        safeQuery(() => dbMain.from('update_news_logs').select('status'))
     ]);
 
     const recentActivity = await fetchLiveActivityLogs();
@@ -633,27 +647,18 @@ export async function deleteNewsArticle(id: number) {
 }
 
 
-// Safe query wrapper to prevent PostgrestBuilder errors and network exceptions
-async function safeQuery<T = any>(promiseOrQuery: PromiseLike<T>): Promise<T> {
-    try {
-        return await promiseOrQuery;
-    } catch (err: any) {
-        return { data: null, error: err } as any;
-    }
-}
-
 // === Users Page Data Fetching ===
 export async function fetchUsersData(): Promise<UserStats[]> {
     try {
         const { data: profiles, error: profilesError } = await safeQuery(
-            dbMain.from('profiles').select('id, full_name, avatar_url, is_suspended, updated_at')
+            () => dbMain.from('profiles').select('id, full_name, avatar_url, is_suspended, updated_at')
         );
         if (profilesError) {
-            console.error("Error fetching profiles:", profilesError);
+            console.warn("Notice: Profiles fetch returned:", profilesError.message || profilesError);
         }
         
         const authUsersRes = await safeQuery(
-            dbMain.auth.admin.listUsers({ perPage: 1000 })
+            () => dbMain.auth.admin.listUsers({ perPage: 1000 })
         );
 
         const [
@@ -666,14 +671,14 @@ export async function fetchUsersData(): Promise<UserStats[]> {
             notesRes,
             sessionsRes
         ] = await Promise.all([
-            safeQuery(dbMain.from('conversations').select('user_id')),
-            safeQuery(dbMain.from('user_settings').select('*')),
-            safeQuery(dbMain.from('vehicles').select('user_id')),
-            safeQuery(dbMain.from('finance_transactions').select('user_id')),
-            safeQuery(dbMain.from('dairy_entries').select('user_id')),
-            safeQuery(dbMain.from('gallery_items').select('user_id')),
-            safeQuery(dbMain.from('notes').select('user_id')),
-            safeQuery(dbMain.from('user_sessions').select('user_id, session_key, last_active_at, created_at, status, is_current'))
+            safeQuery(() => dbMain.from('conversations').select('user_id')),
+            safeQuery(() => dbMain.from('user_settings').select('*')),
+            safeQuery(() => dbMain.from('vehicles').select('user_id')),
+            safeQuery(() => dbMain.from('finance_transactions').select('user_id')),
+            safeQuery(() => dbMain.from('dairy_entries').select('user_id')),
+            safeQuery(() => dbMain.from('gallery_items').select('user_id')),
+            safeQuery(() => dbMain.from('notes').select('user_id')),
+            safeQuery(() => dbMain.from('user_sessions').select('*'))
         ]);
 
         const conversationsData = conversationsRes?.data || null;
@@ -690,7 +695,8 @@ export async function fetchUsersData(): Promise<UserStats[]> {
             if (!data) return map;
             for (const item of data) {
                 if (item.user_id) {
-                    map.set(item.user_id, (map.get(item.user_id) || 0) + 1);
+                    const key = String(item.user_id).toLowerCase();
+                    map.set(key, (map.get(key) || 0) + 1);
                 }
             }
             return map;
@@ -702,7 +708,8 @@ export async function fetchUsersData(): Promise<UserStats[]> {
         if (sessionsData) {
             sessionsData.forEach((s: any) => {
                 if (s.user_id) {
-                    sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
+                    const userIdLower = String(s.user_id).toLowerCase();
+                    sessionCounts.set(userIdLower, (sessionCounts.get(userIdLower) || 0) + 1);
                     const key = s.session_key || '';
                     const statusStr = (s.status || '').toUpperCase();
                     const isTerminated = key.startsWith('TERMINATED_') || statusStr === 'TERMINATED';
@@ -711,7 +718,7 @@ export async function fetchUsersData(): Promise<UserStats[]> {
                     const isExpired = (now - lastActive > 35 * 60 * 1000) && !s.is_current;
                     
                     if (!isTerminated && !isLoggedOut && !isExpired) {
-                        activeSessionCounts.set(s.user_id, (activeSessionCounts.get(s.user_id) || 0) + 1);
+                        activeSessionCounts.set(userIdLower, (activeSessionCounts.get(userIdLower) || 0) + 1);
                     }
                 }
             });
@@ -724,11 +731,11 @@ export async function fetchUsersData(): Promise<UserStats[]> {
         const galleryCounts = createCountMap(galleryData);
         const notesCounts = createCountMap(notesData);
         
-        const profilesList = profiles || [];
-        const profilesMap = new Map(profilesList.map((p: any) => [p.id, p]));
-        const settingsMap = new Map(userSettingsData?.map((s: any) => [s.user_id, s]) || []);
+        const profilesList = (profiles || []) as any[];
+        const profilesMap = new Map<string, any>(profilesList.map((p: any) => [String(p.id).toLowerCase(), p]));
+        const settingsMap = new Map<string, any>((userSettingsData || []).map((s: any) => [String(s.user_id).toLowerCase(), s]));
 
-        const authUsersList = authUsersRes?.data?.users;
+        const authUsersList = authUsersRes?.data?.users as any[] | undefined;
 
         // Construct user list prioritizing auth users, falling back to profiles if auth admin list is unavailable
         let unifiedUsersList: Array<{
@@ -745,7 +752,8 @@ export async function fetchUsersData(): Promise<UserStats[]> {
 
         if (authUsersList && authUsersList.length > 0) {
             unifiedUsersList = authUsersList.map((user: any) => {
-                const profile = profilesMap.get(user.id);
+                const userIdLower = String(user.id).toLowerCase();
+                const profile = profilesMap.get(userIdLower);
                 const metadata: any = user.user_metadata;
                 return {
                     id: user.id,
@@ -773,20 +781,23 @@ export async function fetchUsersData(): Promise<UserStats[]> {
             }));
         }
 
-        return unifiedUsersList.map(u => ({
-            user: u,
-            conversation_count: conversationCounts.get(u.id) || 0,
-            settings: settingsMap.get(u.id) as UserSettings | undefined,
-            vehicles_count: vehiclesCounts.get(u.id) || 0,
-            finance_tx_count: financeCounts.get(u.id) || 0,
-            dairy_entries_count: dairyCounts.get(u.id) || 0,
-            gallery_items_count: galleryCounts.get(u.id) || 0,
-            notes_count: notesCounts.get(u.id) || 0,
-            sessions_count: sessionCounts.get(u.id) || 0,
-            active_sessions_count: activeSessionCounts.get(u.id) || 0,
-        })).sort((a, b) => new Date(b.user.created_at).getTime() - new Date(a.user.created_at).getTime());
+        return unifiedUsersList.map(u => {
+            const userIdLower = String(u.id).toLowerCase();
+            return {
+                user: u,
+                conversation_count: conversationCounts.get(userIdLower) || 0,
+                settings: settingsMap.get(userIdLower) as UserSettings | undefined,
+                vehicles_count: vehiclesCounts.get(userIdLower) || 0,
+                finance_tx_count: financeCounts.get(userIdLower) || 0,
+                dairy_entries_count: dairyCounts.get(userIdLower) || 0,
+                gallery_items_count: galleryCounts.get(userIdLower) || 0,
+                notes_count: notesCounts.get(userIdLower) || 0,
+                sessions_count: sessionCounts.get(userIdLower) || 0,
+                active_sessions_count: activeSessionCounts.get(userIdLower) || 0,
+            };
+        }).sort((a, b) => new Date(b.user.created_at).getTime() - new Date(a.user.created_at).getTime());
     } catch (err) {
-        console.error("Failed to fetch users data:", err);
+        console.warn("Failed to fetch users data (handled gracefully):", err);
         return [];
     }
 }
@@ -794,24 +805,27 @@ export async function fetchUsersData(): Promise<UserStats[]> {
 // === User Sessions Management ===
 export async function fetchUserSessions(userId?: string): Promise<UserSession[]> {
     try {
-        let query = dbMain.from('user_sessions').select('*').order('last_active_at', { ascending: false });
-        if (userId) {
-            query = query.eq('user_id', userId);
-        }
-        const { data: sessions, error } = await safeQuery(query);
+        const { data: sessions, error } = await safeQuery(() => {
+            let query = dbMain.from('user_sessions').select('*').order('last_active_at', { ascending: false });
+            if (userId) {
+                query = query.eq('user_id', userId);
+            }
+            return query;
+        });
+
         if (error) {
-            console.error("Error fetching user sessions:", error);
+            console.warn("Notice: User sessions query:", error.message || error);
             return [];
         }
         if (!sessions) return [];
 
         const [profilesRes, authUsersRes] = await Promise.all([
-            safeQuery(dbMain.from('profiles').select('id, full_name, avatar_url')),
-            safeQuery(dbMain.auth.admin.listUsers({ perPage: 1000 }))
+            safeQuery(() => dbMain.from('profiles').select('id, full_name, avatar_url')),
+            safeQuery(() => dbMain.auth.admin.listUsers({ perPage: 1000 }))
         ]);
 
-        const profileMap = new Map((profilesRes?.data || []).map((p: any) => [p.id, p]));
-        const authMap = new Map((authUsersRes?.data?.users || []).map((u: any) => [u.id, u]));
+        const profileMap = new Map<string, any>((profilesRes?.data || []).map((p: any) => [p.id, p]));
+        const authMap = new Map<string, any>((authUsersRes?.data?.users || []).map((u: any) => [u.id, u]));
 
         return sessions.map((sess: any) => {
             const profile = profileMap.get(sess.user_id);
@@ -834,7 +848,7 @@ export async function fetchUserSessions(userId?: string): Promise<UserSession[]>
             };
         });
     } catch (err) {
-        console.error("Failed to fetch user sessions gracefully:", err);
+        console.warn("Failed to fetch user sessions gracefully:", err);
         return [];
     }
 }

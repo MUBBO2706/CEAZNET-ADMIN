@@ -5,7 +5,7 @@ import { PanelCard, CustomDropdown, DateRangeFilter, ConfirmationModal, BatchAct
 import { UsersPageSkeleton } from '../components/skeletons';
 import { fetchUsersData, deleteUser, deleteUsersBatch, updateUserSettings, updateUserProfile, fetchUserSessions } from '../services/supabaseService';
 import type { UserStats, UserSettings } from '../types';
-import { Search, Trash2, CheckSquare, Square, Edit, Save, X, Loader, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff, Radio, Power, Smartphone } from 'lucide-react';
+import { Search, Trash2, CheckSquare, Square, Edit, Pencil, Save, X, Loader, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff, Radio, Power, Smartphone } from 'lucide-react';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
 import UserSessionsViewer from '../components/users/UserSessionsViewer';
 
@@ -621,10 +621,10 @@ const UsersPage: React.FC = () => {
                 fetchUsersData(),
                 fetchUserSessions()
             ]);
-            setUsers(data);
-            setSessionsCount(sessionsData.length);
+            setUsers(data || []);
+            setSessionsCount(sessionsData?.length || 0);
         } catch (error) {
-            console.error("Failed to fetch users data:", error);
+            console.warn("Failed to fetch users data (handled):", error);
         } finally {
             setLoading(false);
         }
@@ -799,7 +799,7 @@ const UsersPage: React.FC = () => {
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                         >
-                            Users ({users.length})
+                            Users
                         </button>
                         <button
                             onClick={() => setActiveTab('sessions')}
@@ -809,7 +809,7 @@ const UsersPage: React.FC = () => {
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                         >
-                            Session ({sessionsCount})
+                            Sessions
                         </button>
                     </div>
                     {activeTab === 'sessions' && (
@@ -1071,126 +1071,127 @@ const UsersPage: React.FC = () => {
                                                 {/* Expanded View */}
                                                 {isExpanded && (
                                                     <div 
-                                                        className="sticky left-0 w-[100vw] sm:w-auto max-w-[100vw] sm:max-w-none bg-slate-50/50 dark:bg-slate-800/30 border-t border-[var(--border-color)] p-2 inset-shadow-sm animate-fade-in" 
+                                                        className="sticky left-0 w-full bg-[var(--card-bg)] border-t border-[var(--border-color)] animate-fade-in" 
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
-                                                        <div className="flex flex-col md:flex-row gap-2">
+                                                        <div className="flex flex-col divide-y divide-slate-200/60 dark:divide-slate-800/60 border-b border-[var(--border-color)]">
                                                             {/* Profile Info */}
-                                                            <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-indigo-200 dark:hover:border-indigo-800/60 transition-colors">
-                                                                <div className={`absolute top-0 left-0 w-[3px] h-full ${is_suspended ? 'bg-red-500/50' : 'bg-indigo-400/50'} transition-colors`}></div>
-                                                                <div className="flex items-start justify-between mb-2 gap-2">
-                                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div className="p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4 relative overflow-hidden">
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    <div className="flex items-center gap-3 min-w-0">
                                                                         <div className="relative shrink-0">
-                                                                            <img src={avatar_url || fallbackAvatar} alt="Avatar" className={`w-8 h-8 rounded-full border border-slate-100 dark:border-slate-800 object-cover ${is_suspended ? 'grayscale opacity-70' : ''}`} />
+                                                                            <img src={avatar_url || fallbackAvatar} alt="Avatar" className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-200 dark:border-slate-750 object-cover ${is_suspended ? 'grayscale opacity-70' : ''}`} />
                                                                             {is_suspended && (
                                                                                 <div className="absolute inset-0 bg-red-900/20 rounded-full flex items-center justify-center backdrop-blur-[1px]">
-                                                                                    <UserX size={12} className="text-white drop-shadow-md" />
+                                                                                    <UserX size={14} className="text-white" />
                                                                                 </div>
                                                                             )}
                                                                         </div>
-                                                                        <div className="min-w-0">
-                                                                            <div className={`font-bold text-[13px] leading-tight flex flex-wrap items-center gap-1.5 ${is_suspended ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-100'}`}>
-                                                                                <span className="truncate">{full_name || 'Anonymous'}</span>
-                                                                                <span className="font-mono text-[9px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-1 py-0.5 rounded no-underline shrink-0">ID:{id.substring(0,6)}</span>
+                                                                        <div className="min-w-0 space-y-0.5">
+                                                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                                                <h3 className={`font-bold text-sm sm:text-base leading-tight truncate ${is_suspended ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-100'}`}>
+                                                                                    {full_name || 'Anonymous'}
+                                                                                </h3>
+                                                                                <span className="font-mono text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0">ID: {id.substring(0, 10)}</span>
                                                                             </div>
-                                                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">{email}</div>
+                                                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{email}</p>
                                                                         </div>
                                                                     </div>
-                                                                    {is_suspended && (
-                                                                        <div className="bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded flex items-center justify-center text-[9px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap self-start mt-0">
-                                                                            <AlertTriangle size={10} className="mr-1" /> Suspended
-                                                                        </div>
-                                                                    )}
+
+                                                                    {/* Suspend / Normalize button opposite right side */}
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        <button 
+                                                                            onClick={() => setSuspendConfirmation({ id, currentStatus: !!is_suspended })} 
+                                                                            className={`text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${is_suspended ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300' : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400'}`}
+                                                                        >
+                                                                            {is_suspended ? <><UserCheck size={13} /> Normalize</> : <><UserX size={13} /> Suspend</>}
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex flex-wrap gap-1.5 text-[10px]">
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Joined:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(created_at)} at {formatTimeCompact(created_at)}</span>
+
+                                                                {/* Stats Grid: Mobile 2x2, Desktop 4x1 */}
+                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs pt-1">
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Joined Date</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 text-xs sm:text-[13px]">{formatDateCompact(created_at)} at {formatTimeCompact(created_at)}</span>
                                                                     </div>
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Login:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{last_sign_in_at ? `${formatDateCompact(last_sign_in_at)} at ${formatTimeCompact(last_sign_in_at)}` : 'Never'}</span>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Last Login</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 text-xs sm:text-[13px]">{last_sign_in_at ? `${formatDateCompact(last_sign_in_at)} at ${formatTimeCompact(last_sign_in_at)}` : 'Never'}</span>
                                                                     </div>
-                                                                    {updated_at && (
-                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Updated:</span>
-                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{formatDateCompact(updated_at)} at {formatTimeCompact(updated_at)}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider">Chats:</span>
-                                                                        <span className="font-bold text-slate-700 dark:text-slate-300">{conversation_count}</span>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Profile Updated</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 text-xs sm:text-[13px]">{updated_at ? `${formatDateCompact(updated_at)} at ${formatTimeCompact(updated_at)}` : 'Never'}</span>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Total Conversations</span>
+                                                                        <span className="font-bold text-indigo-600 dark:text-indigo-400 text-xs sm:text-[13px]">{conversation_count}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             {/* AI Settings */}
-                                                            <div className="flex-1 bg-white dark:bg-slate-900/50 px-3 py-2.5 rounded border border-slate-200/50 dark:border-slate-800/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative overflow-hidden group/card hover:border-emerald-200 dark:hover:border-emerald-800/60 transition-colors">
-                                                                <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-400/50 transition-colors"></div>
-                                                                <div className="flex items-center justify-between mb-2 gap-2">
-                                                                    <h4 className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 shrink-0"><Settings size={10}/> AI Config</h4>
-                                                                    <div className="flex items-center gap-1 shrink-0">
-                                                                        <button onClick={() => setEditingUser(userStat)} className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-900/30 px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer">
-                                                                            <Edit size={10} /> Edit Settings
-                                                                        </button>
+                                                            <div className="p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+                                                                <div className="flex items-center justify-between gap-4">
+                                                                    <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                                                        AI Assistant Config
+                                                                    </h3>
+                                                                    <div className="flex items-center gap-1.5">
                                                                         <button 
-                                                                            onClick={() => setSuspendConfirmation({ id, currentStatus: !!is_suspended })} 
-                                                                            className={`text-[9px] font-bold px-1.5 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer ${is_suspended ? 'text-green-600 dark:text-green-400 hover:text-green-700 bg-green-50/80 dark:bg-green-900/30' : 'text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50/80 dark:bg-red-900/30'}`}
+                                                                            onClick={() => setEditingUser(userStat)} 
+                                                                            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1.5 cursor-pointer"
                                                                         >
-                                                                            {is_suspended ? <><UserCheck size={10} /> Normalize</> : <><UserX size={10} /> Suspend</>}
+                                                                            <Pencil size={12} /> Edit Settings
                                                                         </button>
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                <div className="flex flex-wrap gap-1.5 text-[10px]">
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Persona:</span>
-                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_persona || 'Assistant'}</span>
+                                                                {/* Row 1 (Desktop: 4 columns, Mobile: 2 columns) */}
+                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Voice Persona</span>
+                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-[13px]">{userStat.settings?.voice_persona || 'Assistant'}</span>
                                                                     </div>
-                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_recording_enabled ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice Rec:</span>
-                                                                        <span className="font-bold">{userStat.settings?.voice_recording_enabled ? 'Enabled' : 'Disabled'}</span>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Voice Input Storage</span>
+                                                                        <span className={`font-semibold text-xs sm:text-[13px] ${userStat.settings?.voice_recording_enabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                                                            {userStat.settings?.voice_recording_enabled ? 'Enabled' : 'Disabled'}
+                                                                        </span>
                                                                     </div>
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Tone:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]">{userStat.settings?.voice_mode_tone_instruction || 'None'}</span>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Speaking Tone</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate text-xs sm:text-[13px]">{userStat.settings?.voice_mode_tone_instruction || 'None'}</span>
                                                                     </div>
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60 max-w-full">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Custom:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px] sm:max-w-[120px]" title={userStat.settings?.voice_mode_custom_instruction}>{userStat.settings?.voice_mode_custom_instruction || 'None'}</span>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Custom Instruction</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 truncate text-xs sm:text-[13px]" title={userStat.settings?.voice_mode_custom_instruction}>{userStat.settings?.voice_mode_custom_instruction || 'None'}</span>
                                                                     </div>
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Voice:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings?.voice_mode_voice || 'Puck'}</span>
-                                                                    </div>
-                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.voice_proactive_mode ? 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">Proactive:</span>
-                                                                        <span className="font-bold">{userStat.settings?.voice_proactive_mode ? 'On' : 'Off'}</span>
-                                                                    </div>
-                                                                    <div className={`px-1.5 py-1 rounded flex items-center gap-1 border ${userStat.settings?.api_key ? 'bg-indigo-50/80 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50/80 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800/60 text-slate-500'}`}>
-                                                                        <span className="uppercase font-bold text-[8.5px] tracking-wider shrink-0">API Key:</span>
-                                                                        <span className="font-bold">{userStat.settings?.api_key ? 'Set' : 'None'}</span>
-                                                                    </div>
-                                                                    <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                        <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Translator:</span>
-                                                                        <span className="font-medium text-slate-700 dark:text-slate-300">In: {userStat.settings?.translator_usage?.input || 0} / Out: {userStat.settings?.translator_usage?.output || 0}</span>
-                                                                    </div>
-                                                                    {userStat.settings?.last_molecule && (
-                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Molecule:</span>
-                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{userStat.settings.last_molecule}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {userStat.settings?.updated_at && (
-                                                                        <div className="bg-slate-50/80 dark:bg-slate-800/40 px-1.5 py-1 rounded flex items-center gap-1 border border-slate-100 dark:border-slate-800/60">
-                                                                            <span className="text-slate-400 uppercase font-bold text-[8.5px] tracking-wider shrink-0">Updated:</span>
-                                                                            <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(userStat.settings.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(userStat.settings.updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
-                                                                 <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 font-medium">
-                                                                    <span className="text-slate-400 uppercase font-bold text-[8px] tracking-wider block mb-1">System Prompt Instructions</span>
-                                                                    <div className="text-[10px] text-slate-650 dark:text-slate-350 bg-slate-50/50 dark:bg-slate-900/40 p-2 rounded border border-slate-100 dark:border-slate-800/40 max-h-20 overflow-y-auto whitespace-pre-wrap leading-relaxed select-all">
+
+                                                                {/* Row 2 (Desktop: 3 columns, Mobile: 2 columns with API Key full width) */}
+                                                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs">
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Speaking Voice</span>
+                                                                        <span className="font-medium text-slate-700 dark:text-slate-300 text-xs sm:text-[13px]">{userStat.settings?.voice_mode_voice || 'Puck'}</span>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Proactive Dialogue</span>
+                                                                        <span className={`font-bold text-xs sm:text-[13px] ${userStat.settings?.voice_proactive_mode ? 'text-emerald-600 dark:text-emerald-450' : 'text-slate-500'}`}>
+                                                                            {userStat.settings?.voice_proactive_mode ? 'Active' : 'Inactive'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-0.5 col-span-2 lg:col-span-1">
+                                                                        <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider">Gemini API Key</span>
+                                                                        <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                                                                            {userStat.settings?.api_key ? '••••••••••••••••' : 'Using default/system API Key'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Row 3 (Full width) */}
+                                                                <div className="pt-1 font-medium">
+                                                                    <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-wider block mb-1">System Prompt Instructions</span>
+                                                                    <div className="text-xs text-slate-650 dark:text-slate-300 bg-slate-100/50 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-200/40 dark:border-slate-800/40 max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed select-all">
                                                                         {userStat.settings?.voice_mode_persona_instruction || 'No instruction prompt set.'}
                                                                     </div>
                                                                 </div>
@@ -1198,17 +1199,17 @@ const UsersPage: React.FC = () => {
                                                         </div>
 
                                                         {/* User Sessions & Security Section - Edge to Edge */}
-                                                        <div className="mt-3 -mx-2 -mb-2 bg-[var(--card-bg)] border-t border-[var(--border-color)]">
-                                                            <div className="flex items-center justify-between px-3 py-2 bg-[var(--subtle-bg)] border-b border-[var(--border-color)]">
-                                                                <h4 className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center">
-                                                                    <span>Connected Devices & Active Sessions</span>
+                                                        <div className="bg-[var(--card-bg)]">
+                                                            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 bg-[var(--subtle-bg)] border-b border-[var(--border-color)]">
+                                                                <h4 className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 min-w-0">
+                                                                    <span className="truncate">Connected Devices & Active Sessions</span>
                                                                 </h4>
-                                                                <span className="text-[10px] text-slate-400 font-semibold">
+                                                                <span className="text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-bold shrink-0">
                                                                     {userStat.active_sessions_count || 0} active session(s)
                                                                 </span>
                                                             </div>
                                                             <div 
-                                                                className="pt-2"
+                                                                className="pt-2 px-1 md:px-3 pb-3"
                                                                 onTouchStart={(e) => e.stopPropagation()}
                                                                 onTouchMove={(e) => e.stopPropagation()}
                                                                 onWheel={(e) => e.stopPropagation()}

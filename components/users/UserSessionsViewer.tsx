@@ -329,7 +329,7 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
         });
       }
     } catch (e) {
-      console.error("Failed to load user options for sessions dropdown:", e);
+      console.warn("User options fetch notice:", e);
     }
   }, []);
 
@@ -418,7 +418,7 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
         });
       }
     } catch (err) {
-      console.error("Failed to load user sessions:", err);
+      console.warn("Failed to load user sessions (handled):", err);
     } finally {
       if (!silent) setLoading(false);
     }

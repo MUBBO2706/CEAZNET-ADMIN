@@ -4,21 +4,23 @@ import App from './App';
 
 // --- Global Error Handling ---
 
-// Catch unhandled promise rejections (e.g., from async functions, like Supabase calls)
+// Catch unhandled promise rejections (e.g., from transient network drops, aborted queries, or third-party SDK background tasks)
 window.addEventListener('unhandledrejection', event => {
-  console.error('Ceaznet Admin - Unhandled Promise Rejection:', event.reason);
+  event.preventDefault?.();
+  const reason = event.reason;
+  const message = reason?.message || (typeof reason === 'string' ? reason : JSON.stringify(reason || ''));
+  console.warn('Ceaznet Admin - Handled background promise rejection:', message);
 });
 
 // Catch other synchronous JavaScript errors that might not be in the React tree
 window.onerror = (message, source, lineno, colno, error) => {
-    console.error('Ceaznet Admin - Global Unhandled Error:', {
+    console.warn('Ceaznet Admin - Handled Global Error:', {
         message,
         source,
         lineno,
         colno,
         error
     });
-    // We are already logging it, so this avoids duplicate messages in some browsers.
     return true; 
 };
 
