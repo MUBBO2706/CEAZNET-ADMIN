@@ -531,18 +531,22 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             <div className="flex items-center gap-1 shrink-0">
                                 <Cpu size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <CustomDropdown
-                                    options={['gemini-3.7-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
+                                    options={['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
                                     value={aiModel}
                                     onChange={(v) => setAiModel(v as string)}
                                     triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
                                     className="w-auto [&_.custom-dropdown-panel]:w-48"
                                     displayLabels={{
-                                        'gemini-3.7-flash': 'Gemini 3.7',
+                                        'gemini-3.7-flash': 'Gemini 3.7 Flash',
+                                        'gemini-3.6-flash': 'Gemini 3.6 Flash',
+                                        'gemini-3.5-flash': 'Gemini 3.5 Flash',
+                                        'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite',
+                                        'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
                                         'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
-                                        'gemini-3.1-flash-lite': 'Gemini 3.1 Lite',
+                                        'gemini-3-flash-preview': 'Gemini 3 Flash',
                                         'gemini-2.5-pro': 'Gemini 2.5 Pro',
                                         'gemini-2.5-flash': 'Gemini 2.5 Flash',
-                                        'gemini-2.5-flash-lite': 'Gemini 2.5 Lite'
+                                        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash-Lite'
                                     }}
                                 />
                             </div>

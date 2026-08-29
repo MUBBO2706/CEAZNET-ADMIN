@@ -374,15 +374,16 @@ function htmlToMarkdown(html: string): string {
 }
 
 const KNOWN_MODELS = [
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
-    'gemini-3-pro-preview',
-    'gemini-3-flash',
-    'gemini-3-pro'
+    'gemini-2.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite'
 ];
 
 interface ParsedAttachment {
@@ -1899,6 +1900,18 @@ const SupportInboxPage: React.FC = () => {
                                                         value={selectedAiModel}
                                                         onChange={setSelectedAiModel}
                                                         triggerClassName="!h-[24px] !p-1 !px-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md !text-[10px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-shadow shadow-sm truncate"
+                                                        displayLabels={{
+                                                            'gemini-3.7-flash': 'Gemini 3.7 Flash',
+                                                            'gemini-3.6-flash': 'Gemini 3.6 Flash',
+                                                            'gemini-3.5-flash': 'Gemini 3.5 Flash',
+                                                            'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite',
+                                                            'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
+                                                            'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+                                                            'gemini-3-flash-preview': 'Gemini 3 Flash',
+                                                            'gemini-2.5-pro': 'Gemini 2.5 Pro',
+                                                            'gemini-2.5-flash': 'Gemini 2.5 Flash',
+                                                            'gemini-2.5-flash-lite': 'Gemini 2.5 Flash-Lite'
+                                                        }}
                                                     />
                                                 </div>
                                                 <button 
@@ -2079,6 +2092,18 @@ const SupportInboxPage: React.FC = () => {
                                                         value={selectedAiModel}
                                                         onChange={setSelectedAiModel}
                                                         triggerClassName="!h-[24px] !p-1 !px-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg !text-[9px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm w-full flex items-center justify-between gap-1 truncate"
+                                                        displayLabels={{
+                                                            'gemini-3.7-flash': 'Gemini 3.7 Flash',
+                                                            'gemini-3.6-flash': 'Gemini 3.6 Flash',
+                                                            'gemini-3.5-flash': 'Gemini 3.5 Flash',
+                                                            'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite',
+                                                            'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
+                                                            'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+                                                            'gemini-3-flash-preview': 'Gemini 3 Flash',
+                                                            'gemini-2.5-pro': 'Gemini 2.5 Pro',
+                                                            'gemini-2.5-flash': 'Gemini 2.5 Flash',
+                                                            'gemini-2.5-flash-lite': 'Gemini 2.5 Flash-Lite'
+                                                        }}
                                                     />
                                                 </div>
                                             </div>
