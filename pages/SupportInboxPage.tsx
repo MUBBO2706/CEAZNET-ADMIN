@@ -601,6 +601,7 @@ const FastTextarea = React.memo(({
     value, 
     onChange, 
     onKeyDown, 
+    onBlur,
     placeholder, 
     className, 
     style, 
@@ -609,6 +610,7 @@ const FastTextarea = React.memo(({
     value: string;
     onChange: (val: string) => void;
     onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+    onBlur?: () => void;
     placeholder: string;
     className: string;
     style?: React.CSSProperties;
@@ -635,6 +637,7 @@ const FastTextarea = React.memo(({
             value={localVal}
             onChange={handleChange}
             onKeyDown={onKeyDown}
+            onBlur={onBlur}
             placeholder={placeholder}
             className={className}
             rows={computedRows}
@@ -734,6 +737,7 @@ const SupportInboxPage: React.FC = () => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const typingChannelRef = useRef<any>(null);
     const typingCooldownRef = useRef<boolean>(false);
+    const adminTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const mailTextareaRef = useRef<HTMLTextAreaElement>(null);
     const richEditorRef = useRef<HTMLDivElement>(null);
     const mailFileInputRef = useRef<HTMLInputElement>(null);
@@ -1229,12 +1233,19 @@ const SupportInboxPage: React.FC = () => {
             channel.on('broadcast', { event: 'typing' }, (payload) => {
                 console.log("Received typing broadcast:", payload);
                 const userType = payload.payload?.user_type || payload.user_type;
+                const isTyping = payload.payload?.is_typing ?? true; // fallback to true
+                
                 if (userType === 'user') {
-                    setIsUserTyping(true);
                     if (userTypingTimeoutRef.current) clearTimeout(userTypingTimeoutRef.current);
-                    userTypingTimeoutRef.current = setTimeout(() => {
+                    
+                    if (isTyping) {
+                        setIsUserTyping(true);
+                        userTypingTimeoutRef.current = setTimeout(() => {
+                            setIsUserTyping(false);
+                        }, 2500); // Shorter fallback timeout
+                    } else {
                         setIsUserTyping(false);
-                    }, 4000); // Hide typing indicator after 4 seconds of inactivity
+                    }
                 }
             });
 
@@ -1249,22 +1260,48 @@ const SupportInboxPage: React.FC = () => {
         }
     }, [selectedConvId]);
 
-    const handleTyping = () => {
-        if (!typingChannelRef.current || typingCooldownRef.current) return;
+    const handleTyping = (isTypingExplicit?: boolean) => {
+        if (!typingChannelRef.current) return;
         
-        typingChannelRef.current.send({
-            type: 'broadcast',
-            event: 'typing',
-            payload: { user_type: 'admin' }
-        }).catch((err: any) => console.error("Typing broadcast error:", err));
+        // Instant stop typing (e.g. input cleared or blurred)
+        if (isTypingExplicit === false) {
+            if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+            typingChannelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_type: 'admin', is_typing: false }
+            }).catch((err: any) => console.error("Typing broadcast error:", err));
+            return;
+        }
 
-        typingCooldownRef.current = true;
-        setTimeout(() => {
-           typingCooldownRef.current = false;
-        }, 3000); // Send typing event at most once every 3 seconds
+        // Throttle the "typing start / typing continuing" events
+        if (!typingCooldownRef.current) {
+            typingChannelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_type: 'admin', is_typing: true }
+            }).catch((err: any) => console.error("Typing broadcast error:", err));
+            
+            typingCooldownRef.current = true;
+            setTimeout(() => {
+                typingCooldownRef.current = false;
+            }, 1000); // Throttled to max once per second
+        }
+
+        // Debounce the automatic "typing stop" event
+        if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+        adminTypingTimeoutRef.current = setTimeout(() => {
+            typingChannelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_type: 'admin', is_typing: false }
+            }).catch((err: any) => console.error("Typing broadcast error:", err));
+        }, 1500); // Stop typing after 1.5s of inactivity
     };
 
     const handleSendReply = async () => {
+        handleTyping(false); // Stop typing immediately when sending
+
         let rawContent = replyText;
         if (richEditorRef.current && richEditorRef.current.innerHTML.trim()) {
             rawContent = richEditorRef.current.innerHTML;
@@ -1845,14 +1882,17 @@ const SupportInboxPage: React.FC = () => {
                                                     ref={richEditorRef}
                                                     contentEditable
                                                     onInput={(e) => {
+                                                        let isEmpty = false;
                                                         if (richEditorRef.current) {
                                                             const html = richEditorRef.current.innerHTML;
                                                             if (html === '<br>' || html === '<div><br></div>' || html === '<p><br></p>') {
                                                                 richEditorRef.current.innerHTML = '';
                                                             }
-                                                            setReplyTextDebounced(richEditorRef.current.innerText || richEditorRef.current.innerHTML);
+                                                            const text = richEditorRef.current.innerText || richEditorRef.current.innerHTML;
+                                                            isEmpty = !text.trim();
+                                                            setReplyTextDebounced(text);
                                                         }
-                                                        handleTyping();
+                                                        handleTyping(isEmpty ? false : undefined);
                                                         checkActiveFormats();
                                                     }}
                                                     onKeyUp={checkActiveFormats}
@@ -1860,6 +1900,7 @@ const SupportInboxPage: React.FC = () => {
                                                     onClick={checkActiveFormats}
                                                     onFocus={checkActiveFormats}
                                                     onBlur={() => {
+                                                        handleTyping(false);
                                                         setTimeout(() => {
                                                             if (!richEditorRef.current?.contains(document.activeElement)) {
                                                                 setActiveFormats({});
@@ -2157,9 +2198,10 @@ const SupportInboxPage: React.FC = () => {
                                                         value={replyText}
                                                         onChange={(val) => {
                                                             setReplyTextDebounced(val);
-                                                            handleTyping();
+                                                            handleTyping(!val.trim() ? false : undefined);
                                                         }}
                                                         onKeyDown={handleKeyDown}
+                                                        onBlur={() => handleTyping(false)}
                                                         placeholder={pendingAttachments.length > 0 ? "Add a message (optional)..." : "Reply in chat..."}
                                                         className="w-full bg-transparent border-none focus:ring-0 resize-none px-4 py-[11px] sm:px-4 sm:py-[15px] text-[16px] sm:text-sm text-zinc-900 dark:text-white min-h-[44px] sm:min-h-[52px] scrollbar-hide outline-none block m-0"
                                                         style={{ lineHeight: '22px' }}
