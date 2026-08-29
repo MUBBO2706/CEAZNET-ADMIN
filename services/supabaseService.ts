@@ -1,7 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 // FIX: Import AdvancedAnalyticsData type
-import type { NewsLog, NewsConfig, MainDashboardData, UserStats, ArticleEngagementData, ChatMessage, DeveloperProfile, DatabaseAnalyticsStats, EdgeFunctionStats, UserSettings, UserProfile, NewsArticle, PublicContentItem, RecentActivityLog, NewsApiKey } from '../types';
+import type { NewsLog, NewsConfig, MainDashboardData, UserStats, ArticleEngagementData, ChatMessage, DeveloperProfile, DatabaseAnalyticsStats, EdgeFunctionStats, UserSettings, UserProfile, NewsArticle, PublicContentItem, RecentActivityLog, NewsApiKey, UserSession } from '../types';
 
 const FALLBACK_URL = 'https://itjurgqbvsqniphuehiz.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0anVyZ3FidnNxbmlwaHVlaGl6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI4Mzk1OCwiZXhwIjoyMDkwODU5OTU4fQ.FgnMsY9Oz2ITeBTg3wyldmftSV6c9rYeScx_hC0Syxc';
@@ -260,7 +260,7 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
                     payload: {
                         query: `${op} operation on ${item.table_name}${recordId ? ` (ID: ${recordId})` : ''}`,
                         response: {
-                            ...(item.old_data ? { deleted_record: item.old_data } : {}),
+                            ...(item.old_data ? { old_data: item.old_data } : {}),
                             ...(item.new_data ? { new_data: item.new_data?.payload || item.new_data } : {}),
                             ...(op === 'DELETE' && !item.old_data && !item.new_data ? { status: 'Record purged from database' } : {})
                         }
@@ -633,82 +633,289 @@ export async function deleteNewsArticle(id: number) {
 }
 
 
+// Safe query wrapper to prevent PostgrestBuilder errors and network exceptions
+async function safeQuery<T = any>(promiseOrQuery: PromiseLike<T>): Promise<T> {
+    try {
+        return await promiseOrQuery;
+    } catch (err: any) {
+        return { data: null, error: err } as any;
+    }
+}
+
 // === Users Page Data Fetching ===
 export async function fetchUsersData(): Promise<UserStats[]> {
-    const { data: profiles, error: profilesError } = await dbMain.from('profiles').select('id, full_name, avatar_url, is_suspended, updated_at');
-    if (profilesError) throw profilesError;
-    if (!profiles) return [];
-    
-    const { data: authUsers, error: authError } = await dbMain.auth.admin.listUsers({ perPage: 1000 });
-    if (authError) throw authError;
-
-    const [
-        { data: conversationsData, error: convosError },
-        { data: userSettingsData, error: settingsError },
-        { data: vehiclesData },
-        { data: financeData },
-        { data: dairyData },
-        { data: galleryData },
-        { data: notesData }
-    ] = await Promise.all([
-        dbMain.from('conversations').select('user_id'),
-        dbMain.from('user_settings').select('*'),
-        dbMain.from('vehicles').select('user_id'),
-        dbMain.from('finance_transactions').select('user_id'),
-        dbMain.from('dairy_entries').select('user_id'),
-        dbMain.from('gallery_items').select('user_id'),
-        dbMain.from('notes').select('user_id')
-    ]);
-
-    if (convosError) console.error("Error fetching conversations:", convosError);
-
-    const createCountMap = (data: { user_id: string }[] | null): Map<string, number> => {
-        const map = new Map<string, number>();
-        if (!data) return map;
-        for (const item of data) {
-            if (item.user_id) {
-                map.set(item.user_id, (map.get(item.user_id) || 0) + 1);
-            }
+    try {
+        const { data: profiles, error: profilesError } = await safeQuery(
+            dbMain.from('profiles').select('id, full_name, avatar_url, is_suspended, updated_at')
+        );
+        if (profilesError) {
+            console.error("Error fetching profiles:", profilesError);
         }
-        return map;
-    };
+        
+        const authUsersRes = await safeQuery(
+            dbMain.auth.admin.listUsers({ perPage: 1000 })
+        );
 
-    const conversationCounts = createCountMap(conversationsData);
-    const vehiclesCounts = createCountMap(vehiclesData);
-    const financeCounts = createCountMap(financeData);
-    const dairyCounts = createCountMap(dairyData);
-    const galleryCounts = createCountMap(galleryData);
-    const notesCounts = createCountMap(notesData);
-    
-    const profilesMap = new Map(profiles.map(p => [p.id, p]));
-    const settingsMap = new Map(userSettingsData?.map(s => [s.user_id, s]) || []);
+        const [
+            conversationsRes,
+            userSettingsRes,
+            vehiclesRes,
+            financeRes,
+            dairyRes,
+            galleryRes,
+            notesRes,
+            sessionsRes
+        ] = await Promise.all([
+            safeQuery(dbMain.from('conversations').select('user_id')),
+            safeQuery(dbMain.from('user_settings').select('*')),
+            safeQuery(dbMain.from('vehicles').select('user_id')),
+            safeQuery(dbMain.from('finance_transactions').select('user_id')),
+            safeQuery(dbMain.from('dairy_entries').select('user_id')),
+            safeQuery(dbMain.from('gallery_items').select('user_id')),
+            safeQuery(dbMain.from('notes').select('user_id')),
+            safeQuery(dbMain.from('user_sessions').select('user_id, session_key, last_active_at, created_at, status, is_current'))
+        ]);
 
-    return authUsers.users.map(user => {
-        const profile = profilesMap.get(user.id);
-        // Supabase's user.user_metadata is typed as `unknown`. We cast it to any to safely access its properties.
-        const metadata: any = user.user_metadata;
+        const conversationsData = conversationsRes?.data || null;
+        const userSettingsData = userSettingsRes?.data || null;
+        const vehiclesData = vehiclesRes?.data || null;
+        const financeData = financeRes?.data || null;
+        const dairyData = dairyRes?.data || null;
+        const galleryData = galleryRes?.data || null;
+        const notesData = notesRes?.data || null;
+        const sessionsData = sessionsRes?.data || null;
 
-        return {
-            user: {
-                id: user.id,
-                full_name: profile?.full_name || metadata?.full_name || 'N/A',
-                avatar_url: profile?.avatar_url || metadata?.avatar_url || '',
-                email: user.email || 'N/A',
-                created_at: user.created_at,
-                updated_at: profile?.updated_at,
-                last_sign_in_at: user.last_sign_in_at,
-                providers: user.app_metadata?.providers || [user.app_metadata?.provider].filter(Boolean) || [],
-                is_suspended: profile?.is_suspended || false,
-            },
-            conversation_count: conversationCounts.get(user.id) || 0,
-            settings: settingsMap.get(user.id) as UserSettings | undefined,
-            vehicles_count: vehiclesCounts.get(user.id) || 0,
-            finance_tx_count: financeCounts.get(user.id) || 0,
-            dairy_entries_count: dairyCounts.get(user.id) || 0,
-            gallery_items_count: galleryCounts.get(user.id) || 0,
-            notes_count: notesCounts.get(user.id) || 0,
+        const createCountMap = (data: { user_id: string }[] | null): Map<string, number> => {
+            const map = new Map<string, number>();
+            if (!data) return map;
+            for (const item of data) {
+                if (item.user_id) {
+                    map.set(item.user_id, (map.get(item.user_id) || 0) + 1);
+                }
+            }
+            return map;
         };
-    }).sort((a, b) => new Date(b.user.created_at).getTime() - new Date(a.user.created_at).getTime());
+
+        const sessionCounts = new Map<string, number>();
+        const activeSessionCounts = new Map<string, number>();
+        const now = Date.now();
+        if (sessionsData) {
+            sessionsData.forEach((s: any) => {
+                if (s.user_id) {
+                    sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
+                    const key = s.session_key || '';
+                    const statusStr = (s.status || '').toUpperCase();
+                    const isTerminated = key.startsWith('TERMINATED_') || statusStr === 'TERMINATED';
+                    const isLoggedOut = key.startsWith('LOGGED_OUT_') || statusStr === 'LOGGED_OUT';
+                    const lastActive = new Date(s.last_active_at || s.created_at || now).getTime();
+                    const isExpired = (now - lastActive > 35 * 60 * 1000) && !s.is_current;
+                    
+                    if (!isTerminated && !isLoggedOut && !isExpired) {
+                        activeSessionCounts.set(s.user_id, (activeSessionCounts.get(s.user_id) || 0) + 1);
+                    }
+                }
+            });
+        }
+
+        const conversationCounts = createCountMap(conversationsData);
+        const vehiclesCounts = createCountMap(vehiclesData);
+        const financeCounts = createCountMap(financeData);
+        const dairyCounts = createCountMap(dairyData);
+        const galleryCounts = createCountMap(galleryData);
+        const notesCounts = createCountMap(notesData);
+        
+        const profilesList = profiles || [];
+        const profilesMap = new Map(profilesList.map((p: any) => [p.id, p]));
+        const settingsMap = new Map(userSettingsData?.map((s: any) => [s.user_id, s]) || []);
+
+        const authUsersList = authUsersRes?.data?.users;
+
+        // Construct user list prioritizing auth users, falling back to profiles if auth admin list is unavailable
+        let unifiedUsersList: Array<{
+            id: string;
+            full_name: string;
+            avatar_url: string;
+            email: string;
+            created_at: string;
+            updated_at?: string;
+            last_sign_in_at?: string;
+            providers: string[];
+            is_suspended: boolean;
+        }> = [];
+
+        if (authUsersList && authUsersList.length > 0) {
+            unifiedUsersList = authUsersList.map((user: any) => {
+                const profile = profilesMap.get(user.id);
+                const metadata: any = user.user_metadata;
+                return {
+                    id: user.id,
+                    full_name: profile?.full_name || metadata?.full_name || 'N/A',
+                    avatar_url: profile?.avatar_url || metadata?.avatar_url || '',
+                    email: user.email || 'N/A',
+                    created_at: user.created_at,
+                    updated_at: profile?.updated_at,
+                    last_sign_in_at: user.last_sign_in_at,
+                    providers: user.app_metadata?.providers || [user.app_metadata?.provider].filter(Boolean) || [],
+                    is_suspended: profile?.is_suspended || false,
+                };
+            });
+        } else {
+            unifiedUsersList = profilesList.map((profile: any) => ({
+                id: profile.id,
+                full_name: profile.full_name || 'N/A',
+                avatar_url: profile.avatar_url || '',
+                email: 'N/A',
+                created_at: profile.updated_at || new Date().toISOString(),
+                updated_at: profile.updated_at,
+                last_sign_in_at: undefined,
+                providers: [],
+                is_suspended: profile.is_suspended || false,
+            }));
+        }
+
+        return unifiedUsersList.map(u => ({
+            user: u,
+            conversation_count: conversationCounts.get(u.id) || 0,
+            settings: settingsMap.get(u.id) as UserSettings | undefined,
+            vehicles_count: vehiclesCounts.get(u.id) || 0,
+            finance_tx_count: financeCounts.get(u.id) || 0,
+            dairy_entries_count: dairyCounts.get(u.id) || 0,
+            gallery_items_count: galleryCounts.get(u.id) || 0,
+            notes_count: notesCounts.get(u.id) || 0,
+            sessions_count: sessionCounts.get(u.id) || 0,
+            active_sessions_count: activeSessionCounts.get(u.id) || 0,
+        })).sort((a, b) => new Date(b.user.created_at).getTime() - new Date(a.user.created_at).getTime());
+    } catch (err) {
+        console.error("Failed to fetch users data:", err);
+        return [];
+    }
+}
+
+// === User Sessions Management ===
+export async function fetchUserSessions(userId?: string): Promise<UserSession[]> {
+    try {
+        let query = dbMain.from('user_sessions').select('*').order('last_active_at', { ascending: false });
+        if (userId) {
+            query = query.eq('user_id', userId);
+        }
+        const { data: sessions, error } = await safeQuery(query);
+        if (error) {
+            console.error("Error fetching user sessions:", error);
+            return [];
+        }
+        if (!sessions) return [];
+
+        const [profilesRes, authUsersRes] = await Promise.all([
+            safeQuery(dbMain.from('profiles').select('id, full_name, avatar_url')),
+            safeQuery(dbMain.auth.admin.listUsers({ perPage: 1000 }))
+        ]);
+
+        const profileMap = new Map((profilesRes?.data || []).map((p: any) => [p.id, p]));
+        const authMap = new Map((authUsersRes?.data?.users || []).map((u: any) => [u.id, u]));
+
+        return sessions.map((sess: any) => {
+            const profile = profileMap.get(sess.user_id);
+            const authUser = authMap.get(sess.user_id) as any;
+            const sessionKey = sess.session_key || '';
+            
+            let status: 'ACTIVE' | 'LOGGED_OUT' | 'TERMINATED' = 'ACTIVE';
+            if (sessionKey.startsWith('TERMINATED_')) {
+                status = 'TERMINATED';
+            } else if (sessionKey.startsWith('LOGGED_OUT_')) {
+                status = 'LOGGED_OUT';
+            }
+
+            return {
+                ...sess,
+                status,
+                user_full_name: profile?.full_name || authUser?.user_metadata?.full_name || 'Anonymous User',
+                user_email: authUser?.email || 'N/A',
+                user_avatar_url: profile?.avatar_url || authUser?.user_metadata?.avatar_url || ''
+            };
+        });
+    } catch (err) {
+        console.error("Failed to fetch user sessions gracefully:", err);
+        return [];
+    }
+}
+
+export async function terminateUserSession(sessionId: string, adminName: string = 'Administrator', adminDevice: string = 'System') {
+    const { data: session } = await dbMain.from('user_sessions').select('session_key, device_name, location').eq('id', sessionId).single();
+    const rawKey = session?.session_key || sessionId;
+    const nowIso = new Date().toISOString();
+    const locationStr = session?.location || 'System';
+    const deviceStr = session?.device_name || adminDevice;
+
+    const terminatedKey = `TERMINATED_${rawKey}_BY_${encodeURIComponent(deviceStr)}_LOC_${encodeURIComponent(locationStr)}_TIME_${nowIso}`;
+
+    const { data, error } = await dbMain
+        .from('user_sessions')
+        .update({
+            session_key: terminatedKey,
+            action_by: adminName,
+            action_from: adminDevice,
+            last_active_at: nowIso
+        })
+        .eq('id', sessionId);
+
+    if (error) {
+        console.error("Failed to terminate user session:", error);
+        throw error;
+    }
+
+    await logFrontendActivity('user_sessions', 'UPDATE', `Terminated session #${sessionId}`, { sessionId, actionBy: adminName });
+
+    return { data, error: null };
+}
+
+export async function terminateAllUserSessions(userId: string, adminName: string = 'Administrator', adminDevice: string = 'System') {
+    const { data: activeSessions } = await dbMain
+        .from('user_sessions')
+        .select('id, session_key, device_name, location')
+        .eq('user_id', userId)
+        .not('session_key', 'like', 'TERMINATED_%')
+        .not('session_key', 'like', 'LOGGED_OUT_%');
+
+    if (!activeSessions || activeSessions.length === 0) {
+        return { count: 0 };
+    }
+
+    const nowIso = new Date().toISOString();
+    const updatePromises = activeSessions.map(sess => {
+        const locationStr = sess.location || 'System';
+        const deviceStr = sess.device_name || adminDevice;
+        const terminatedKey = `TERMINATED_${sess.session_key}_BY_${encodeURIComponent(deviceStr)}_LOC_${encodeURIComponent(locationStr)}_TIME_${nowIso}`;
+        
+        return dbMain
+            .from('user_sessions')
+            .update({
+                session_key: terminatedKey,
+                action_by: adminName,
+                action_from: adminDevice,
+                last_active_at: nowIso
+            })
+            .eq('id', sess.id);
+    });
+
+    await Promise.all(updatePromises);
+    await logFrontendActivity('user_sessions', 'UPDATE', `Terminated all (${activeSessions.length}) active sessions for user ${userId}`, { userId, count: activeSessions.length });
+
+    return { count: activeSessions.length };
+}
+
+export async function deleteUserSession(sessionId: string) {
+    const { data, error } = await dbMain.from('user_sessions').delete().eq('id', sessionId);
+    if (error) throw error;
+    await logFrontendActivity('user_sessions', 'DELETE', `Deleted session record #${sessionId}`, { sessionId });
+    return { data, error: null };
+}
+
+export async function deleteUserSessionsBatch(sessionIds: string[]) {
+    if (sessionIds.length === 0) return { data: [], error: null };
+    const { data, error } = await dbMain.from('user_sessions').delete().in('id', sessionIds);
+    if (error) throw error;
+    await logFrontendActivity('user_sessions', 'DELETE', `Deleted ${sessionIds.length} user session records`, { sessionIds });
+    return { data, error: null };
 }
 
 // === User Page Data Updates (NEW) ===

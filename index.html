@@ -587,6 +587,16 @@
         background-color: #818cf8; /* A bit darker on hover */
     }
 
+    /* Hide horizontal scrollbars globally on mobile and tablet devices, but keep them on desktop */
+    @media (max-width: 1023px) {
+        ::-webkit-scrollbar:horizontal,
+        *::-webkit-scrollbar:horizontal {
+            display: none !important;
+            height: 0 !important;
+            width: 0 !important;
+        }
+    }
+
     /* --- Utility: Hide Scrollbar --- */
     .hide-scrollbar {
         -ms-overflow-style: none;  /* IE and Edge */

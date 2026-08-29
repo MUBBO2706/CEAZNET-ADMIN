@@ -226,31 +226,60 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
         );
     };
 
-    const renderDiffData = (oldData: any, newData: any) => {
+    const renderDiffData = (oldData: any, newData: any, method?: string) => {
         if (!oldData && !newData) return <span className="text-[var(--text-secondary)] italic text-xs">No data available</span>;
         
-        if (!oldData || !newData) {
-            const dataToRender = newData || oldData;
-            const isDelete = !newData;
-            
+        // 1. DELETE operation (old data present, no new data, or operation is DELETE)
+        if ((!newData && oldData) || method === 'DELETE') {
+            const dataToRender = oldData || newData;
+            if (!dataToRender || typeof dataToRender !== 'object') {
+                return <span className="text-red-500 dark:text-red-400 text-xs font-mono">- {String(dataToRender)}</span>;
+            }
             return (
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 w-full`}>
-                    {Object.entries(dataToRender).map(([key, value]) => (
-                        <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${isDelete ? 'border-red-500/30' : 'border-green-500/30'}`}>
-                            <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                            <div className="text-[11px] font-mono break-all">
-                                {typeof value === 'object' && value !== null ? (
-                                    <span className={isDelete ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}>{JSON.stringify(value)}</span>
-                                ) : (
-                                    <span className={isDelete ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}>{String(value)}</span>
-                                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                    {Object.entries(dataToRender).map(([key, value]) => {
+                        const valStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+                        return (
+                            <div key={key} className="flex flex-col border-l-2 border-red-500/40 pl-3 py-1">
+                                <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
+                                <div className="text-[11px] font-mono break-all">
+                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit inline-block">
+                                        - {valStr}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             );
         }
 
+        // 2. INSERT operation (new data present, no old data, or operation is INSERT)
+        if ((!oldData && newData) || method === 'INSERT') {
+            const dataToRender = newData || oldData;
+            if (!dataToRender || typeof dataToRender !== 'object') {
+                return <span className="text-green-500 dark:text-green-400 text-xs font-mono">+ {String(dataToRender)}</span>;
+            }
+            return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                    {Object.entries(dataToRender).map(([key, value]) => {
+                        const valStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+                        return (
+                            <div key={key} className="flex flex-col border-l-2 border-green-500/40 pl-3 py-1">
+                                <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
+                                <div className="text-[11px] font-mono break-all">
+                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit inline-block">
+                                        + {valStr}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        // 3. UPDATE operation (Both oldData and newData are present)
         const allKeys = Array.from(new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]));
         
         return (
@@ -261,8 +290,8 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     const isAdded = oldVal === undefined && newVal !== undefined;
                     const isRemoved = oldVal !== undefined && newVal === undefined;
                     
-                    const oldValStr = typeof oldVal === 'object' ? JSON.stringify(oldVal) : String(oldVal);
-                    const newValStr = typeof newVal === 'object' ? JSON.stringify(newVal) : String(newVal);
+                    const oldValStr = typeof oldVal === 'object' && oldVal !== null ? JSON.stringify(oldVal) : String(oldVal);
+                    const newValStr = typeof newVal === 'object' && newVal !== null ? JSON.stringify(newVal) : String(newVal);
                     
                     const isModified = oldVal !== undefined && newVal !== undefined && oldValStr !== newValStr;
                     const isUnchanged = oldVal !== undefined && newVal !== undefined && oldValStr === newValStr;
@@ -270,19 +299,33 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     let borderClass = 'border-[var(--subtle-border)]';
                     if (isAdded) borderClass = 'border-green-500/40';
                     if (isRemoved) borderClass = 'border-red-500/40';
-                    if (isModified) borderClass = 'border-yellow-500/40';
+                    if (isModified) borderClass = 'border-amber-500/40';
 
                     return (
                         <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${borderClass}`}>
                             <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
                             <div className="text-[11px] font-mono break-all flex flex-col gap-1">
-                                {isUnchanged && <span className="text-[var(--text-primary)]">{newValStr}</span>}
-                                {isAdded && <span className="text-green-500 dark:text-green-400">+{newValStr}</span>}
-                                {isRemoved && <span className="text-red-500 dark:text-red-400 line-through">-{oldValStr}</span>}
+                                {isUnchanged && (
+                                    <span className="text-[var(--text-primary)] font-normal">{newValStr}</span>
+                                )}
+                                {isAdded && (
+                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit">
+                                        + {newValStr}
+                                    </span>
+                                )}
+                                {isRemoved && (
+                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit">
+                                        - {oldValStr}
+                                    </span>
+                                )}
                                 {isModified && (
                                     <>
-                                        <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1 rounded w-fit">-{oldValStr}</span>
-                                        <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1 rounded w-fit">+{newValStr}</span>
+                                        <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit">
+                                            - {oldValStr}
+                                        </span>
+                                        <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                                            + {newValStr}
+                                        </span>
                                     </>
                                 )}
                             </div>
@@ -295,6 +338,10 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 
     const eventData = log.payload?.response || log.payload;
     const rawJsonString = JSON.stringify(eventData, null, 2);
+
+    const oldDataObj = eventData?.old_data || eventData?.deleted_record;
+    const newDataObj = eventData?.new_data;
+    const hasDiff = oldDataObj !== undefined || newDataObj !== undefined;
 
     return (
         <div className={`text-[var(--text-primary)] font-sans ${isEmbedded ? 'bg-transparent border-t-0 px-4 py-4 sm:px-6 sm:py-5' : 'bg-[var(--body-bg)] border-t border-[var(--border-color)] px-3 py-3 sm:px-6 sm:py-4'}`}>
@@ -372,13 +419,15 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                         </div>
                         <div>
                             {viewMode === 'raw' ? (
-                                <pre className="font-mono text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 overflow-x-auto max-h-[40vh] overflow-y-auto custom-scrollbar [&::-webkit-scrollbar:horizontal]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <pre className="font-mono text-[10px] sm:text-[11px] text-[var(--text-primary)] bg-[var(--subtle-bg)] p-3 rounded-lg overflow-x-auto max-h-[40vh] overflow-y-auto custom-scrollbar [&::-webkit-scrollbar:horizontal]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                     {rawJsonString}
                                 </pre>
                             ) : (
-                                (eventData?.old_data || eventData?.new_data) 
-                                    ? renderDiffData(eventData.old_data, eventData.new_data)
-                                    : renderStructuredData(eventData)
+                                hasDiff 
+                                    ? renderDiffData(oldDataObj, newDataObj, log.method)
+                                    : (log.method === 'DELETE' || log.method === 'INSERT')
+                                        ? renderDiffData(log.method === 'DELETE' ? eventData : undefined, log.method === 'INSERT' ? eventData : undefined, log.method)
+                                        : renderStructuredData(eventData)
                             )}
                         </div>
                     </div>

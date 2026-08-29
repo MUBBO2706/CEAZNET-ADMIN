@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { PanelCard, CustomDropdown, DateRangeFilter, ConfirmationModal, BatchActionToolbar, StatCard, ActionPopover } from '../components/ui';
 import { UsersPageSkeleton } from '../components/skeletons';
-import { fetchUsersData, deleteUser, deleteUsersBatch, updateUserSettings, updateUserProfile } from '../services/supabaseService';
+import { fetchUsersData, deleteUser, deleteUsersBatch, updateUserSettings, updateUserProfile, fetchUserSessions } from '../services/supabaseService';
 import type { UserStats, UserSettings } from '../types';
-import { Search, Trash2, CheckSquare, Square, Edit, Save, X, Loader, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Search, Trash2, CheckSquare, Square, Edit, Save, X, Loader, Users, User, Settings, MessageSquare, Activity, TrendingUp, MoreVertical, ChevronDown, ChevronUp, Key, ShieldAlert, ShieldCheck, UserX, UserCheck, AlertTriangle, Eye, EyeOff, Radio, Power, Smartphone } from 'lucide-react';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
+import UserSessionsViewer from '../components/users/UserSessionsViewer';
 
 const stringToColor = (str: string): string => {
     let hash = 0;
@@ -552,8 +553,14 @@ const UsersPage: React.FC = () => {
     const navigate = useNavigate();
 
     const [users, setUsers] = useState<UserStats[]>([]);
+    const [sessionsCount, setSessionsCount] = useState<number>(0);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'users' | 'sessions'>('users');
     const { refreshTrigger } = useAutoRefresh();
+
+    const handleSessionsCountChange = useCallback((count: number) => {
+        setSessionsCount(count);
+    }, []);
     
     // State for filters and sorting
     const [searchTerm, setSearchTerm] = useState('');
@@ -579,17 +586,6 @@ const UsersPage: React.FC = () => {
     const [actionPopoverData, setActionPopoverData] = useState<{ id: string; anchorEl: HTMLElement } | null>(null);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        if (expandedRow) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [expandedRow]);
 
     const handleTouchStart = (userId: string) => {
         longPressTimer.current = setTimeout(() => {
@@ -621,8 +617,12 @@ const UsersPage: React.FC = () => {
     const loadUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await fetchUsersData();
+            const [data, sessionsData] = await Promise.all([
+                fetchUsersData(),
+                fetchUserSessions()
+            ]);
             setUsers(data);
+            setSessionsCount(sessionsData.length);
         } catch (error) {
             console.error("Failed to fetch users data:", error);
         } finally {
@@ -676,8 +676,8 @@ const UsersPage: React.FC = () => {
             case 'name':
                 processed.sort((a, b) => (a.user.full_name || '').localeCompare(b.user.full_name || ''));
                 break;
-            case 'conversations':
-                processed.sort((a, b) => b.conversation_count - a.conversation_count);
+            case 'sessions':
+                processed.sort((a, b) => (b.sessions_count || 0) - (a.sessions_count || 0));
                 break;
             case 'newest':
             default:
@@ -780,15 +780,52 @@ const UsersPage: React.FC = () => {
     
     return (
         <div className="space-y-4 pb-0">
-            <div className="flex flex-col gap-4 mb-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Users</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your {users.length} registered users and their settings.</p>
-                    </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                        <span>Users & Sessions</span>
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage registered users, settings, and active device login sessions.</p>
                 </div>
 
-                {/* Analytics Cards */}
+                {/* Sub-tab Switcher & Actions */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                        <button
+                            onClick={() => setActiveTab('users')}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                activeTab === 'users'
+                                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-800'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            Users ({users.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('sessions')}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                activeTab === 'sessions'
+                                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-800'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            Session ({sessionsCount})
+                        </button>
+                    </div>
+                    {activeTab === 'sessions' && (
+                        <div id="sessions-portal-target" className="inline-flex items-center ml-auto sm:ml-4" />
+                    )}
+                </div>
+            </div>
+
+            {activeTab === 'sessions' ? (
+                <UserSessionsViewer 
+                    onRefreshParent={loadUsers} 
+                    onTotalSessionsCountChange={handleSessionsCountChange} 
+                />
+            ) : (
+                <>
+                        {/* Analytics Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-2">
                     <StatCard 
                         title="Filtered Users" 
@@ -857,12 +894,12 @@ const UsersPage: React.FC = () => {
                                 <CustomDropdown
                                     value={sortOption}
                                     onChange={setSortOption}
-                                    options={['newest', 'oldest', 'name', 'conversations']}
+                                    options={['newest', 'oldest', 'name', 'sessions']}
                                     displayLabels={{
                                         newest: 'Newest First',
                                         oldest: 'Oldest First',
                                         name: 'By Name (A-Z)',
-                                        conversations: 'Most Active'
+                                        sessions: 'Most Sessions'
                                     }}
                                     triggerClassName="w-full rounded-xl !text-[11px] !py-1.5 px-3 shadow-sm border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors"
                                 />
@@ -875,17 +912,17 @@ const UsersPage: React.FC = () => {
                         <DateRangeFilter onChange={setDateRange} />
                     </div>
                 </div>
-            </div>
 
             {processedUsers.length > 0 ? (
                 <div className="flex flex-col overflow-hidden border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none">
                     
-                    <div className="w-full overflow-x-auto custom-scrollbar">
-                        <div className="min-w-[850px] flex flex-col">
-                            {/* Header Row */}
-                            <div 
-                                className="bg-[var(--card-bg)] flex items-center px-1 md:px-2 border-b border-[var(--border-color)] py-2.5 lg:min-w-full select-none"
-                            >
+                    <div className="flex flex-col w-full">
+                        {/* Header Row */}
+                        <div 
+                            ref={headerRef}
+                            className="bg-[var(--card-bg)] flex items-center py-2.5 px-1 md:px-2 border-b border-[var(--border-color)] select-none overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full"
+                        >
+                            <div className="min-w-[850px] flex items-center w-full">
                                 {isSelectionMode && (
                                     <div className="w-10 shrink-0 text-center animate-fade-in pl-1">
                                         <input
@@ -901,40 +938,43 @@ const UsersPage: React.FC = () => {
                                 <div className="w-24 shrink-0 px-2 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Status</div>
                                 <div className="w-36 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Joined Date</div>
                                 <div className="w-36 shrink-0 px-3 text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Last Login</div>
-                                <div className="w-20 shrink-0 px-2 text-center text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Chats</div>
+                                <div className="w-20 shrink-0 px-2 text-center text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Sessions</div>
                                 <div className="w-12 shrink-0 px-1 text-right text-[11px] font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap">Actions</div>
                                 <div className="w-10 shrink-0 px-1 hidden md:block"></div>
                             </div>
+                        </div>
 
-                            {/* Data Rows */}
-                            <div className="flex flex-col">
-                                {processedUsers.map(userStat => {
-                                    const { id, full_name, avatar_url, email, created_at, updated_at, last_sign_in_at, providers, is_suspended } = userStat.user;
-                                    const { conversation_count } = userStat;
-                                    const isSelected = selectedUsers.has(id);
-                                    const isExpanded = expandedRow === id;
-                                    const firstLetter = (full_name || email || 'A').charAt(0).toUpperCase();
-                                    const bgColor = stringToColor(full_name || email || id);
-                                    const fallbackAvatar = `https://api.dicebear.com/8.x/initials/svg?seed=${firstLetter}&backgroundColor=${bgColor}&textColor=ffffff`;
+                        {/* Data Rows */}
+                        <div className="flex flex-col">
+                            {processedUsers.map(userStat => {
+                                const { id, full_name, avatar_url, email, created_at, updated_at, last_sign_in_at, providers, is_suspended } = userStat.user;
+                                const { conversation_count, sessions_count } = userStat;
+                                const isSelected = selectedUsers.has(id);
+                                const isExpanded = expandedRow === id;
+                                const firstLetter = (full_name || email || 'A').charAt(0).toUpperCase();
+                                const bgColor = stringToColor(full_name || email || id);
+                                const fallbackAvatar = `https://api.dicebear.com/8.x/initials/svg?seed=${firstLetter}&backgroundColor=${bgColor}&textColor=ffffff`;
 
-                                    return (
-                                        <div key={id} className={`flex flex-col border-b border-[var(--border-color)] last:border-b-0 group ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${is_suspended ? 'opacity-75 bg-slate-50/30' : ''}`}>
-                                            <div className="relative">
-                                                <div 
-                                                    className={`flex items-center py-2 px-1 md:px-2 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none lg:min-w-full ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
-                                                    onClick={() => {
-                                                        if (isSelectionMode) {
-                                                            handleToggleSelection(id);
-                                                        } else {
-                                                            toggleRowExpansion(id);
-                                                        }
-                                                    }}
-                                                    onTouchStart={() => handleTouchStart(id)}
-                                                    onTouchEnd={handleTouchEnd}
-                                                    onMouseDown={() => handleTouchStart(id)}
-                                                    onMouseUp={handleTouchEnd}
-                                                    onMouseLeave={handleTouchEnd}
-                                                >
+                                return (
+                                    <div key={id} className={`flex flex-col border-b border-[var(--border-color)] last:border-b-0 group ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${is_suspended ? 'opacity-75 bg-slate-50/30' : ''}`}>
+                                        <div className="relative">
+                                            <div 
+                                                className={`flex items-center py-2 px-1 md:px-2 hover:bg-[var(--subtle-bg)] transition-colors cursor-pointer select-none overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full ${isExpanded ? 'bg-[var(--subtle-bg)]' : ''}`}
+                                                onScroll={handleRowScroll}
+                                                onClick={() => {
+                                                    if (isSelectionMode) {
+                                                        handleToggleSelection(id);
+                                                    } else {
+                                                        toggleRowExpansion(id);
+                                                    }
+                                                }}
+                                                onTouchStart={() => handleTouchStart(id)}
+                                                onTouchEnd={handleTouchEnd}
+                                                onMouseDown={() => handleTouchStart(id)}
+                                                onMouseUp={handleTouchEnd}
+                                                onMouseLeave={handleTouchEnd}
+                                            >
+                                                <div className="min-w-[850px] flex items-center w-full">
                                                     {isSelectionMode && (
                                                         <div className="w-10 shrink-0 text-center animate-fade-in pl-1" onClick={(e) => e.stopPropagation()}>
                                                             <input
@@ -1003,10 +1043,8 @@ const UsersPage: React.FC = () => {
                                                             <span className="text-[var(--text-secondary)] text-[10px] whitespace-nowrap">{formatTimeCompact(last_sign_in_at)}</span>
                                                         )}
                                                     </div>
-                                                    <div className="w-20 shrink-0 px-2 flex justify-center items-center">
-                                                        <span className="inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded-full bg-[var(--card-bg)] shadow-sm border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-[10px]">
-                                                            {conversation_count}
-                                                        </span>
+                                                    <div className="w-20 shrink-0 px-2 text-center text-xs font-semibold text-[var(--text-primary)] self-center">
+                                                        {sessions_count || 0}
                                                     </div>
                                                     <div className="w-12 shrink-0 px-1 text-right flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
                                                         <button
@@ -1028,6 +1066,7 @@ const UsersPage: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
                                                 
                                                 {/* Expanded View */}
                                                 {isExpanded && (
@@ -1149,12 +1188,32 @@ const UsersPage: React.FC = () => {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 font-medium">
+                                                                 <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60 font-medium">
                                                                     <span className="text-slate-400 uppercase font-bold text-[8px] tracking-wider block mb-1">System Prompt Instructions</span>
                                                                     <div className="text-[10px] text-slate-650 dark:text-slate-350 bg-slate-50/50 dark:bg-slate-900/40 p-2 rounded border border-slate-100 dark:border-slate-800/40 max-h-20 overflow-y-auto whitespace-pre-wrap leading-relaxed select-all">
                                                                         {userStat.settings?.voice_mode_persona_instruction || 'No instruction prompt set.'}
                                                                     </div>
                                                                 </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* User Sessions & Security Section - Edge to Edge */}
+                                                        <div className="mt-3 -mx-2 -mb-2 bg-[var(--card-bg)] border-t border-[var(--border-color)]">
+                                                            <div className="flex items-center justify-between px-3 py-2 bg-[var(--subtle-bg)] border-b border-[var(--border-color)]">
+                                                                <h4 className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center">
+                                                                    <span>Connected Devices & Active Sessions</span>
+                                                                </h4>
+                                                                <span className="text-[10px] text-slate-400 font-semibold">
+                                                                    {userStat.active_sessions_count || 0} active session(s)
+                                                                </span>
+                                                            </div>
+                                                            <div 
+                                                                className="pt-2"
+                                                                onTouchStart={(e) => e.stopPropagation()}
+                                                                onTouchMove={(e) => e.stopPropagation()}
+                                                                onWheel={(e) => e.stopPropagation()}
+                                                            >
+                                                                <UserSessionsViewer userId={id} compact onRefreshParent={loadUsers} />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1166,7 +1225,6 @@ const UsersPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-24 px-4 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 border-dashed">
                     <div className="w-20 h-20 mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center ring-8 ring-slate-50 dark:ring-slate-900/50">
@@ -1175,6 +1233,8 @@ const UsersPage: React.FC = () => {
                     <p className='font-bold text-xl text-slate-700 dark:text-slate-300 mb-2'>No users found</p>
                     <p className="text-sm max-w-sm text-center">We couldn't find any users matching your current search and filter criteria.</p>
                 </div>
+            )}
+            </>
             )}
              {selectedUsers.size > 0 && (
                 <BatchActionToolbar

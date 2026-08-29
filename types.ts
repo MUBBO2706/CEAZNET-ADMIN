@@ -82,6 +82,30 @@ export interface UserSettings {
     voice_recording_enabled?: boolean;
 }
 
+export interface UserSession {
+  id: string;
+  user_id: string;
+  session_key: string;
+  session_token?: string;
+  device_name?: string;
+  ip_address?: string;
+  location?: string;
+  created_at: string;
+  last_active_at?: string;
+  battery_percentage?: number;
+  device_id?: string;
+  browser_name?: string;
+  browser_version?: string;
+  is_incognito?: boolean;
+  is_current?: boolean;
+  action_by?: string;
+  action_from?: string;
+  status: 'ACTIVE' | 'LOGGED_OUT' | 'TERMINATED' | string;
+  user_full_name?: string;
+  user_email?: string;
+  user_avatar_url?: string;
+}
+
 export interface UserStats {
   user: UserProfile;
   conversation_count: number;
@@ -91,6 +115,8 @@ export interface UserStats {
   dairy_entries_count?: number;
   gallery_items_count?: number;
   notes_count?: number;
+  sessions_count?: number;
+  active_sessions_count?: number;
 }
 
 export interface NewsArticle {

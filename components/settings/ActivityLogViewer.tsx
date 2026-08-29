@@ -55,7 +55,7 @@ const ExpandableValue: React.FC<{ valueStr: string, className?: string, prefix?:
     return (
         <div className="flex flex-col items-start gap-1 w-full relative">
              <div className={`${!expanded ? 'line-clamp-3 break-all' : 'whitespace-pre-wrap break-all'} overflow-hidden transition-all duration-200 max-w-full ${className}`}>
-                {prefix}{valueStr}
+                {prefix ? `${prefix} ` : ''}{valueStr}
              </div>
              {isLong && (
                  <button 
@@ -69,24 +69,24 @@ const ExpandableValue: React.FC<{ valueStr: string, className?: string, prefix?:
     );
 };
 
-const renderDiffData = (oldData: any, newData: any) => {
+const renderDiffData = (oldData: any, newData: any, method?: string) => {
     if (!oldData && !newData) return <span className="text-[var(--text-secondary)] italic text-xs">No data available</span>;
     
-    // If it's just an insert (no old data) or delete (no new data), render normally
-    if (!oldData || !newData) {
-        const dataToRender = newData || oldData;
-        const isDelete = !newData;
-        
+    // 1. DELETE operation (old data present, no new data, or operation is DELETE)
+    if ((!newData && oldData) || method === 'DELETE') {
+        const dataToRender = oldData || newData;
+        if (!dataToRender || typeof dataToRender !== 'object') {
+            return <span className="text-red-500 dark:text-red-400 text-xs font-mono">- {String(dataToRender)}</span>;
+        }
         return (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 w-full`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                 {Object.entries(dataToRender).map(([key, value]) => {
                     const valueStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
-                    const textColor = isDelete ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400';
                     return (
-                        <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${isDelete ? 'border-red-500/30' : 'border-green-500/30'}`}>
+                        <div key={key} className="flex flex-col border-l-2 border-red-500/40 pl-3 py-1">
                             <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
                             <div className="text-[11px] font-mono">
-                                <ExpandableValue valueStr={valueStr} className={textColor} />
+                                <ExpandableValue valueStr={valueStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />
                             </div>
                         </div>
                     );
@@ -95,7 +95,30 @@ const renderDiffData = (oldData: any, newData: any) => {
         );
     }
 
-    // It's an update, compare keys
+    // 2. INSERT operation (new data present, no old data, or operation is INSERT)
+    if ((!oldData && newData) || method === 'INSERT') {
+        const dataToRender = newData || oldData;
+        if (!dataToRender || typeof dataToRender !== 'object') {
+            return <span className="text-green-500 dark:text-green-400 text-xs font-mono">+ {String(dataToRender)}</span>;
+        }
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                {Object.entries(dataToRender).map(([key, value]) => {
+                    const valueStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+                    return (
+                        <div key={key} className="flex flex-col border-l-2 border-green-500/40 pl-3 py-1">
+                            <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
+                            <div className="text-[11px] font-mono">
+                                <ExpandableValue valueStr={valueStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit" prefix="+" />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+
+    // 3. UPDATE operation (Both oldData and newData are present)
     const allKeys = Array.from(new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]));
     
     return (
@@ -106,8 +129,8 @@ const renderDiffData = (oldData: any, newData: any) => {
                 const isAdded = oldVal === undefined && newVal !== undefined;
                 const isRemoved = oldVal !== undefined && newVal === undefined;
                 
-                const oldValStr = typeof oldVal === 'object' ? JSON.stringify(oldVal) : String(oldVal);
-                const newValStr = typeof newVal === 'object' ? JSON.stringify(newVal) : String(newVal);
+                const oldValStr = typeof oldVal === 'object' && oldVal !== null ? JSON.stringify(oldVal) : String(oldVal);
+                const newValStr = typeof newVal === 'object' && newVal !== null ? JSON.stringify(newVal) : String(newVal);
                 
                 const isModified = oldVal !== undefined && newVal !== undefined && oldValStr !== newValStr;
                 const isUnchanged = oldVal !== undefined && newVal !== undefined && oldValStr === newValStr;
@@ -115,19 +138,19 @@ const renderDiffData = (oldData: any, newData: any) => {
                 let borderClass = 'border-[var(--subtle-border)]';
                 if (isAdded) borderClass = 'border-green-500/40';
                 if (isRemoved) borderClass = 'border-red-500/40';
-                if (isModified) borderClass = 'border-yellow-500/40';
+                if (isModified) borderClass = 'border-amber-500/40';
 
                 return (
                     <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${borderClass}`}>
                         <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
                         <div className="text-[11px] font-mono flex flex-col gap-1 w-full min-w-0">
-                            {isUnchanged && <ExpandableValue valueStr={newValStr} className="text-[var(--text-primary)]" />}
-                            {isAdded && <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1 rounded w-fit" prefix="+" />}
-                            {isRemoved && <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1 rounded w-fit" prefix="-" />}
+                            {isUnchanged && <ExpandableValue valueStr={newValStr} className="text-[var(--text-primary)] font-normal" />}
+                            {isAdded && <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit" prefix="+" />}
+                            {isRemoved && <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />}
                             {isModified && (
                                 <>
-                                    <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1 rounded w-fit" prefix="-" />
-                                    <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1 rounded w-fit mt-1" prefix="+" />
+                                    <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />
+                                    <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit mt-0.5" prefix="+" />
                                 </>
                             )}
                         </div>
@@ -191,7 +214,7 @@ const ActivityLogViewer: React.FC<{ row: any; onBack: () => void }> = ({ row, on
                     <JsonToggleCard
                         title="Event Details (Diff)"
                         data={eventDetails}
-                        structuredRenderer={(data) => renderDiffData(data.old_data, data.new_data)}
+                        structuredRenderer={(data) => renderDiffData(data.old_data, data.new_data, action)}
                     />
                 </div>
             </div>

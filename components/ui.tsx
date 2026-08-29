@@ -320,15 +320,16 @@ export const CustomDropdown: React.FC<{
                 }
             });
 
-            // Account for font size ~12px (~7px per char), padding (24px), scrollbar space if > 6 items (12px)
+            // Account for font size ~11px (~6.6px per char), padding (18px), scrollbar space if > 6 items (8px)
             const hasScrollbar = options.length > 6;
-            const contentNeededWidth = Math.ceil(maxCharLength * 7.0 + 24 + (hasScrollbar ? 12 : 0));
+            const contentNeededWidth = Math.ceil(maxCharLength * 6.6 + 18 + (hasScrollbar ? 8 : 0));
+            const triggerWidth = rect.width;
             
             // Maximum allowed width ensures dropdown never overflows screen boundaries (12px margin on left & right)
-            const maxAllowedScreenWidth = Math.max(100, window.innerWidth - 24);
+            const maxAllowedScreenWidth = Math.max(80, window.innerWidth - 24);
             
-            // Width dynamically fits longest option content
-            panelWidth = Math.min(Math.max(contentNeededWidth, 90), maxAllowedScreenWidth);
+            // Width dynamically fits content without excess spacing
+            panelWidth = Math.min(Math.max(contentNeededWidth, triggerWidth ? Math.min(triggerWidth, 180) : 0, 60), maxAllowedScreenWidth);
         }
 
         let left = rect.left;
@@ -972,17 +973,17 @@ export const BatchActionToolbar: React.FC<{
             </button>
         )}
         
-        <button onClick={onDelete} className="btn btn-danger flex items-center gap-1.5 !py-1.5 !px-2.5 text-xs">
-            <Trash2 size={14} />
-            Delete
-        </button>
-
         <button 
             onClick={onCancel} 
             className="text-xs font-semibold text-slate-300 hover:text-white px-2 py-1.5 transition-colors leading-none"
             aria-label="Cancel selection"
         >
             Cancel
+        </button>
+
+        <button onClick={onDelete} className="btn btn-danger flex items-center gap-1.5 !py-1.5 !px-2.5 text-xs">
+            <Trash2 size={14} />
+            Delete
         </button>
     </div>
 );
