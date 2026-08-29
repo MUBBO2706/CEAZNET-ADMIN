@@ -19,6 +19,8 @@ ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS old_data JSONB;
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS new_data JSONB;
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS changed_by UUID;
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS record_id TEXT;
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Index for fast sorting and cleanup
@@ -268,10 +270,38 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ==============================================================================
--- 6. Enable Realtime for activity_logs
+-- 6. Enable Realtime for activity_logs and other important tables
 -- ==============================================================================
 -- This ensures the dashboard updates automatically when new logs are added
-ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_logs;
+DO $$
+DECLARE
+    t text;
+    rt_tables text[] := ARRAY[
+        'activity_logs',
+        'support_conversations',
+        'support_messages',
+        'news_system_config',
+        'news_api_keys',
+        'user_sessions',
+        'broadcasts',
+        'update_news_logs',
+        'public_news_articles'
+    ];
+BEGIN
+    FOREACH t IN ARRAY rt_tables
+    LOOP
+        -- Enable realtime for each table if it exists
+        IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = t) THEN
+            EXECUTE format('ALTER TABLE public.%I REPLICA IDENTITY FULL;', t);
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = t
+            ) THEN
+                EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', t);
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
 
 -- ==============================================================================
 -- 8. Fix RLS Policies for Admin Operations
