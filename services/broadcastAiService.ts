@@ -315,7 +315,16 @@ export async function upsertSystemBanner(bannerType: string, isActive: boolean):
     }
 }
 
-export async function publishBroadcast(rawHtml: string, title: string = 'AI Generated Broadcast', history: BroadcastIteration[] = [], expiresAt: string | null = null, type: 'popup' | 'system_banner' = 'popup'): Promise<boolean> {
+export async function publishBroadcast(
+    rawHtml: string, 
+    title: string = 'AI Generated Broadcast', 
+    history: BroadcastIteration[] = [], 
+    expiresAt: string | null = null, 
+    type: 'popup' | 'system_banner' = 'popup',
+    targetType: 'all' | 'specific' = 'all',
+    targetUsers: string[] = [],
+    isDismissible: boolean = true
+): Promise<boolean> {
     try {
         const { data: broadcast, error: broadcastError } = await dbMain
             .from('broadcasts')
@@ -325,7 +334,11 @@ export async function publishBroadcast(rawHtml: string, title: string = 'AI Gene
                 status: 'sent',
                 is_active: true,
                 type: type,
+                display_type: type,
                 sent_at: new Date().toISOString(),
+                target_type: targetType,
+                target_users: targetUsers,
+                is_dismissible: isDismissible,
                 ...(expiresAt ? { expires_at: expiresAt } : {})
             })
             .select()

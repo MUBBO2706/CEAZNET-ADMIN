@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, EyeOff, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
 import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, fetchBroadcastIterations, deleteBroadcast, toggleBroadcastActive, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
+import { dbMain } from '../services/supabaseService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
 
@@ -19,6 +20,9 @@ const draftState = {
     bannerType: 'maintenance' as 'maintenance' | 'development' | 'testing' | 'alert',
     isActive: true,
     aiModel: localStorage.getItem('broadcast_ai_model') || 'gemini-3.7-flash',
+    targetType: 'all' as 'all' | 'specific',
+    targetUsers: [] as string[],
+    isDismissible: true,
 };
 
 const listeners = new Set<() => void>();
@@ -53,6 +57,9 @@ const useBroadcastState = () => {
         localStorage.setItem('broadcast_ai_model', v);
         notifyListeners(); 
     };
+    const setTargetType = (v: 'all' | 'specific') => { draftState.targetType = v; notifyListeners(); };
+    const setTargetUsers = (v: string[]) => { draftState.targetUsers = v; notifyListeners(); };
+    const setIsDismissible = (v: boolean) => { draftState.isDismissible = v; notifyListeners(); };
 
     return {
         ...draftState,
@@ -68,7 +75,10 @@ const useBroadcastState = () => {
         setBroadcastType,
         setBannerType,
         setIsActive,
-        setAiModel
+        setAiModel,
+        setTargetType,
+        setTargetUsers,
+        setIsDismissible
     };
 };
 
@@ -163,8 +173,24 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
         broadcastType, setBroadcastType,
         bannerType, setBannerType,
         isActive, setIsActive,
-        aiModel, setAiModel
+        aiModel, setAiModel,
+        targetType, setTargetType,
+        targetUsers, setTargetUsers,
+        isDismissible, setIsDismissible
     } = useBroadcastState();
+
+    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const { data } = await dbMain.from('users').select('id, name, full_name, username, email').limit(150);
+            if (data) {
+                setAllUsers(data);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     const [internalShowHistory, setInternalShowHistory] = useState(false);
     const showHistory = externalShowHistory !== undefined ? externalShowHistory : internalShowHistory;
@@ -272,7 +298,16 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                     expiresAtValid = new Date(Date.now() + expireDuration * 60 * 60 * 1000).toISOString();
                 }
 
-                const success = await publishBroadcast(generatedHtml, 'Broadcast Popup', history, expiresAtValid, broadcastType);
+                const success = await publishBroadcast(
+                    generatedHtml, 
+                    'Broadcast Popup', 
+                    history, 
+                    expiresAtValid, 
+                    broadcastType,
+                    targetType,
+                    targetUsers,
+                    isDismissible
+                );
                 
                 if (success) {
                     setStatusData({ type: 'success', msg: 'Broadcast pushed successfully!' });
@@ -283,6 +318,9 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                         setHistory([]);
                         setStatusData(null);
                         setExpireDuration(0);
+                        setTargetType('all');
+                        setTargetUsers([]);
+                        setIsDismissible(true);
                     }, 3000);
                 } else {
                     setStatusData({ type: 'error', msg: 'Broadcast failed.' });
@@ -469,18 +507,58 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden shrink-0"
                                         >
-                                            <div className={`
-                                                px-3 py-2 text-center text-xs font-semibold flex items-center justify-center gap-2 transition-colors
-                                                ${bannerType === 'maintenance' ? 'bg-blue-600 text-white' : ''}
-                                                ${bannerType === 'development' ? 'bg-purple-600 text-white' : ''}
-                                                ${bannerType === 'testing' ? 'bg-amber-500 text-zinc-950 font-bold' : ''}
-                                                ${bannerType === 'alert' ? 'bg-rose-600 text-white' : ''}
-                                            `}>
-                                                {bannerType === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> System Maintenance in Progress</span>}
-                                                {bannerType === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Under Development - Features may be unstable</span>}
-                                                {bannerType === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Testing Environment - Data may be reset</span>}
-                                                {bannerType === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={13}/> Critical System Alert</span>}
-                                            </div>
+                                            {bannerType === 'maintenance' && (
+                                                <div className="px-4 py-2 flex items-center justify-center gap-2 bg-blue-50/85 text-blue-800 dark:bg-blue-950/25 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/30 text-center text-[11px] font-semibold backdrop-blur-sm transition-colors">
+                                                    <span className="flex h-1.5 w-1.5 relative shrink-0">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                                                    </span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase bg-blue-100/80 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 shrink-0">Maintenance</span>
+                                                    <span className="flex items-center gap-1.5 truncate">
+                                                        <AlertCircle size={12} className="shrink-0 text-blue-500 dark:text-blue-400"/>
+                                                        <span>System Maintenance in Progress • Updates are being deployed.</span>
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {bannerType === 'development' && (
+                                                <div className="px-4 py-2 flex items-center justify-center gap-2 bg-purple-50/85 text-purple-800 dark:bg-purple-950/25 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/30 text-center text-[11px] font-semibold backdrop-blur-sm transition-colors">
+                                                    <span className="flex h-1.5 w-1.5 relative shrink-0">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-500"></span>
+                                                    </span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase bg-purple-100/80 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 shrink-0">Sandbox</span>
+                                                    <span className="flex items-center gap-1.5 truncate">
+                                                        <Cpu size={12} className="shrink-0 text-purple-500 dark:text-purple-400"/>
+                                                        <span>Under Development • Sandboxed experimental features active.</span>
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {bannerType === 'testing' && (
+                                                <div className="px-4 py-2 flex items-center justify-center gap-2 bg-amber-50/85 text-amber-800 dark:bg-amber-950/25 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/30 text-center text-[11px] font-semibold backdrop-blur-sm transition-colors">
+                                                    <span className="flex h-1.5 w-1.5 relative shrink-0">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                                                    </span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase bg-amber-100/80 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">Testing</span>
+                                                    <span className="flex items-center gap-1.5 truncate">
+                                                        <Code size={12} className="shrink-0 text-amber-500 dark:text-amber-400"/>
+                                                        <span>Testing Environment • Databases are simulated.</span>
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {bannerType === 'alert' && (
+                                                <div className="px-4 py-2 flex items-center justify-center gap-2 bg-red-50/85 text-red-800 dark:bg-red-950/25 dark:text-red-400 border-b border-red-100 dark:border-red-900/30 text-center text-[11px] font-semibold backdrop-blur-sm transition-colors">
+                                                    <span className="flex h-1.5 w-1.5 relative shrink-0">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                    </span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase bg-red-100/80 text-red-800 dark:bg-red-900/40 dark:text-red-300 shrink-0">Alert</span>
+                                                    <span className="flex items-center gap-1.5 truncate">
+                                                        <AlertCircle size={12} className="shrink-0 text-red-500 dark:text-red-400"/>
+                                                        <span>Critical System Alert • Main network gateways are congested.</span>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -587,6 +665,38 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                 />
                             </div>
                         )}
+
+                        {broadcastType === 'popup' && (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Radio size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <CustomDropdown
+                                    options={['all', 'specific']}
+                                    value={targetType}
+                                    onChange={(v) => {
+                                        setTargetType(v as 'all' | 'specific');
+                                        if (v === 'all') setTargetUsers([]);
+                                    }}
+                                    triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
+                                    className="w-auto [&_.custom-dropdown-panel]:w-32"
+                                    displayLabels={{
+                                        'all': 'All Users',
+                                        'specific': 'Specific Users'
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {broadcastType === 'popup' && (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Check size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <button
+                                    onClick={() => setIsDismissible(!isDismissible)}
+                                    className="bg-transparent border-none p-0 text-[10px] font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 shadow-none flex items-center gap-1 transition-colors"
+                                >
+                                    {isDismissible ? 'Dismiss: Yes' : 'Dismiss: No'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                     
                     {broadcastType === 'popup' && history.length > 0 && (
@@ -654,6 +764,118 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                         >
                                             <X size={13} />
                                         </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Specific Users Selector Panel */}
+                        <AnimatePresence>
+                            {targetType === 'specific' && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden border-t border-slate-100 dark:border-zinc-800/60 pt-2 mt-2 px-1"
+                                >
+                                    <div className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-1.5 flex justify-between items-center">
+                                        <span>Target Specific Users ({targetUsers.length} selected)</span>
+                                        {targetUsers.length > 0 && (
+                                            <button 
+                                                onClick={() => setTargetUsers([])} 
+                                                className="text-[10px] text-red-500 hover:text-red-600 font-semibold"
+                                            >
+                                                Clear All
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Search Input */}
+                                    <div className="relative mb-2">
+                                        <input
+                                            type="text"
+                                            value={userSearchQuery}
+                                            onChange={(e) => setUserSearchQuery(e.target.value)}
+                                            placeholder="Search users by name, username or email..."
+                                            className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2.5 py-1.5 rounded-lg text-[11.5px] focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-zinc-300"
+                                        />
+                                    </div>
+
+                                    {/* User Chips Selected */}
+                                    {targetUsers.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-2 max-h-[60px] overflow-y-auto sleek-scrollbar">
+                                            {targetUsers.map(userId => {
+                                                const uObj = allUsers.find(u => String(u.id) === userId);
+                                                const label = uObj ? (uObj.full_name || uObj.name || uObj.email) : userId;
+                                                return (
+                                                    <div key={userId} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-medium border border-indigo-100 dark:border-indigo-900">
+                                                        <span className="truncate max-w-[120px]">{label}</span>
+                                                        <button 
+                                                            onClick={() => setTargetUsers(targetUsers.filter(id => id !== userId))}
+                                                            className="hover:text-red-500 font-bold ml-0.5"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Filtered User List to Checkmark */}
+                                    <div className="max-h-[140px] overflow-y-auto border border-slate-150 dark:border-zinc-800 rounded-lg divide-y divide-slate-100 dark:divide-zinc-800/50 bg-white dark:bg-zinc-950 sleek-scrollbar">
+                                        {allUsers.filter(u => {
+                                            const search = userSearchQuery.toLowerCase();
+                                            const name = (u.full_name || u.name || '').toLowerCase();
+                                            const email = (u.email || '').toLowerCase();
+                                            const username = (u.username || '').toLowerCase();
+                                            return name.includes(search) || email.includes(search) || username.includes(search);
+                                        }).length === 0 ? (
+                                            <div className="p-3 text-center text-slate-400 dark:text-zinc-500 text-[10.5px]">
+                                                No users found matching "{userSearchQuery}"
+                                            </div>
+                                        ) : (
+                                            allUsers.filter(u => {
+                                                const search = userSearchQuery.toLowerCase();
+                                                const name = (u.full_name || u.name || '').toLowerCase();
+                                                const email = (u.email || '').toLowerCase();
+                                                const username = (u.username || '').toLowerCase();
+                                                return name.includes(search) || email.includes(search) || username.includes(search);
+                                            }).map(u => {
+                                                const isSelected = targetUsers.includes(String(u.id));
+                                                return (
+                                                    <div 
+                                                        key={u.id}
+                                                        onClick={() => {
+                                                            const strId = String(u.id);
+                                                            if (isSelected) {
+                                                                setTargetUsers(targetUsers.filter(id => id !== strId));
+                                                            } else {
+                                                                setTargetUsers([...targetUsers, strId]);
+                                                            }
+                                                        }}
+                                                        className="flex items-center justify-between px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors select-none text-[11px]"
+                                                    >
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="font-semibold text-slate-700 dark:text-zinc-300 truncate">
+                                                                {u.full_name || u.name || 'No Name'}
+                                                            </span>
+                                                            <span className="text-[9.5px] text-slate-400 dark:text-zinc-500 truncate">
+                                                                {u.email || u.username || 'No Email/Username'}
+                                                            </span>
+                                                        </div>
+                                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                                                            isSelected 
+                                                                ? 'bg-indigo-600 border-indigo-600 text-white' 
+                                                                : 'border-slate-300 dark:border-zinc-700 bg-transparent'
+                                                        }`}>
+                                                            {isSelected && <Check size={10} strokeWidth={3} />}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 </motion.div>
                             )}
@@ -891,18 +1113,60 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                                             </div>
                                                         </div>
                                                         {item.is_active && (
-                                                            <div className={`
-                                                                px-3 py-2 text-center text-xs font-medium flex items-center justify-center gap-2
-                                                                ${item.banner_type === 'maintenance' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/50' : ''}
-                                                                ${item.banner_type === 'development' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/50' : ''}
-                                                                ${item.banner_type === 'testing' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/50' : ''}
-                                                                ${item.banner_type === 'alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-b border-red-100 dark:border-red-900/50' : ''}
-                                                            `}>
-                                                                {item.banner_type === 'maintenance' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> System Maintenance in Progress</span>}
-                                                                {item.banner_type === 'development' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Under Development</span>}
-                                                                {item.banner_type === 'testing' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Testing Environment</span>}
-                                                                {item.banner_type === 'alert' && <span className="flex items-center gap-1.5"><AlertCircle size={12}/> Critical System Alert</span>}
-                                                            </div>
+                                                            <>
+                                                                {item.banner_type === 'maintenance' && (
+                                                                    <div className="px-3 py-1.5 flex items-center justify-center gap-2 bg-blue-50/80 text-blue-800 dark:bg-blue-950/25 dark:text-blue-400 border-b border-blue-100 dark:border-blue-900/30 text-center text-[10px] font-semibold transition-colors">
+                                                                        <span className="flex h-1 w-1 relative shrink-0">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1 w-1 bg-blue-500"></span>
+                                                                        </span>
+                                                                        <span className="px-1 py-0.2 rounded text-[7px] font-bold tracking-wider uppercase bg-blue-100/80 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 shrink-0">Maintenance</span>
+                                                                        <span className="flex items-center gap-1 truncate">
+                                                                            <AlertCircle size={10} className="shrink-0 text-blue-500 dark:text-blue-400"/>
+                                                                            <span>System Maintenance in Progress • Updates deploying.</span>
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {item.banner_type === 'development' && (
+                                                                    <div className="px-3 py-1.5 flex items-center justify-center gap-2 bg-purple-50/80 text-purple-800 dark:bg-purple-950/25 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/30 text-center text-[10px] font-semibold transition-colors">
+                                                                        <span className="flex h-1 w-1 relative shrink-0">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1 w-1 bg-purple-500"></span>
+                                                                        </span>
+                                                                        <span className="px-1 py-0.2 rounded text-[7px] font-bold tracking-wider uppercase bg-purple-100/80 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 shrink-0">Sandbox</span>
+                                                                        <span className="flex items-center gap-1 truncate">
+                                                                            <Cpu size={10} className="shrink-0 text-purple-500 dark:text-purple-400"/>
+                                                                            <span>Under Development • Sandboxed experimental features active.</span>
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {item.banner_type === 'testing' && (
+                                                                    <div className="px-3 py-1.5 flex items-center justify-center gap-2 bg-amber-50/80 text-amber-800 dark:bg-amber-950/25 dark:text-amber-400 border-b border-amber-100 dark:border-amber-900/30 text-center text-[10px] font-semibold transition-colors">
+                                                                        <span className="flex h-1 w-1 relative shrink-0">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1 w-1 bg-amber-500"></span>
+                                                                        </span>
+                                                                        <span className="px-1 py-0.2 rounded text-[7px] font-bold tracking-wider uppercase bg-amber-100/80 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">Testing</span>
+                                                                        <span className="flex items-center gap-1 truncate">
+                                                                            <Code size={10} className="shrink-0 text-amber-500 dark:text-amber-400"/>
+                                                                            <span>Testing Environment • Simulated databases active.</span>
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {item.banner_type === 'alert' && (
+                                                                    <div className="px-3 py-1.5 flex items-center justify-center gap-2 bg-red-50/80 text-red-800 dark:bg-red-950/25 dark:text-red-400 border-b border-red-100 dark:border-red-900/30 text-center text-[10px] font-semibold transition-colors">
+                                                                        <span className="flex h-1 w-1 relative shrink-0">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1 w-1 bg-red-500"></span>
+                                                                        </span>
+                                                                        <span className="px-1 py-0.2 rounded text-[7px] font-bold tracking-wider uppercase bg-red-100/80 text-red-800 dark:bg-red-900/40 dark:text-red-300 shrink-0">Alert</span>
+                                                                        <span className="flex items-center gap-1 truncate">
+                                                                            <AlertCircle size={10} className="shrink-0 text-red-500 dark:text-red-400"/>
+                                                                            <span>Critical System Alert • Main network gateways congested.</span>
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </>
                                                         )}
                                                         {!item.is_active && (
                                                            <div className="px-3 py-2 text-center text-xs font-medium flex items-center justify-center gap-2 bg-slate-50 text-slate-500 border-b border-slate-100 dark:bg-zinc-900/30 dark:text-zinc-400 dark:border-zinc-800">
