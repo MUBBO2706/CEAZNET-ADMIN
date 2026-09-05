@@ -21,10 +21,10 @@ const NewsAnalytics: React.FC<{
             <StatCard title="Articles Updated" value={analyticsData.articlesUpdated} description="Total articles processed" icon={<Newspaper size={24} />} borderColor="border-sky-500" info="Total number of news articles processed or updated across all runs." trend={{ value: (analyticsData.articlesUpdated / Math.max(1, analyticsData.totalRuns)).toFixed(1), label: "Avg/Run", neutral: true }} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PanelCard>
+            <PanelCard borderColor="border-indigo-500">
                 <NewsArticlesChart logs={logs} title="Articles Processed per Run" />
             </PanelCard>
-            <PanelCard>
+            <PanelCard borderColor="border-amber-500">
                 <AvgDurationChart logs={logs} title="Run Duration" />
             </PanelCard>
         </div>

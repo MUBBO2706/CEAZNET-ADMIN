@@ -594,7 +594,7 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
 };
 
 const ProfileDropdown: React.FC = () => {
-    const { user, daysRemaining, logout } = useAuth();
+    const { user, daysRemaining, lastLogin, logout } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -623,35 +623,76 @@ const ProfileDropdown: React.FC = () => {
         }
     };
 
+    // Format compact last login string (e.g. "Today, 10:06 AM" or "Sep 5, 10:06 AM")
+    const formatLastLoginTime = (dateStr: string | null) => {
+        if (!dateStr) return 'Active now';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'Active now';
+            
+            const now = new Date();
+            const isToday = 
+                date.getDate() === now.getDate() &&
+                date.getMonth() === now.getMonth() &&
+                date.getFullYear() === now.getFullYear();
+
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+            if (isToday) {
+                return `Today, ${timeStr}`;
+            }
+            const dateFormatted = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return `${dateFormatted}, ${timeStr}`;
+        } catch {
+            return 'Active now';
+        }
+    };
+
     return (
         <div className="relative flex items-center" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full transition-colors flex items-center justify-center outline-none"
+                className="relative p-0.5 rounded-full transition-colors flex items-center justify-center outline-none group"
                 aria-label="Admin Profile Menu"
             >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 shrink-0 transition-transform active:scale-95">
-                    <User size={16} />
+                <div className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-500 dark:border-indigo-400 overflow-hidden shrink-0 transition-all duration-200 group-hover:scale-105 active:scale-95 shadow-sm">
+                    <img 
+                        src="/admin-avatar.jpg" 
+                        alt="Admin Profile" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                            // Fallback to User icon if image fails
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                        }}
+                    />
                 </div>
             </button>
 
             {isOpen && (
                 <div 
-                    className="fixed right-[6px] md:right-2 top-[56px] md:top-[58px] w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-none z-50 overflow-hidden flex flex-col ring-1 ring-black/5 dark:ring-white/10"
+                    className="fixed right-[6px] md:right-2 top-[56px] md:top-[58px] w-max max-w-[calc(100vw-16px)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-none z-50 overflow-hidden flex flex-col ring-1 ring-black/5 dark:ring-white/10"
                 >
-                    {/* Header Title & Actions */}
-                    <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center justify-between gap-2 shrink-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                <User size={14} />
-                            </div>
-                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {/* Header Title & Profile Details */}
+                    <div className="pl-3.5 pr-[27px] py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center gap-2.5 shrink-0 whitespace-nowrap">
+                        {/* Profile icon size consistent with main header (w-8 h-8 sm:w-8.5 sm:h-8.5) */}
+                        <div className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-500 dark:border-indigo-400 overflow-hidden shrink-0 shadow-sm">
+                            <img 
+                                src="/admin-avatar.jpg" 
+                                alt="Admin Profile" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-col whitespace-nowrap">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
                                 {user?.username || 'admin'}
                             </span>
+                            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium leading-tight mt-0.5" title={lastLogin ? new Date(lastLogin).toLocaleString() : 'Active now'}>
+                                Login: {formatLastLoginTime(lastLogin)}
+                            </span>
                         </div>
-                        <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium whitespace-nowrap shrink-0">
-                            Session: {daysRemaining ?? 7}d left
-                        </span>
                     </div>
 
                     {/* Footer */}
@@ -662,7 +703,7 @@ const ProfileDropdown: React.FC = () => {
                                 setIsOpen(false);
                                 setShowLogoutModal(true);
                             }}
-                            className="w-full flex items-center justify-between gap-2 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer border-0"
+                            className="w-full flex items-center justify-between gap-3 pl-3 pr-[19px] py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer border-0 whitespace-nowrap"
                         >
                             <span>Logout</span>
                             <LogOut size={14} className="shrink-0 text-red-500" />
@@ -782,7 +823,7 @@ const Header: React.FC<{
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
-                <span className="font-bold text-base sm:text-lg tracking-tight truncate bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
+                <span className="font-bold text-lg sm:text-xl tracking-tight truncate bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
                     {pageTitle}
                 </span>
             </div>

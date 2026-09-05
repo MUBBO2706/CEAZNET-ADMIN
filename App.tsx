@@ -452,6 +452,16 @@ const App: React.FC = () => {
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     });
 
+    const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const toggleTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
@@ -485,26 +495,48 @@ const App: React.FC = () => {
                                 {createPortal(
                                     <Toaster 
                                         position="top-right" 
-                                        containerStyle={{ zIndex: 999999, top: 64, right: 16 }} 
+                                        containerClassName="custom-toast-container"
+                                        containerStyle={{ 
+                                            zIndex: 999999, 
+                                            top: isDesktop ? 58 : 56, 
+                                            right: isDesktop ? 8 : 6,
+                                            left: isDesktop ? 8 : 6,
+                                            bottom: isDesktop ? 8 : 6
+                                        }} 
                                         toastOptions={{
                                             className: 'custom-toast-notification',
                                             style: {
-                                                maxWidth: 'none',
-                                                width: 'max-content',
+                                                minWidth: '0px',
+                                                width: 'auto',
+                                                minHeight: isDesktop ? '40px' : '34px',
+                                                maxWidth: isDesktop ? 'calc(100vw - 32px)' : 'calc(100vw - 12px)',
                                                 whiteSpace: 'nowrap',
+                                                padding: isDesktop ? '9px 15px' : '7px 12px',
+                                                fontSize: isDesktop ? '13px' : '12px',
+                                                borderRadius: '5px',
                                             },
                                             success: {
                                                 style: {
-                                                    maxWidth: 'none',
-                                                    width: 'max-content',
+                                                    minWidth: '0px',
+                                                    width: 'auto',
+                                                    minHeight: isDesktop ? '40px' : '34px',
+                                                    maxWidth: isDesktop ? 'calc(100vw - 32px)' : 'calc(100vw - 12px)',
                                                     whiteSpace: 'nowrap',
+                                                    padding: isDesktop ? '9px 15px' : '7px 12px',
+                                                    fontSize: isDesktop ? '13px' : '12px',
+                                                    borderRadius: '5px',
                                                 }
                                             },
                                             error: {
                                                 style: {
-                                                    maxWidth: 'none',
-                                                    width: 'max-content',
+                                                    minWidth: '0px',
+                                                    width: 'auto',
+                                                    minHeight: isDesktop ? '40px' : '34px',
+                                                    maxWidth: isDesktop ? 'calc(100vw - 32px)' : 'calc(100vw - 12px)',
                                                     whiteSpace: 'nowrap',
+                                                    padding: isDesktop ? '9px 15px' : '7px 12px',
+                                                    fontSize: isDesktop ? '13px' : '12px',
+                                                    borderRadius: '5px',
                                                 }
                                             }
                                         }} 

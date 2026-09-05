@@ -46,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         username: result.payload.username,
         role: result.payload.role
       },
+      issuedAt: result.payload.iat,
       expiresAt: result.payload.exp,
       daysRemaining
     });

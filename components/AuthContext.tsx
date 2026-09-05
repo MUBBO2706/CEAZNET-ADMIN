@@ -11,17 +11,20 @@ export interface AuthContextType {
   isLoading: boolean;
   user: AdminUser | null;
   daysRemaining: number | null;
+  lastLogin: string | null;
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
 const STORAGE_KEY = 'ceaznet_admin_jwt';
+const LAST_LOGIN_KEY = 'ceaznet_admin_last_login';
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   user: null,
   daysRemaining: null,
+  lastLogin: null,
   login: async () => ({ success: false }),
   logout: () => {},
 });
@@ -31,6 +34,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [lastLogin, setLastLogin] = useState<string | null>(() => {
+    return localStorage.getItem(LAST_LOGIN_KEY) || null;
+  });
 
   // Verify JWT session on initial application load
   useEffect(() => {
@@ -64,6 +70,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setIsAuthenticated(true);
             setUser(data.user || { username: 'admin', role: 'admin' });
             setDaysRemaining(data.daysRemaining ?? 7);
+
+            // Establish last login time from stored value or token iat
+            if (!localStorage.getItem(LAST_LOGIN_KEY) && data.issuedAt) {
+              const loginDate = new Date(data.issuedAt * 1000).toISOString();
+              localStorage.setItem(LAST_LOGIN_KEY, loginDate);
+              setLastLogin(loginDate);
+            } else if (!localStorage.getItem(LAST_LOGIN_KEY)) {
+              const nowIso = new Date().toISOString();
+              localStorage.setItem(LAST_LOGIN_KEY, nowIso);
+              setLastLogin(nowIso);
+            }
           } else {
             // Token expired or invalid
             localStorage.removeItem(STORAGE_KEY);
@@ -120,11 +137,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success && data.token) {
+        const nowIso = new Date().toISOString();
         localStorage.setItem(STORAGE_KEY, data.token);
+        localStorage.setItem(LAST_LOGIN_KEY, nowIso);
         sessionStorage.setItem('ceaznet-admin-auth', 'true');
         setIsAuthenticated(true);
         setUser(data.user || { username: trimmedUser, role: 'admin' });
         setDaysRemaining(7);
+        setLastLogin(nowIso);
         toast.success('Authenticated successfully. Session valid for 7 days.');
         return { success: true };
       }
@@ -144,10 +164,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LAST_LOGIN_KEY);
     sessionStorage.removeItem('ceaznet-admin-auth');
     setIsAuthenticated(false);
     setUser(null);
     setDaysRemaining(null);
+    setLastLogin(null);
     toast.success('Logged out successfully.');
   };
 
@@ -158,6 +180,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         user,
         daysRemaining,
+        lastLogin,
         login,
         logout
       }}

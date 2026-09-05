@@ -149,7 +149,7 @@ export const ApiKeyAnalytics: React.FC = () => {
             {/* Combined Row 1: Error Diagnoses & Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                 {/* Left: Error Types Pie Chart */}
-                <PanelCard className="h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <PanelCard borderColor="border-rose-500" className="h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
                     <div className="flex justify-between items-center mb-3 px-1 w-full">
                         <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-xs tracking-tight">FAILURE DIAGNOSES</h3>
                         <InfoPopover info="Breakdown of API errors and failures by kind." />
@@ -234,7 +234,7 @@ export const ApiKeyAnalytics: React.FC = () => {
             {/* Combined Row 2: Categories Bar Chart & Timeline Area Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                 {/* Categories Bar Chart */}
-                <PanelCard className="lg:col-span-1 h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <PanelCard borderColor="border-purple-500" className="lg:col-span-1 h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
                     <div className="flex justify-between items-center mb-3 px-1 w-full">
                          <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-xs tracking-tight">TOP IMPACTED CATEGORIES</h3>
                          <InfoPopover info="The operational categories that most often experienced failovers." />
@@ -257,7 +257,7 @@ export const ApiKeyAnalytics: React.FC = () => {
                 </PanelCard>
 
                 {/* Timeline Chart */}
-                <PanelCard className="lg:col-span-2 h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <PanelCard borderColor="border-indigo-500" className="lg:col-span-2 h-full flex flex-col p-4 md:p-5 border border-slate-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
                     <div className="flex justify-between items-center mb-3 px-1 w-full">
                         <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-xs tracking-tight">FAILURES & ROTATIONS OVER TIME</h3>
                         <InfoPopover info="Timeline graph highlighting key rotations and failures over time." />

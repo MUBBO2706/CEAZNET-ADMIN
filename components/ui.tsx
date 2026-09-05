@@ -153,11 +153,17 @@ export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ in
 };
 
 export const PanelCard = React.forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string; borderColor?: string; style?: React.CSSProperties }>(
-    ({ children, className = '', borderColor, style }, ref) => (
-        <div ref={ref} className={`panel-card p-3 ${borderColor ? `border-t-[3px] ${borderColor}` : ''} ${className}`} style={style}>
-            {children}
-        </div>
-    )
+    ({ children, className = '', borderColor = 'border-indigo-500', style }, ref) => {
+        const borderClass = borderColor.startsWith('border-t-') || borderColor.startsWith('border-t-[') 
+            ? borderColor 
+            : `border-t-[3px] ${borderColor}`;
+            
+        return (
+            <div ref={ref} className={`panel-card p-3 ${borderClass} ${className}`} style={style}>
+                {children}
+            </div>
+        );
+    }
 );
 PanelCard.displayName = 'PanelCard';
 

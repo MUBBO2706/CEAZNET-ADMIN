@@ -90,6 +90,7 @@ async function startServer() {
           username: result.payload.username,
           role: result.payload.role
         },
+        issuedAt: result.payload.iat,
         expiresAt: result.payload.exp,
         daysRemaining
       });

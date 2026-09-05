@@ -32,14 +32,14 @@ const NewsEngagement: React.FC<{
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <PanelCard className="lg:col-span-3">
+                <PanelCard borderColor="border-teal-500" className="lg:col-span-3">
                     <div className="flex justify-between items-center mb-4 w-full">
                         <h3 className="font-semibold">Engagement by Category</h3>
                         <InfoPopover info="Engagement metrics broken down by article category." />
                     </div>
                     <CategoryEngagementChart categoryData={statsByCategory} />
                 </PanelCard>
-                <PanelCard className="lg:col-span-2">
+                <PanelCard borderColor="border-amber-500" className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-4 w-full">
                         <h3 className="font-semibold text-[var(--text-primary)]">Top 10 Most Viewed Articles</h3>
                         <InfoPopover info="List of top 10 articles ranked by highest view count." />

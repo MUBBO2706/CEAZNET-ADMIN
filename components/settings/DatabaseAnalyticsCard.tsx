@@ -252,7 +252,7 @@ const DatabaseAnalyticsCard: React.FC = () => {
 
                 {/* Right Column: Table Activity (Edge to Edge Panel & Compact Table) */}
                 <div className="lg:col-span-8">
-                    <div className="mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] bg-[var(--card-bg)] border-t border-b border-[var(--border-color)] border-x-0 rounded-none h-full flex flex-col overflow-hidden">
+                    <div className="mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] bg-[var(--card-bg)] border-t-[3px] border-t-blue-500 border-b border-[var(--border-color)] border-x-0 rounded-none h-full flex flex-col overflow-hidden">
                         <div className="p-4 sm:p-5 lg:p-6 lg:px-8 border-b border-[var(--border-color)] bg-[var(--card-bg)] flex justify-between items-center">
                             <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)] flex items-center gap-2">
                                 <Server size={16} className="text-blue-500" /> Table Activity

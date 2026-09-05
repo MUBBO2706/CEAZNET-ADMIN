@@ -93,7 +93,7 @@ const SystemHealthBanner: React.FC<{ successRate: number }> = ({ successRate }) 
 
 const QuickActions: React.FC = () => (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-        <Link to="/news#settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-amber-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
+        <Link to="/news#settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] border-t-[3px] border-t-amber-500 rounded-xl hover:border-amber-500 active:scale-[0.97] transition-all shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
             <div className="text-amber-600 dark:text-amber-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Settings size={18} />
             </div>
@@ -106,7 +106,7 @@ const QuickActions: React.FC = () => (
             </div>
         </Link>
 
-        <Link to="/users" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-sky-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
+        <Link to="/users" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] border-t-[3px] border-t-sky-500 rounded-xl hover:border-sky-500 active:scale-[0.97] transition-all shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
             <div className="text-sky-600 dark:text-sky-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Users size={18} />
             </div>
@@ -119,7 +119,7 @@ const QuickActions: React.FC = () => (
             </div>
         </Link>
 
-        <Link to="/settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-emerald-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
+        <Link to="/settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] border-t-[3px] border-t-emerald-500 rounded-xl hover:border-emerald-500 active:scale-[0.97] transition-all shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
             <div className="text-emerald-600 dark:text-emerald-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Activity size={18} />
             </div>
@@ -778,7 +778,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 
     return (
         <div 
-            className="flex flex-col overflow-hidden h-[calc(100dvh-56px)] md:h-[750px] lg:h-[820px] border-t border-[var(--border-color)] border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none"
+            className="flex flex-col overflow-hidden h-[calc(100dvh-56px)] md:h-[750px] lg:h-[820px] border-t-[3px] border-t-emerald-500 border-b-0 border-x-0 bg-[var(--card-bg)] text-[var(--text-primary)] font-sans mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] rounded-none"
             onClick={() => setActiveIndex(null)}
         >
             {/* Header with container layout */}
