@@ -220,7 +220,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                         <InfoPopover info="Bar chart showing the tables with the highest number of operations." />
                     </div>
                     <div className="h-48 w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart data={topTablesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800/50" />
                                 <XAxis 
@@ -308,7 +308,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                             <InfoPopover info="Pie chart of database operations broken down by the source." />
                         </div>
                         <div className="flex-1 w-full min-h-[220px]">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <PieChart>
                                     <Pie
                                         data={sourceDistribution}
@@ -399,7 +399,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                             <InfoPopover info="Pie chart of recent activities by operation method." />
                         </div>
                         <div className="flex-1 w-full min-h-[220px]">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <PieChart>
                                     <Pie
                                         data={activityByMethod}
@@ -439,7 +439,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                             <InfoPopover info="Line chart of the overall system events over the past 7 days." />
                         </div>
                         <div className="flex-1 w-full min-h-[220px]">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <AreaChart data={activityTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                                     <defs>
                                         <linearGradient id="colorActions" x1="0" y1="0" x2="0" y2="1">

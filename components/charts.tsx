@@ -127,7 +127,7 @@ export const RoundedBarHorizontal = (props: any) => {
 export const ArticlesByCategoryChart: React.FC<{ data: { category: string; count: number }[] }> = React.memo(({ data }) => {
     return useMemo(() => (
         <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data}
@@ -166,7 +166,7 @@ export const ArticlesByCategoryChart: React.FC<{ data: { category: string; count
 export const DatabaseEventsTimelineChart: React.FC<{ data: { time: string; count: number }[] }> = React.memo(({ data }) => {
     return useMemo(() => (
         <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
@@ -214,7 +214,7 @@ export const ApiDistributionChart: React.FC<{ metrics?: EdgeFunctionStats[], fal
 
     return useMemo(() => (
         <div className="h-36 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data}
@@ -252,7 +252,7 @@ export const ApiDistributionChart: React.FC<{ metrics?: EdgeFunctionStats[], fal
 export const FinanceDistributionChart: React.FC<{ data: { name: string; value: number }[] }> = React.memo(({ data }) => {
     return useMemo(() => (
         <div className="h-40 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data.length > 0 ? data : [{ name: 'No Data', value: 1 }]}
@@ -290,7 +290,7 @@ export const FinanceDistributionChart: React.FC<{ data: { name: string; value: n
 export const ActivityByMethodChart: React.FC<{ data: { name: string; value: number }[] }> = React.memo(({ data }) => {
     return useMemo(() => (
         <div className="h-40 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data.length > 0 ? data : [{ name: 'No Data', value: 1 }]}
@@ -343,7 +343,7 @@ export const SuccessRateChart: React.FC<{ successRate: number }> = React.memo(({
 
     return useMemo(() => (
         <div className="h-32 w-full relative flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data}
@@ -458,7 +458,7 @@ export const NewsArticlesChart: React.FC<{ logs: any[]; title: string; }> = ({ l
             </div>
              <div className="flex-grow h-36">
                 {paginatedLogs.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                         <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                             <defs>
                                 <linearGradient id={`colorCount-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
@@ -582,7 +582,7 @@ export const AvgDurationChart: React.FC<{ logs: any[]; title: string; }> = ({ lo
             </div>
              <div className="flex-grow h-36">
                 {paginatedLogs.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                         <BarChart data={chartData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                             <XAxis 
                                 dataKey="time" 
@@ -627,7 +627,7 @@ export const CategoryEngagementChart: React.FC<{ categoryData: ArticleStats[] }>
 
     return (
         <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart
                     layout="vertical"
                     data={categoryData}
@@ -684,7 +684,7 @@ export const TrendChart: React.FC<{ trendData: TrendDataPoint[]; label: string; 
 
     return (
         <div className="h-40 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                     <defs>
                         <linearGradient id={`color-${label}`} x1="0" y1="0" x2="0" y2="1">
@@ -731,7 +731,7 @@ export const DistributionChart: React.FC<{ distData: DistributionDataPoint[]; ty
     
     return useMemo(() => (
         <div className={className}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                     <Pie
                         data={data}
@@ -779,7 +779,7 @@ export const HorizontalBarChart: React.FC<{ barData: BarDataPoint[]; label: stri
     
     return useMemo(() => (
         <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart
                     layout="vertical"
                     data={sortedData}
