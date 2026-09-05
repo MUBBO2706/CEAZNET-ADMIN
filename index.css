@@ -281,7 +281,7 @@
     }
     /* END FIX */
     
-    html.dark header { background-color: rgba(10, 10, 10, 0.8) !important; border-bottom-color: var(--border-color) !important; }
+    html.dark header { background-color: rgba(6, 78, 59, 0.4) !important; border-bottom-color: rgba(16, 185, 129, 0.2) !important; }
     /* FIX: Style sidebar buttons for dark sidebar in dark mode */
     html.dark .sidebar button.bg-gray-100 {
         background-color: #0a0a0a; /* dark gray */

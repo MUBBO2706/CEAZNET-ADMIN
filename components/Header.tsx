@@ -788,7 +788,7 @@ const Header: React.FC<{
     const { settings } = usePlatformSettings();
     const [activeHeaderIcon, setActiveHeaderIcon] = useState<string | null>(null);
     return (
-        <header className={`bg-white/80 backdrop-blur-lg px-2 sm:px-3 flex items-center gap-2 sm:gap-3 flex-shrink-0 border-b border-gray-200 fixed top-0 w-full z-50 transition-all duration-300 ease-in-out h-[50px] ${isCollapsed ? 'md:w-[calc(100%-4rem)] md:left-16' : 'md:w-[calc(100%-10rem)] md:left-40'}`}>
+        <header className={`bg-[var(--status-success-bg)]/80 dark:bg-[#064e3b]/40 backdrop-blur-lg px-2 sm:px-3 flex items-center gap-2 sm:gap-3 flex-shrink-0 border-b border-[var(--status-success-text)]/20 dark:border-emerald-500/20 fixed top-0 w-full z-50 transition-all duration-300 ease-in-out h-[50px] ${isCollapsed ? 'md:w-[calc(100%-4rem)] md:left-16' : 'md:w-[calc(100%-10rem)] md:left-40'}`}>
             <button 
                 className={`md:hidden p-1.5 -ml-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors relative z-50`} 
                 onClick={onMenuClick} 
