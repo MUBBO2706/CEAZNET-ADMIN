@@ -57,20 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
     };
 
     const { user, daysRemaining, logout } = useAuth();
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const profileRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-                setIsProfileOpen(false);
-            }
-        };
-        if (isProfileOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isProfileOpen]);
 
     return (
         <>
@@ -239,82 +225,6 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                         </div>
                     </div>
 
-                    {/* Admin Profile Link right above the footer */}
-                    <div className="pt-2 mt-2 border-t border-[var(--sidebar-border)] relative" ref={profileRef}>
-                        <button
-                            type="button"
-                            onClick={() => setIsProfileOpen(!isProfileOpen)}
-                            className={`sidebar-link w-full text-left flex items-center gap-3 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
-                                isCollapsed ? 'md:justify-center' : ''
-                            } ${isProfileOpen ? 'active' : ''}`}
-                        >
-                            <img src="/logo.png" className="w-5 h-5 rounded-full object-contain shrink-0" alt="Ceaznet Logo" referrerPolicy="no-referrer" />
-                            <span className={`truncate ${isCollapsed ? 'md:hidden' : ''}`}>Admin Profile</span>
-                        </button>
-
-                        {/* Compact Admin Profile Dropdown/Accordion Popover */}
-                        <AnimatePresence>
-                            {isProfileOpen && (
-                                isCollapsed ? (
-                                    // Collapsed Mode: Floats as absolute popover outside narrow sidebar to avoid horizontal scroll
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="fixed left-16 bottom-14 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 w-max whitespace-nowrap"
-                                    >
-                                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
-                                            <span className="truncate">{user?.username || 'admin'}</span>
-                                            <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>
-                                            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Session: {daysRemaining ?? 7}d left</span>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsProfileOpen(false);
-                                                closeSidebar();
-                                                logout();
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-b-lg transition-colors text-left cursor-pointer"
-                                        >
-                                            <LogOut size={14} className="shrink-0 text-red-500" />
-                                            <span>Logout</span>
-                                        </button>
-                                    </motion.div>
-                                ) : (
-                                    // Expanded/Mobile Mode: Floats as absolute popover above the link (tooltip-like) to avoid vertical/horizontal layout cracking
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="absolute bottom-full mb-1 left-3 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 w-max whitespace-nowrap"
-                                    >
-                                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
-                                            <span className="truncate">{user?.username || 'admin'}</span>
-                                            <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>
-                                            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Session: {daysRemaining ?? 7}d left</span>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsProfileOpen(false);
-                                                closeSidebar();
-                                                logout();
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-b-lg transition-colors text-left cursor-pointer"
-                                        >
-                                            <LogOut size={14} className="shrink-0 text-red-500" />
-                                            <span>Logout</span>
-                                        </button>
-                                    </motion.div>
-                                )
-                            )}
-                        </AnimatePresence>
-                    </div>
                 </nav>
 
                 <div className={`px-1 py-3 border-t border-[var(--sidebar-border)]`}>

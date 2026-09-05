@@ -8,6 +8,7 @@ import { MainDashboardSkeleton } from '../components/skeletons';
 import { fetchMainDashboardData, fetchLiveActivityLogs, dbMain } from '../services/supabaseService';
 import type { MainDashboardData, RecentActivityLog } from '../types';
 import { useAutoRefresh } from '../components/AutoRefreshContext';
+import { useAuth } from '../components/AuthContext';
 import { 
     Zap, Newspaper, Users, LineChart, HeartCrack, X, 
     Activity, CheckCircle, AlertTriangle, ArrowRight, 
@@ -93,7 +94,7 @@ const SystemHealthBanner: React.FC<{ successRate: number }> = ({ successRate }) 
 const QuickActions: React.FC = () => (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <Link to="/news#settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-amber-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
-            <div className="p-2.5 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-all duration-200 shrink-0">
+            <div className="text-amber-600 dark:text-amber-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Settings size={18} />
             </div>
             <div className="text-center sm:text-left overflow-hidden">
@@ -106,7 +107,7 @@ const QuickActions: React.FC = () => (
         </Link>
 
         <Link to="/users" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-sky-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
-            <div className="p-2.5 bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-400 rounded-lg group-hover:bg-sky-500 group-hover:text-white transition-all duration-200 shrink-0">
+            <div className="text-sky-600 dark:text-sky-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Users size={18} />
             </div>
             <div className="text-center sm:text-left overflow-hidden">
@@ -119,7 +120,7 @@ const QuickActions: React.FC = () => (
         </Link>
 
         <Link to="/settings" className="group relative overflow-hidden p-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl hover:border-emerald-500/50 active:scale-[0.97] transition-transform shadow-sm hover:shadow-md flex flex-col sm:flex-row items-center sm:items-start gap-3">
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-all duration-200 shrink-0">
+            <div className="text-emerald-600 dark:text-emerald-400 transition-colors shrink-0 flex items-center justify-center pt-0.5">
                 <Activity size={18} />
             </div>
             <div className="text-center sm:text-left overflow-hidden">
@@ -240,10 +241,10 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     {Object.entries(dataToRender).map(([key, value]) => {
                         const valStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
                         return (
-                            <div key={key} className="flex flex-col border-l-2 border-red-500/40 pl-3 py-1">
+                            <div key={key} className="flex flex-col items-start border-l-2 border-red-500/40 pl-3 py-1">
                                 <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                                <div className="text-[11px] font-mono break-all">
-                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit inline-block">
+                                <div className="text-[11px] font-mono break-all flex flex-col items-start">
+                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block">
                                         - {valStr}
                                     </span>
                                 </div>
@@ -265,10 +266,10 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     {Object.entries(dataToRender).map(([key, value]) => {
                         const valStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
                         return (
-                            <div key={key} className="flex flex-col border-l-2 border-green-500/40 pl-3 py-1">
+                            <div key={key} className="flex flex-col items-start border-l-2 border-green-500/40 pl-3 py-1">
                                 <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                                <div className="text-[11px] font-mono break-all">
-                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit inline-block">
+                                <div className="text-[11px] font-mono break-all flex flex-col items-start">
+                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block">
                                         + {valStr}
                                     </span>
                                 </div>
@@ -302,28 +303,28 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                     if (isModified) borderClass = 'border-amber-500/40';
 
                     return (
-                        <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${borderClass}`}>
+                        <div key={key} className={`flex flex-col items-start border-l-2 pl-3 py-1 ${borderClass}`}>
                             <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                            <div className="text-[11px] font-mono break-all flex flex-col gap-1">
+                            <div className="text-[11px] font-mono break-all flex flex-col items-start gap-1">
                                 {isUnchanged && (
                                     <span className="text-[var(--text-primary)] font-normal">{newValStr}</span>
                                 )}
                                 {isAdded && (
-                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit">
+                                    <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block">
                                         + {newValStr}
                                     </span>
                                 )}
                                 {isRemoved && (
-                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit">
+                                    <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block">
                                         - {oldValStr}
                                     </span>
                                 )}
                                 {isModified && (
                                     <>
-                                        <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit">
+                                        <span className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block">
                                             - {oldValStr}
                                         </span>
-                                        <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                                        <span className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit max-w-full inline-block mt-0.5">
                                             + {newValStr}
                                         </span>
                                     </>
@@ -1214,6 +1215,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
 let cachedMainDashboardData: MainDashboardData | null = null;
 
 const MainDashboard: React.FC = () => {
+    const { user } = useAuth();
     const [data, setData] = useState<MainDashboardData | null>(cachedMainDashboardData);
     const [loading, setLoading] = useState<boolean>(!cachedMainDashboardData);
     const { refreshTrigger } = useAutoRefresh();
@@ -1285,12 +1287,19 @@ const MainDashboard: React.FC = () => {
         ? Object.entries(data.recentActivity.reduce((acc, log) => { acc[log.table] = (acc[log.table] || 0) + 1; return acc; }, {} as Record<string, number>)).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || 'N/A'
         : 'N/A';
 
+    const username = user?.username ? (user.username.charAt(0).toUpperCase() + user.username.slice(1)) : 'Admin';
+
     return (
         <div className="space-y-6 pb-0">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">Welcome back, Admin 👋</h1>
-                    <p className="text-[var(--text-secondary)] mt-1 font-medium">{currentDate}</p>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2.5">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                        Welcome back, {username} 👋
+                    </h1>
+                    <span className="hidden md:inline-block text-[var(--text-secondary)] font-normal text-2xl select-none mx-0.5">-</span>
+                    <p className="text-[var(--text-secondary)] font-medium text-sm sm:text-base md:text-xl leading-tight mt-1 md:mt-0">
+                        {currentDate}
+                    </p>
                 </div>
             </div>
             

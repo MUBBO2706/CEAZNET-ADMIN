@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAutoRefresh, useCountdown } from './AutoRefreshContext';
 import { Sparkles, Bell, X, CheckCircle, CheckCircle2, Plus, Edit2, Trash2, Database, Clock, Eye, EyeOff, MessageSquare, RotateCw, Loader, Check, User, LogOut, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -233,15 +234,10 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                 </AnimatePresence>
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="fixed left-[6px] right-[6px] top-[56px] h-[calc(100vh-62px)] max-h-[calc(100vh-62px)] md:left-auto md:right-2 md:top-[58px] md:w-[420px] md:h-[calc(100vh-66px)] md:max-h-[calc(100vh-66px)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300"
-                    >
+            {isOpen && (
+                <div 
+                    className="fixed left-[6px] right-[6px] top-[56px] h-[calc(100vh-62px)] max-h-[calc(100vh-62px)] md:left-auto md:right-2 md:top-[58px] md:w-[420px] md:h-[calc(100vh-66px)] md:max-h-[calc(100vh-66px)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10"
+                >
                         {/* Header Title & Actions */}
                         <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 flex items-center justify-between z-10 shrink-0">
                             <div className="flex items-center gap-2">
@@ -364,9 +360,8 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                 Hide All Read
                             </button>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
             
             {/* The previous BroadcastModal line was here, now removed */}
         </div>
@@ -598,6 +593,150 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
     );
 };
 
+const ProfileDropdown: React.FC = () => {
+    const { user, daysRemaining, logout } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    const handleConfirmLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 600));
+            await logout();
+        } finally {
+            setIsLoggingOut(false);
+            setShowLogoutModal(false);
+        }
+    };
+
+    return (
+        <div className="relative flex items-center" ref={dropdownRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="relative p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full transition-colors flex items-center justify-center outline-none"
+                aria-label="Admin Profile Menu"
+            >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 shrink-0 transition-transform active:scale-95">
+                    <User size={16} />
+                </div>
+            </button>
+
+            {isOpen && (
+                <div 
+                    className="fixed right-[6px] md:right-2 top-[56px] md:top-[58px] w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-none z-50 overflow-hidden flex flex-col ring-1 ring-black/5 dark:ring-white/10"
+                >
+                    {/* Header Title & Actions */}
+                    <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center justify-between gap-2 shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 flex items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                <User size={14} />
+                            </div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                {user?.username || 'admin'}
+                            </span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium whitespace-nowrap shrink-0">
+                            Session: {daysRemaining ?? 7}d left
+                        </span>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-1 bg-white dark:bg-zinc-900 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsOpen(false);
+                                setShowLogoutModal(true);
+                            }}
+                            className="w-full flex items-center justify-between gap-2 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer border-0"
+                        >
+                            <span>Logout</span>
+                            <LogOut size={14} className="shrink-0 text-red-500" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Logout Confirmation Modal */}
+            {createPortal(
+                <AnimatePresence>
+                    {showLogoutModal && (
+                        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => {
+                                    if (!isLoggingOut) setShowLogoutModal(false);
+                                }}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-xs"
+                            />
+
+                            {/* Compact Container-less Dialog Box */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={{ duration: 0.12 }}
+                                className="relative w-full max-w-[280px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-xl z-10 flex flex-col text-left overflow-hidden"
+                            >
+                                <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-1">
+                                    Confirm Logout
+                                </h3>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
+                                    Are you sure you want to log out?
+                                </p>
+
+                                <div className="flex items-center justify-end gap-2 w-full pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
+                                    <button
+                                        type="button"
+                                        disabled={isLoggingOut}
+                                        onClick={() => setShowLogoutModal(false)}
+                                        className="px-3 py-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-all disabled:opacity-50 cursor-pointer border-0"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={isLoggingOut}
+                                        onClick={handleConfirmLogout}
+                                        className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-lg transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer border-0"
+                                    >
+                                        {isLoggingOut ? (
+                                            <>
+                                                <Loader size={12} className="animate-spin" />
+                                                <span>Logging out...</span>
+                                            </>
+                                        ) : (
+                                            <span>Logout</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+        </div>
+    );
+};
+
 const Header: React.FC<{
     pageTitle: string;
     onMenuClick: () => void;
@@ -643,9 +782,9 @@ const Header: React.FC<{
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
-                <h1 className="font-cursive text-lg gradient-text">Ceaznet Admin</h1>
-                <span className="text-slate-300 font-light text-sm hidden sm:inline-block">|</span>
-                <span className="text-slate-700 font-medium text-sm truncate">{pageTitle}</span>
+                <span className="font-bold text-base sm:text-lg tracking-tight truncate bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
+                    {pageTitle}
+                </span>
             </div>
 
             <div className="flex-grow" />
@@ -654,6 +793,7 @@ const Header: React.FC<{
                 <GlobalRefreshButton activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
                 <SupportInboxIcon activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
                 <NotificationBell activeHeaderIcon={activeHeaderIcon} setActiveHeaderIcon={setActiveHeaderIcon} />
+                <ProfileDropdown />
             </div>
         </header>
     );

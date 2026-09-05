@@ -778,4 +778,57 @@
     .markdown-body code { background: rgba(0,0,0,0.05); padding: 0.2em 0.4em; border-radius: 0.25em; font-family: monospace; font-size: 0.9em; }
     html.dark .markdown-body code { background: rgba(255,255,255,0.1); }
     .markdown-body pre code { background: transparent; padding: 0; }
+
+    /* --- Toast Notification Responsiveness & Non-Wrapping Rules --- */
+    .custom-toast-notification,
+    [role="status"],
+    [role="alert"],
+    div[data-toast] {
+        white-space: nowrap !important;
+        max-width: none !important;
+        width: max-content !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    .custom-toast-notification *,
+    [role="status"] *,
+    [role="alert"] * {
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+    }
+
+    /* Wide screens: toast width adjusts dynamically according to text length without wrapping */
+    @media (min-width: 641px) {
+        .custom-toast-notification,
+        [role="status"],
+        [role="alert"] {
+            max-width: calc(100vw - 32px) !important;
+            font-size: 13px !important;
+            padding: 8px 14px !important;
+        }
+    }
+
+    /* Narrow / Mobile screens: text size shrinks and becomes compact, but content never wraps */
+    @media (max-width: 640px) {
+        .custom-toast-notification,
+        [role="status"],
+        [role="alert"] {
+            font-size: 10.5px !important;
+            padding: 5px 9px !important;
+            line-height: 1.2 !important;
+            gap: 5px !important;
+            max-width: calc(100vw - 20px) !important;
+            overflow: hidden !important;
+        }
+
+        .custom-toast-notification svg,
+        [role="status"] svg,
+        [role="alert"] svg {
+            width: 13px !important;
+            height: 13px !important;
+            min-width: 13px !important;
+            flex-shrink: 0 !important;
+        }
+    }
 }

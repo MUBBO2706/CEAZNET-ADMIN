@@ -181,8 +181,8 @@ export const StatCard: React.FC<{
         <div className="relative z-10 flex flex-col gap-1.5 sm:gap-2">
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2 min-w-0 pr-2">
-                    <div className="text-[var(--text-secondary)] opacity-90 p-1 bg-[var(--card-bg)] shadow-sm rounded-md group-hover:scale-110 group-hover:text-[var(--text-primary)] transition-all duration-300 flex-shrink-0">
-                        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: "w-3 h-3 sm:w-3.5 sm:h-3.5" }) : icon}
+                    <div className="text-[var(--text-secondary)] opacity-90 group-hover:scale-110 group-hover:text-[var(--text-primary)] transition-all duration-300 flex-shrink-0 flex items-center justify-center">
+                        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: "w-3.5 h-3.5 sm:w-4 sm:h-4" }) : icon}
                     </div>
                     <p className="text-[9px] sm:text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider truncate leading-none" title={title}>{title}</p>
                 </div>

@@ -53,14 +53,16 @@ const ExpandableValue: React.FC<{ valueStr: string, className?: string, prefix?:
     const isLong = valueStr.length > 150;
 
     return (
-        <div className="flex flex-col items-start gap-1 w-full relative">
-             <div className={`${!expanded ? 'line-clamp-3 break-all' : 'whitespace-pre-wrap break-all'} overflow-hidden transition-all duration-200 max-w-full ${className}`}>
-                {prefix ? `${prefix} ` : ''}{valueStr}
+        <div className="flex flex-col items-start max-w-full relative">
+             <div className={`${!expanded ? 'line-clamp-3 break-all' : 'whitespace-pre-wrap break-all'} overflow-hidden transition-all duration-200 max-w-full`}>
+                <span className={`inline-block w-fit max-w-full ${className}`}>
+                    {prefix ? `${prefix} ` : ''}{valueStr}
+                </span>
              </div>
              {isLong && (
                  <button 
                      onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                     className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold select-none flex items-center gap-1"
+                     className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold select-none flex items-center gap-1 mt-0.5"
                  >
                      {expanded ? 'Show less' : 'Click to expand'}
                  </button>
@@ -83,10 +85,10 @@ const renderDiffData = (oldData: any, newData: any, method?: string) => {
                 {Object.entries(dataToRender).map(([key, value]) => {
                     const valueStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
                     return (
-                        <div key={key} className="flex flex-col border-l-2 border-red-500/40 pl-3 py-1">
+                        <div key={key} className="flex flex-col items-start border-l-2 border-red-500/40 pl-3 py-1">
                             <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                            <div className="text-[11px] font-mono">
-                                <ExpandableValue valueStr={valueStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />
+                            <div className="text-[11px] font-mono flex flex-col items-start w-full">
+                                <ExpandableValue valueStr={valueStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded" prefix="-" />
                             </div>
                         </div>
                     );
@@ -106,10 +108,10 @@ const renderDiffData = (oldData: any, newData: any, method?: string) => {
                 {Object.entries(dataToRender).map(([key, value]) => {
                     const valueStr = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
                     return (
-                        <div key={key} className="flex flex-col border-l-2 border-green-500/40 pl-3 py-1">
+                        <div key={key} className="flex flex-col items-start border-l-2 border-green-500/40 pl-3 py-1">
                             <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                            <div className="text-[11px] font-mono">
-                                <ExpandableValue valueStr={valueStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit" prefix="+" />
+                            <div className="text-[11px] font-mono flex flex-col items-start w-full">
+                                <ExpandableValue valueStr={valueStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded" prefix="+" />
                             </div>
                         </div>
                     );
@@ -141,16 +143,16 @@ const renderDiffData = (oldData: any, newData: any, method?: string) => {
                 if (isModified) borderClass = 'border-amber-500/40';
 
                 return (
-                    <div key={key} className={`flex flex-col border-l-2 pl-3 py-1 ${borderClass}`}>
+                    <div key={key} className={`flex flex-col items-start border-l-2 pl-3 py-1 ${borderClass}`}>
                         <span className="text-[var(--text-secondary)] text-[9px] uppercase tracking-wider mb-1 font-bold opacity-60">{key}</span>
-                        <div className="text-[11px] font-mono flex flex-col gap-1 w-full min-w-0">
+                        <div className="text-[11px] font-mono flex flex-col items-start gap-1 w-full min-w-0">
                             {isUnchanged && <ExpandableValue valueStr={newValStr} className="text-[var(--text-primary)] font-normal" />}
-                            {isAdded && <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit" prefix="+" />}
-                            {isRemoved && <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />}
+                            {isAdded && <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded" prefix="+" />}
+                            {isRemoved && <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded" prefix="-" />}
                             {isModified && (
                                 <>
-                                    <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded w-fit" prefix="-" />
-                                    <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded w-fit mt-0.5" prefix="+" />
+                                    <ExpandableValue valueStr={oldValStr} className="text-red-500 dark:text-red-400 line-through bg-red-500/10 px-1.5 py-0.5 rounded" prefix="-" />
+                                    <ExpandableValue valueStr={newValStr} className="text-green-500 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mt-0.5" prefix="+" />
                                 </>
                             )}
                         </div>
