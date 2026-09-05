@@ -1,8 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import App from './App';
 
 // --- Global Error Handling ---
+
+const originalWarn = console.warn;
+console.warn = (...args) => {
+    // Silence Recharts transient layout warnings
+    if (typeof args[0] === 'string' && args[0].includes('The width(') && args[0].includes('and height(')) {
+        return;
+    }
+    originalWarn(...args);
+};
 
 // Catch unhandled promise rejections (e.g., from transient network drops, aborted queries, or third-party SDK background tasks)
 window.addEventListener('unhandledrejection', event => {
