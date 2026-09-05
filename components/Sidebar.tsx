@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, 
@@ -14,9 +14,14 @@ import {
     ScrollText, 
     SlidersHorizontal, 
     ChevronsLeft,
-    Radio
+    Radio,
+    LogOut,
+    User,
+    ShieldCheck
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import ThemeToggle from './ThemeToggle';
+import { useAuth } from './AuthContext';
 
 interface SidebarProps {
     closeSidebar: () => void;
@@ -50,6 +55,22 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
         const baseClasses = "p-2 rounded-full text-[var(--sidebar-text-secondary)] hover:bg-[var(--sidebar-link-hover-bg)] hover:text-[var(--sidebar-text-primary)] transition-colors";
         return isActive ? `${baseClasses} bg-[var(--sidebar-link-hover-bg)] text-[var(--sidebar-text-primary)]` : baseClasses;
     };
+
+    const { user, daysRemaining, logout } = useAuth();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        if (isProfileOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProfileOpen]);
 
     return (
         <>
@@ -217,10 +238,97 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                             </NavLink>
                         </div>
                     </div>
+
+                    {/* Admin Profile Link right above the footer */}
+                    <div className="pt-2 mt-2 border-t border-[var(--sidebar-border)] relative" ref={profileRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsProfileOpen(!isProfileOpen)}
+                            className={`sidebar-link w-full text-left flex items-center gap-3 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
+                                isCollapsed ? 'md:justify-center' : ''
+                            } ${isProfileOpen ? 'active' : ''}`}
+                        >
+                            <img src="/logo.png" className="w-5 h-5 rounded-full object-contain shrink-0" alt="Ceaznet Logo" referrerPolicy="no-referrer" />
+                            <span className={`truncate ${isCollapsed ? 'md:hidden' : ''}`}>Admin Profile</span>
+                        </button>
+
+                        {/* Compact Admin Profile Dropdown/Accordion Popover */}
+                        <AnimatePresence>
+                            {isProfileOpen && (
+                                isCollapsed ? (
+                                    // Collapsed Mode: Floats as absolute popover outside narrow sidebar to avoid horizontal scroll
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -10 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="fixed left-16 bottom-14 z-50 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl p-1 overflow-hidden ring-1 ring-black/5 dark:ring-white/10"
+                                    >
+                                        <div className="px-3 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 rounded-t-lg">
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                                {user?.username || 'Admin'}
+                                            </p>
+                                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                Session: {daysRemaining ?? 7}d left
+                                            </p>
+                                        </div>
+
+                                        <div className="p-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsProfileOpen(false);
+                                                    closeSidebar();
+                                                    logout();
+                                                }}
+                                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors text-left cursor-pointer"
+                                            >
+                                                <LogOut size={14} className="shrink-0 text-red-500" />
+                                                <span>Logout</span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    // Expanded/Mobile Mode: Inline accordion so it fits 100% within sidebar flow with zero horizontal scrolling
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="overflow-hidden mt-1 mx-2 bg-slate-50 dark:bg-zinc-800/40 border border-slate-100 dark:border-zinc-800/60 rounded-xl p-1"
+                                    >
+                                        <div className="px-2.5 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/80">
+                                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                                {user?.username || 'Admin'}
+                                            </p>
+                                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                Session: {daysRemaining ?? 7}d left
+                                            </p>
+                                        </div>
+
+                                        <div className="pt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsProfileOpen(false);
+                                                    closeSidebar();
+                                                    logout();
+                                                }}
+                                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors text-left cursor-pointer"
+                                            >
+                                                <LogOut size={14} className="shrink-0 text-red-500" />
+                                                <span>Logout</span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </nav>
 
                 <div className={`px-1 py-3 border-t border-[var(--sidebar-border)]`}>
-                    <div className={`grid grid-cols-2 gap-2 items-center justify-items-center ${isCollapsed ? 'md:grid-cols-1' : ''}`}>
+                    <div className={`grid grid-cols-2 gap-1 items-center justify-items-center ${isCollapsed ? 'md:grid-cols-1 md:gap-2' : ''}`}>
                         <div
                             className="sidebar-tooltip-wrapper w-full flex justify-center"
                             data-tooltip={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
@@ -235,9 +343,11 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                                 to="/settings"
                                 className={getFooterNavLinkClass}
                                 aria-label="Settings"
-                                onClick={closeSidebar}
+                                onClick={() => {
+                                    closeSidebar();
+                                }}
                             >
-                                <Settings size={20} />
+                                <Settings size={18} />
                             </NavLink>
                         </div>
                     </div>

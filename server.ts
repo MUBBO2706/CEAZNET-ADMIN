@@ -1,85 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { createClient } from "@supabase/supabase-js";
-
-const FALLBACK_URL = 'https://itjurgqbvsqniphuehiz.supabase.co';
-const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0anVyZ3FidnNxbmlwaHVlaGl6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI4Mzk1OCwiZXhwIjoyMDkwODU5OTU4fQ.FgnMsY9Oz2ITeBTg3wyldmftSV6c9rYeScx_hC0Syxc';
-
-const supabaseUrl = process.env.VITE_MAIN_SUPABASE_URL || process.env.MAIN_SUPABASE_URL || FALLBACK_URL;
-const supabaseKey = process.env.VITE_MAIN_SUPABASE_SERVICE_KEY || process.env.MAIN_SUPABASE_SERVICE_KEY || FALLBACK_KEY;
-const dbClient = createClient(supabaseUrl, supabaseKey);
-
-async function verifyDbLogin(usernameInput: string, passwordInput: string): Promise<boolean> {
-  if (!usernameInput || !passwordInput) return false;
-
-  // 1. Check Server-Side Environment Variables First
-  const envAdminUser = (process.env.ADMIN_USERNAME || process.env.VITE_ADMIN_USERNAME || "").trim();
-  const envAdminPass = (process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "").trim();
-
-  if (envAdminUser && envAdminPass) {
-    if (usernameInput === envAdminUser && passwordInput === envAdminPass) {
-      return true;
-    }
-  }
-
-  // 2. Check platform_settings table for admin_credentials
-  try {
-    const { data: settingData } = await dbClient
-      .from("platform_settings")
-      .select("setting_value")
-      .eq("setting_key", "admin_credentials")
-      .maybeSingle();
-
-    if (settingData?.setting_value) {
-      let parsed: any = {};
-      try {
-        parsed = typeof settingData.setting_value === "string" 
-          ? JSON.parse(settingData.setting_value) 
-          : settingData.setting_value;
-      } catch (e) {
-        // ignore JSON parse error
-      }
-      if (parsed?.username && parsed?.password) {
-        if (usernameInput === parsed.username && passwordInput === parsed.password) {
-          return true;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("DB check platform_settings error:", err);
-  }
-
-  // 2. Check admin_users table if present in schema
-  try {
-    const { data: adminUser } = await dbClient
-      .from("admin_users")
-      .select("*")
-      .or(`username.eq.${usernameInput},email.eq.${usernameInput}`)
-      .maybeSingle();
-
-    if (adminUser) {
-      if (adminUser.password === passwordInput || adminUser.password_hash === passwordInput) {
-        return true;
-      }
-    }
-  } catch (err) {
-    // table might not exist
-  }
-
-  // 3. Check verify_admin_login RPC if available
-  try {
-    const { data: rpcVal } = await dbClient.rpc("verify_admin_login", {
-      p_username: usernameInput,
-      p_password: passwordInput,
-    });
-    if (rpcVal === true) return true;
-  } catch (err) {
-    // rpc might not exist
-  }
-
-  return false;
-}
+import { getAdminConfig, createAdminToken, verifyAdminToken } from "./api/auth/jwt";
 
 async function startServer() {
   const app = express();
@@ -88,20 +10,96 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes FIRST
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", (req, res) => {
     const { username, password } = req.body || {};
 
     if (!username || !password) {
-      return res.status(400).json({ success: false, message: "Username and password required" });
+      return res.status(400).json({ success: false, message: "Username and password are required" });
     }
 
-    const isValid = await verifyDbLogin(username, password);
+    const { username: configuredUsername, password: configuredPassword } = getAdminConfig();
 
-    if (isValid) {
-      return res.json({ success: true, message: "Authenticated successfully" });
+    if (!configuredPassword) {
+      console.error("Server error: ADMIN_PASSWORD environment variable is not configured.");
+      return res.status(500).json({
+        success: false,
+        message: "Server authentication configuration is missing. Please configure ADMIN_PASSWORD in server environment variables."
+      });
     }
 
-    return res.status(401).json({ success: false, message: "Incorrect username or password." });
+    const trimmedInputUser = String(username).trim();
+    const trimmedInputPass = String(password).trim();
+
+    // Strict Server-Side Environment Variables Authentication
+    if (trimmedInputUser === configuredUsername && trimmedInputPass === configuredPassword) {
+      // 7-day token (7 days = 604800 seconds)
+      const tokenData = createAdminToken(trimmedInputUser, 7 * 24 * 60 * 60);
+
+      return res.json({
+        success: true,
+        message: "Authenticated successfully",
+        token: tokenData.token,
+        expiresIn: tokenData.expiresIn,
+        expiresAt: tokenData.expiresAt,
+        user: {
+          username: trimmedInputUser,
+          role: "admin"
+        }
+      });
+    }
+
+    return res.status(401).json({ success: false, message: "Incorrect username or password. Access denied." });
+  });
+
+  app.all(["/api/auth/verify", "/api/auth/session"], (req, res) => {
+    if (req.method === "OPTIONS") {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      return res.sendStatus(204);
+    }
+
+    const authHeader = req.headers.authorization || "";
+    let token = "";
+
+    if (authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7).trim();
+    } else if (req.body?.token) {
+      token = String(req.body.token).trim();
+    } else if (req.query?.token) {
+      token = String(req.query.token).trim();
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        valid: false,
+        message: "No authorization token provided"
+      });
+    }
+
+    const result = verifyAdminToken(token);
+
+    if (result.valid && result.payload) {
+      const daysRemaining = Math.max(0, Math.round((result.payload.exp - Math.floor(Date.now() / 1000)) / 86400));
+      return res.json({
+        success: true,
+        valid: true,
+        message: "Session is valid",
+        user: {
+          username: result.payload.username,
+          role: result.payload.role
+        },
+        expiresAt: result.payload.exp,
+        daysRemaining
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      valid: false,
+      message: result.message || "Session expired or invalid token. Please log in again."
+    });
   });
 
   app.get("/api/health", (req, res) => {

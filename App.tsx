@@ -13,7 +13,7 @@ import { LoadingSpinner } from './components/skeletons';
 import SupportInboxPage from './pages/SupportInboxPage';
 import AdvancedAnalyticsPage from './pages/AdvancedAnalyticsPage';
 import BroadcastPage from './pages/BroadcastPage';
-import { verifyAdminBackend } from './services/supabaseService';
+import { AuthProvider, useAuth } from './components/AuthContext';
 
 
 // --- Error Boundary Component ---
@@ -329,13 +329,37 @@ import { BroadcastPopup } from './components/BroadcastPopup';
 import { GlobalAlertProvider } from './components/ui';
 
 const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme: () => void }> = ({ children, theme, toggleTheme }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return sessionStorage.getItem('ceaznet-admin-auth') === 'true';
-    });
+    const { isAuthenticated, isLoading: isAuthLoading, login } = useAuth();
     const [usernameInput, setUsernameInput] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    if (isAuthLoading) {
+        return (
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300">
+                <div className="flex flex-col items-center gap-4">
+                    <img 
+                        src="/logo.png" 
+                        alt="Ceaznet Logo" 
+                        className="w-20 h-20 sm:w-24 sm:h-24 object-contain animate-pulse" 
+                        onError={(e) => {
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            if (target.nextElementSibling) {
+                                (target.nextElementSibling as HTMLElement).style.display = 'block';
+                            }
+                        }} 
+                    />
+                    <Zap className="h-16 w-16 hidden text-indigo-500 animate-pulse" />
+                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        <Loader className="w-4 h-4 animate-spin text-indigo-500" />
+                        <span>Verifying admin session...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (isAuthenticated) {
         return <>{children}</>;
@@ -347,55 +371,24 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
             setError("Please enter both username and password.");
             return;
         }
-        setIsLoading(true);
+        setIsSubmitting(true);
         setError('');
 
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: usernameInput.trim(), password: passwordInput.trim() })
-            });
-            const text = await res.text();
-            let data: any = {};
-            try {
-                data = text ? JSON.parse(text) : {};
-            } catch (parseErr) {
-                // Ignore parsing errors
-            }
-
-            if (res.ok && data.success) {
-                setIsAuthenticated(true);
-                sessionStorage.setItem('ceaznet-admin-auth', 'true');
-            } else {
-                const isDirectValid = await verifyAdminBackend(usernameInput.trim(), passwordInput.trim());
-                if (isDirectValid) {
-                    setIsAuthenticated(true);
-                    sessionStorage.setItem('ceaznet-admin-auth', 'true');
-                    return;
-                }
-                setError(data.message || "Incorrect username or password.");
+            const res = await login(usernameInput, passwordInput);
+            if (!res.success) {
+                setError(res.message || "Incorrect username or password. Access denied.");
             }
         } catch (err: any) {
-            try {
-                const isDirectValid = await verifyAdminBackend(usernameInput.trim(), passwordInput.trim());
-                if (isDirectValid) {
-                    setIsAuthenticated(true);
-                    sessionStorage.setItem('ceaznet-admin-auth', 'true');
-                    return;
-                }
-            } catch (fallbackErr) {
-                // ignore fallback error
-            }
-            setError(`Authentication error: ${err.message || 'Server connection failed'}`);
+            setError(`Authentication failed: ${err.message || 'Server error'}`);
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300 animate-in fade-in duration-200">
-            {/* Theme Toggle Button - Icon only, no border/outline, no bg fill, no shadow, accent color change */}
+            {/* Theme Toggle Button */}
             <button
                 type="button"
                 onClick={toggleTheme}
@@ -428,7 +421,7 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
                 </div>
                 
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1 tracking-tight">Ceaznet Admin</h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Authentication Required to Proceed</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Secure Server-Side Authentication</p>
                 
                 <form onSubmit={handleLogin} className="w-full space-y-4 text-left">
                     <div>
@@ -466,12 +459,15 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
                     )}
                     <button 
                         type="submit" 
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                         className="w-full mt-2 px-5 py-3 text-white text-sm font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]"
                     >
-                        {isLoading && <Loader className="w-4 h-4 animate-spin" />}
-                        {isLoading ? 'Authenticating...' : 'Access Admin Panel'}
+                        {isSubmitting && <Loader className="w-4 h-4 animate-spin" />}
+                        {isSubmitting ? 'Verifying & Signing In...' : 'Access Admin Panel'}
                     </button>
+                    <div className="pt-2 text-center text-xs text-zinc-400 dark:text-zinc-500">
+                        Sessions remain securely active for 7 days
+                    </div>
                 </form>
             </div>
         </div>
@@ -509,16 +505,18 @@ const App: React.FC = () => {
     return (
         <BrowserRouter>
             <ErrorBoundary>
-                <AdminAuthGuard theme={theme} toggleTheme={toggleTheme}>
-                    <AutoRefreshProvider>
-                        <PlatformSettingsProvider>
-                            <PageLayout theme={theme} toggleTheme={toggleTheme} />
-                            <BroadcastPopup />
-                            {createPortal(<Toaster position="top-right" containerStyle={{ zIndex: 999999 }} />, document.body)}
-                            <GlobalAlertProvider />
-                        </PlatformSettingsProvider>
-                    </AutoRefreshProvider>
-                </AdminAuthGuard>
+                <AuthProvider>
+                    <AdminAuthGuard theme={theme} toggleTheme={toggleTheme}>
+                        <AutoRefreshProvider>
+                            <PlatformSettingsProvider>
+                                <PageLayout theme={theme} toggleTheme={toggleTheme} />
+                                <BroadcastPopup />
+                                {createPortal(<Toaster position="top-right" containerStyle={{ zIndex: 999999 }} />, document.body)}
+                                <GlobalAlertProvider />
+                            </PlatformSettingsProvider>
+                        </AutoRefreshProvider>
+                    </AdminAuthGuard>
+                </AuthProvider>
             </ErrorBoundary>
         </BrowserRouter>
     );

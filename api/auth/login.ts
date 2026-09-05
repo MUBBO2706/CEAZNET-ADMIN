@@ -1,14 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const FALLBACK_URL = 'https://itjurgqbvsqniphuehiz.supabase.co';
-const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0anVyZ3FidnNxbmlwaHVlaGl6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI4Mzk1OCwiZXhwIjoyMDkwODU5OTU4fQ.FgnMsY9Oz2ITeBTg3wyldmftSV6c9rYeScx_hC0Syxc';
-
-const supabaseUrl = process.env.VITE_MAIN_SUPABASE_URL || process.env.MAIN_SUPABASE_URL || FALLBACK_URL;
-const supabaseKey = process.env.VITE_MAIN_SUPABASE_SERVICE_KEY || process.env.MAIN_SUPABASE_SERVICE_KEY || FALLBACK_KEY;
-const dbClient = createClient(supabaseUrl, supabaseKey);
+import { getAdminConfig, createAdminToken } from './jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Allow OPTIONS for CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
@@ -16,75 +17,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { username, password } = req.body || {};
 
   if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Username and password required' });
+    return res.status(400).json({ success: false, message: 'Username and password are required' });
   }
 
-  // 1. Check Server-Side Environment Variables First
-  const envAdminUser = (process.env.ADMIN_USERNAME || process.env.VITE_ADMIN_USERNAME || '').trim();
-  const envAdminPass = (process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || '').trim();
+  const { username: configuredUsername, password: configuredPassword } = getAdminConfig();
 
-  if (envAdminUser && envAdminPass) {
-    if (username === envAdminUser && password === envAdminPass) {
-      return res.status(200).json({ success: true, message: 'Authenticated successfully via server configuration' });
-    }
-  }
-
-  // 2. Check platform_settings table for admin_credentials
-  try {
-    const { data: settingData } = await dbClient
-      .from('platform_settings')
-      .select('setting_value')
-      .eq('setting_key', 'admin_credentials')
-      .maybeSingle();
-
-    if (settingData?.setting_value) {
-      let parsed: any = {};
-      try {
-        parsed = typeof settingData.setting_value === 'string'
-          ? JSON.parse(settingData.setting_value)
-          : settingData.setting_value;
-      } catch (e) {
-        // ignore
-      }
-      if (parsed?.username && parsed?.password) {
-        if (username === parsed.username && password === parsed.password) {
-          return res.status(200).json({ success: true, message: 'Authenticated successfully' });
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('DB check platform_settings error:', err);
-  }
-
-  // 2. Check admin_users table
-  try {
-    const { data: adminUser } = await dbClient
-      .from('admin_users')
-      .select('*')
-      .or(`username.eq.${username},email.eq.${username}`)
-      .maybeSingle();
-
-    if (adminUser) {
-      if (adminUser.password === password || adminUser.password_hash === password) {
-        return res.status(200).json({ success: true, message: 'Authenticated successfully' });
-      }
-    }
-  } catch (err) {
-    // ignore
-  }
-
-  // 3. Check verify_admin_login RPC
-  try {
-    const { data: rpcVal } = await dbClient.rpc('verify_admin_login', {
-      p_username: username,
-      p_password: password,
+  // If no password configured on the server, reject with security warning
+  if (!configuredPassword) {
+    console.error('Server error: ADMIN_PASSWORD environment variable is not configured.');
+    return res.status(500).json({
+      success: false,
+      message: 'Server authentication configuration is missing. Please configure ADMIN_PASSWORD in server environment variables.'
     });
-    if (rpcVal === true) {
-      return res.status(200).json({ success: true, message: 'Authenticated successfully' });
-    }
-  } catch (err) {
-    // ignore
   }
 
-  return res.status(401).json({ success: false, message: 'Incorrect username or password.' });
+  const trimmedInputUser = String(username).trim();
+  const trimmedInputPass = String(password).trim();
+
+  // Strict server-side environment variables comparison
+  if (trimmedInputUser === configuredUsername && trimmedInputPass === configuredPassword) {
+    // Generate 7-day JWT token (7 days = 604800 seconds)
+    const tokenData = createAdminToken(trimmedInputUser, 7 * 24 * 60 * 60);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Authenticated successfully',
+      token: tokenData.token,
+      expiresIn: tokenData.expiresIn,
+      expiresAt: tokenData.expiresAt,
+      user: {
+        username: trimmedInputUser,
+        role: 'admin'
+      }
+    });
+  }
+
+  // Generic 401 response for incorrect credentials
+  return res.status(401).json({
+    success: false,
+    message: 'Incorrect username or password. Access denied.'
+  });
 }

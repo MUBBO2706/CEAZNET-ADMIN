@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAutoRefresh, useCountdown } from './AutoRefreshContext';
-import { Sparkles, Bell, X, CheckCircle, Plus, Edit2, Trash2, Database, Clock, Eye, EyeOff, MessageSquare, RotateCw, Loader, Check } from 'lucide-react';
+import { Sparkles, Bell, X, CheckCircle, CheckCircle2, Plus, Edit2, Trash2, Database, Clock, Eye, EyeOff, MessageSquare, RotateCw, Loader, Check, User, LogOut, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dbMain, fetchLiveActivityLogs } from '../services/supabaseService';
 import type { RecentActivityLog } from '../types';
@@ -8,6 +8,7 @@ import { ExpandedLogDetail } from '../pages/MainDashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlatformSettings } from './PlatformSettingsContext';
 import { playAudio, normalizeAudioUrl } from './audioUtils';
+import { useAuth } from './AuthContext';
 
 function formatRelativeTime(dateString: string) {
     const date = new Date(dateString);
@@ -264,16 +265,15 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                         
                         {/* Body Container */}
                         <div className="flex-1 overflow-y-auto relative flex flex-col min-h-0 sleek-scrollbar bg-slate-50/30 dark:bg-zinc-900/20">
-                            <div className="flex flex-col p-0">
-                                {displayLogs.length === 0 ? (
-                                    <div className="p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-zinc-500 my-auto py-12">
-                                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mb-2">
-                                            <Bell size={20} className="text-slate-300 dark:text-zinc-600" />
-                                        </div>
-                                        <span className="text-[13px] font-medium text-slate-600 dark:text-zinc-300">You're all caught up!</span>
-                                        <span className="text-[11px] font-medium opacity-70">No activity to show right now.</span>
+                            {displayLogs.length === 0 ? (
+                                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-zinc-500 min-h-[300px] my-auto">
+                                    <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-center mb-3 shadow-inner">
+                                        <CheckCircle2 size={26} className="text-indigo-600 dark:text-indigo-400" />
                                     </div>
-                                ) : (
+                                    <span className="text-sm font-bold text-slate-700 dark:text-zinc-200">You're all caught up!</span>
+                                    <span className="text-xs font-medium text-slate-400 dark:text-zinc-400 mt-1">No activity to show right now.</span>
+                                </div>
+                            ) : (
                                     <div className="flex flex-col divide-y divide-slate-100/70 dark:divide-zinc-800/60">
                                         {displayLogs.map((log, idx) => {
                                             const isExpanded = expandedLog === (log.id || idx);
@@ -342,7 +342,6 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
                                         })}
                                     </div>
                                 )}
-                            </div>
                         </div>
                         
                         {/* Footer */}
@@ -617,7 +616,6 @@ const Header: React.FC<{
             >
                 {/* Custom Animated Menu Icon */}
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    {/* Top Line: Rotates 45deg and moves down to center */}
                     <line 
                         x1="4" y1="6" x2="20" y2="6" 
                         style={{ 
@@ -626,7 +624,6 @@ const Header: React.FC<{
                             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                     />
-                    {/* Middle Line: Fades out */}
                     <line 
                         x1="8" y1="12" x2="20" y2="12" 
                         style={{ 
@@ -634,7 +631,6 @@ const Header: React.FC<{
                             transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                     />
-                    {/* Bottom Line: Rotates -45deg and moves up to center */}
                     <line 
                         x1="4" y1="18" x2="20" y2="18" 
                         style={{ 
