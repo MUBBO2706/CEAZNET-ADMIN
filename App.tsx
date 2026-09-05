@@ -391,22 +391,6 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
             </button>
 
             <div className="w-full max-w-sm flex flex-col items-center text-center">
-                <div className="mb-8 flex flex-col items-center">
-                    <img 
-                        src="/logo.png" 
-                        alt="Ceaznet Logo" 
-                        className="w-28 h-28 sm:w-32 sm:h-32 object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-105" 
-                        onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            if (target.nextElementSibling) {
-                                (target.nextElementSibling as HTMLElement).style.display = 'block';
-                            }
-                        }} 
-                    />
-                    <Zap className="h-24 w-24 hidden text-indigo-500" />
-                </div>
-                
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1 tracking-tight">Ceaznet Admin</h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Secure Server-Side Authentication</p>
                 
