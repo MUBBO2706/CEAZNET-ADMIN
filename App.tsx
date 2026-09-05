@@ -330,7 +330,6 @@ import { GlobalAlertProvider } from './components/ui';
 
 const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme: () => void }> = ({ children, theme, toggleTheme }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        if (import.meta.env.DEV) return true; // Skip password in development
         return sessionStorage.getItem('ceaznet-admin-auth') === 'true';
     });
     const [usernameInput, setUsernameInput] = useState('');
@@ -351,37 +350,26 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
         setIsLoading(true);
         setError('');
 
-        const expectedEnvUser = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
-        const expectedEnvPass = import.meta.env.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_ACTION_PASSWORD || '';
-
-        // Check client-side env variables first if configured
-        if (expectedEnvPass && usernameInput === expectedEnvUser && passwordInput === expectedEnvPass) {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('ceaznet-admin-auth', 'true');
-            setIsLoading(false);
-            return;
-        }
-
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                body: JSON.stringify({ username: usernameInput.trim(), password: passwordInput.trim() })
             });
             const text = await res.text();
             let data: any = {};
             try {
                 data = text ? JSON.parse(text) : {};
             } catch (parseErr) {
-                // Ignore parsing errors from static hosting fallback
+                // Ignore parsing errors
             }
 
             if (res.ok && data.success) {
                 setIsAuthenticated(true);
                 sessionStorage.setItem('ceaznet-admin-auth', 'true');
             } else {
-                // Fallback for static deployments (like Vercel) where API serverless function might not be active
-                if ((usernameInput === 'admin' && passwordInput === 'admin123') || (usernameInput === 'admin' && passwordInput === 'admin')) {
+                const isDirectValid = await verifyAdminBackend(usernameInput.trim(), passwordInput.trim());
+                if (isDirectValid) {
                     setIsAuthenticated(true);
                     sessionStorage.setItem('ceaznet-admin-auth', 'true');
                     return;
@@ -389,10 +377,15 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
                 setError(data.message || "Incorrect username or password.");
             }
         } catch (err: any) {
-            if ((usernameInput === 'admin' && passwordInput === 'admin123') || (usernameInput === 'admin' && passwordInput === 'admin')) {
-                setIsAuthenticated(true);
-                sessionStorage.setItem('ceaznet-admin-auth', 'true');
-                return;
+            try {
+                const isDirectValid = await verifyAdminBackend(usernameInput.trim(), passwordInput.trim());
+                if (isDirectValid) {
+                    setIsAuthenticated(true);
+                    sessionStorage.setItem('ceaznet-admin-auth', 'true');
+                    return;
+                }
+            } catch (fallbackErr) {
+                // ignore fallback error
             }
             setError(`Authentication error: ${err.message || 'Server connection failed'}`);
         } finally {
@@ -402,23 +395,27 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300 animate-in fade-in duration-200">
-            {/* Theme Toggle Button */}
+            {/* Theme Toggle Button - Icon only, no border/outline, no bg fill, no shadow, accent color change */}
             <button
                 type="button"
                 onClick={toggleTheme}
-                className="absolute top-6 right-6 p-3 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:bg-zinc-800/80 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                className="absolute top-6 right-6 p-2 rounded-lg bg-transparent border-0 shadow-none hover:bg-transparent focus:outline-none transition-colors active:scale-95 cursor-pointer"
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 id="login-theme-toggle"
             >
-                {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-500 animate-pulse" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+                {theme === 'dark' ? (
+                    <Sun className="w-6 h-6 text-amber-500 hover:text-amber-400 transition-colors" />
+                ) : (
+                    <Moon className="w-6 h-6 text-indigo-600 hover:text-indigo-500 transition-colors" />
+                )}
             </button>
 
             <div className="w-full max-w-sm flex flex-col items-center text-center">
-                <div className="mb-6 flex flex-col items-center">
+                <div className="mb-8 flex flex-col items-center">
                     <img 
                         src="/logo.png" 
                         alt="Ceaznet Logo" 
-                        className="w-20 h-20 object-contain drop-shadow-xl" 
+                        className="w-28 h-28 sm:w-32 sm:h-32 object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-105" 
                         onError={(e) => {
                             const target = e.currentTarget;
                             target.style.display = 'none';
@@ -427,7 +424,7 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
                             }
                         }} 
                     />
-                    <Zap className="h-16 w-16 hidden text-indigo-500" />
+                    <Zap className="h-24 w-24 hidden text-indigo-500" />
                 </div>
                 
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1 tracking-tight">Ceaznet Admin</h1>

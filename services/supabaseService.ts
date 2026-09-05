@@ -1152,6 +1152,36 @@ export async function createPublicContent(key: string, content: any) {
 
 // === Admin Authentication via Backend / Supabase ===
 export async function verifyAdminBackend(username: string, password: string): Promise<boolean> {
+    if (!username || !password) return false;
+
+    // 1. Check platform_settings for admin_credentials
+    try {
+        const { data: settingData } = await dbMain
+            .from('platform_settings')
+            .select('setting_value')
+            .eq('setting_key', 'admin_credentials')
+            .maybeSingle();
+
+        if (settingData?.setting_value) {
+            let parsed: any = {};
+            try {
+                parsed = typeof settingData.setting_value === 'string'
+                    ? JSON.parse(settingData.setting_value)
+                    : settingData.setting_value;
+            } catch (e) {
+                // ignore
+            }
+            if (parsed?.username && parsed?.password) {
+                if (username === parsed.username && password === parsed.password) {
+                    return true;
+                }
+            }
+        }
+    } catch (e) {
+        // fallback
+    }
+
+    // 2. Check RPC verify_admin_login
     try {
         const { data, error } = await dbMain.rpc('verify_admin_login', {
             p_username: username,
@@ -1164,25 +1194,19 @@ export async function verifyAdminBackend(username: string, password: string): Pr
         // fallback
     }
 
+    // 3. Check admin_users table
     try {
         const { data, error } = await dbMain
             .from('admin_users')
             .select('*')
-            .eq('username', username)
-            .single();
+            .or(`username.eq.${username},email.eq.${username}`)
+            .maybeSingle();
 
         if (!error && data) {
             return data.password === password || data.password_hash === password;
         }
     } catch (e) {
         // fallback
-    }
-
-    const expectedUsername = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_USERNAME) || 'admin';
-    const expectedPassword = (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_ACTION_PASSWORD)) || '';
-
-    if (expectedPassword && username === expectedUsername && password === expectedPassword) {
-        return true;
     }
 
     return false;

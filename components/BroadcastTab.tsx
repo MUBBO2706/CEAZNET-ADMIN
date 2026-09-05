@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Sparkles, RotateCw, Loader, AlertCircle, CheckCircle2, Radio, Eye, EyeOff, Clock, RotateCcw, Cpu, Palette, LayoutDashboard, Code, Wand2, History, X, Check, Copy, MoreVertical, Trash2 } from 'lucide-react';
 import { generateBroadcastHtml, publishBroadcast, BroadcastIteration, fetchBroadcastHistory, fetchBroadcastIterations, deleteBroadcast, toggleBroadcastActive, upsertSystemBanner, fetchSystemBanner } from '../services/broadcastAiService';
-import { dbMain } from '../services/supabaseService';
 
 import { ConfirmationModal, CustomDropdown } from './ui';
 
@@ -20,9 +19,6 @@ const draftState = {
     bannerType: 'maintenance' as 'maintenance' | 'development' | 'testing' | 'alert',
     isActive: true,
     aiModel: localStorage.getItem('broadcast_ai_model') || 'gemini-3.7-flash',
-    targetType: 'all' as 'all' | 'specific',
-    targetUsers: [] as string[],
-    isDismissible: true,
 };
 
 const listeners = new Set<() => void>();
@@ -57,9 +53,6 @@ const useBroadcastState = () => {
         localStorage.setItem('broadcast_ai_model', v);
         notifyListeners(); 
     };
-    const setTargetType = (v: 'all' | 'specific') => { draftState.targetType = v; notifyListeners(); };
-    const setTargetUsers = (v: string[]) => { draftState.targetUsers = v; notifyListeners(); };
-    const setIsDismissible = (v: boolean) => { draftState.isDismissible = v; notifyListeners(); };
 
     return {
         ...draftState,
@@ -75,10 +68,7 @@ const useBroadcastState = () => {
         setBroadcastType,
         setBannerType,
         setIsActive,
-        setAiModel,
-        setTargetType,
-        setTargetUsers,
-        setIsDismissible
+        setAiModel
     };
 };
 
@@ -173,24 +163,8 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
         broadcastType, setBroadcastType,
         bannerType, setBannerType,
         isActive, setIsActive,
-        aiModel, setAiModel,
-        targetType, setTargetType,
-        targetUsers, setTargetUsers,
-        isDismissible, setIsDismissible
+        aiModel, setAiModel
     } = useBroadcastState();
-
-    const [allUsers, setAllUsers] = useState<any[]>([]);
-    const [userSearchQuery, setUserSearchQuery] = useState('');
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            const { data } = await dbMain.from('users').select('id, name, full_name, username, email').limit(150);
-            if (data) {
-                setAllUsers(data);
-            }
-        };
-        fetchUsers();
-    }, []);
 
     const [internalShowHistory, setInternalShowHistory] = useState(false);
     const showHistory = externalShowHistory !== undefined ? externalShowHistory : internalShowHistory;
@@ -298,16 +272,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                     expiresAtValid = new Date(Date.now() + expireDuration * 60 * 60 * 1000).toISOString();
                 }
 
-                const success = await publishBroadcast(
-                    generatedHtml, 
-                    'Broadcast Popup', 
-                    history, 
-                    expiresAtValid, 
-                    broadcastType,
-                    targetType,
-                    targetUsers,
-                    isDismissible
-                );
+                const success = await publishBroadcast(generatedHtml, 'Broadcast Popup', history, expiresAtValid, broadcastType);
                 
                 if (success) {
                     setStatusData({ type: 'success', msg: 'Broadcast pushed successfully!' });
@@ -318,9 +283,6 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                         setHistory([]);
                         setStatusData(null);
                         setExpireDuration(0);
-                        setTargetType('all');
-                        setTargetUsers([]);
-                        setIsDismissible(true);
                     }, 3000);
                 } else {
                     setStatusData({ type: 'error', msg: 'Broadcast failed.' });
@@ -665,38 +627,6 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                 />
                             </div>
                         )}
-
-                        {broadcastType === 'popup' && (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Radio size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                                <CustomDropdown
-                                    options={['all', 'specific']}
-                                    value={targetType}
-                                    onChange={(v) => {
-                                        setTargetType(v as 'all' | 'specific');
-                                        if (v === 'all') setTargetUsers([]);
-                                    }}
-                                    triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
-                                    className="w-auto [&_.custom-dropdown-panel]:w-32"
-                                    displayLabels={{
-                                        'all': 'All Users',
-                                        'specific': 'Specific Users'
-                                    }}
-                                />
-                            </div>
-                        )}
-
-                        {broadcastType === 'popup' && (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Check size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                                <button
-                                    onClick={() => setIsDismissible(!isDismissible)}
-                                    className="bg-transparent border-none p-0 text-[10px] font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 shadow-none flex items-center gap-1 transition-colors"
-                                >
-                                    {isDismissible ? 'Dismiss: Yes' : 'Dismiss: No'}
-                                </button>
-                            </div>
-                        )}
                     </div>
                     
                     {broadcastType === 'popup' && history.length > 0 && (
@@ -764,118 +694,6 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                         >
                                             <X size={13} />
                                         </button>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Specific Users Selector Panel */}
-                        <AnimatePresence>
-                            {targetType === 'specific' && (
-                                <motion.div 
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="overflow-hidden border-t border-slate-100 dark:border-zinc-800/60 pt-2 mt-2 px-1"
-                                >
-                                    <div className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-1.5 flex justify-between items-center">
-                                        <span>Target Specific Users ({targetUsers.length} selected)</span>
-                                        {targetUsers.length > 0 && (
-                                            <button 
-                                                onClick={() => setTargetUsers([])} 
-                                                className="text-[10px] text-red-500 hover:text-red-600 font-semibold"
-                                            >
-                                                Clear All
-                                            </button>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Search Input */}
-                                    <div className="relative mb-2">
-                                        <input
-                                            type="text"
-                                            value={userSearchQuery}
-                                            onChange={(e) => setUserSearchQuery(e.target.value)}
-                                            placeholder="Search users by name, username or email..."
-                                            className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2.5 py-1.5 rounded-lg text-[11.5px] focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-zinc-300"
-                                        />
-                                    </div>
-
-                                    {/* User Chips Selected */}
-                                    {targetUsers.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mb-2 max-h-[60px] overflow-y-auto sleek-scrollbar">
-                                            {targetUsers.map(userId => {
-                                                const uObj = allUsers.find(u => String(u.id) === userId);
-                                                const label = uObj ? (uObj.full_name || uObj.name || uObj.email) : userId;
-                                                return (
-                                                    <div key={userId} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-medium border border-indigo-100 dark:border-indigo-900">
-                                                        <span className="truncate max-w-[120px]">{label}</span>
-                                                        <button 
-                                                            onClick={() => setTargetUsers(targetUsers.filter(id => id !== userId))}
-                                                            className="hover:text-red-500 font-bold ml-0.5"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {/* Filtered User List to Checkmark */}
-                                    <div className="max-h-[140px] overflow-y-auto border border-slate-150 dark:border-zinc-800 rounded-lg divide-y divide-slate-100 dark:divide-zinc-800/50 bg-white dark:bg-zinc-950 sleek-scrollbar">
-                                        {allUsers.filter(u => {
-                                            const search = userSearchQuery.toLowerCase();
-                                            const name = (u.full_name || u.name || '').toLowerCase();
-                                            const email = (u.email || '').toLowerCase();
-                                            const username = (u.username || '').toLowerCase();
-                                            return name.includes(search) || email.includes(search) || username.includes(search);
-                                        }).length === 0 ? (
-                                            <div className="p-3 text-center text-slate-400 dark:text-zinc-500 text-[10.5px]">
-                                                No users found matching "{userSearchQuery}"
-                                            </div>
-                                        ) : (
-                                            allUsers.filter(u => {
-                                                const search = userSearchQuery.toLowerCase();
-                                                const name = (u.full_name || u.name || '').toLowerCase();
-                                                const email = (u.email || '').toLowerCase();
-                                                const username = (u.username || '').toLowerCase();
-                                                return name.includes(search) || email.includes(search) || username.includes(search);
-                                            }).map(u => {
-                                                const isSelected = targetUsers.includes(String(u.id));
-                                                return (
-                                                    <div 
-                                                        key={u.id}
-                                                        onClick={() => {
-                                                            const strId = String(u.id);
-                                                            if (isSelected) {
-                                                                setTargetUsers(targetUsers.filter(id => id !== strId));
-                                                            } else {
-                                                                setTargetUsers([...targetUsers, strId]);
-                                                            }
-                                                        }}
-                                                        className="flex items-center justify-between px-2.5 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors select-none text-[11px]"
-                                                    >
-                                                        <div className="flex flex-col min-w-0">
-                                                            <span className="font-semibold text-slate-700 dark:text-zinc-300 truncate">
-                                                                {u.full_name || u.name || 'No Name'}
-                                                            </span>
-                                                            <span className="text-[9.5px] text-slate-400 dark:text-zinc-500 truncate">
-                                                                {u.email || u.username || 'No Email/Username'}
-                                                            </span>
-                                                        </div>
-                                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
-                                                            isSelected 
-                                                                ? 'bg-indigo-600 border-indigo-600 text-white' 
-                                                                : 'border-slate-300 dark:border-zinc-700 bg-transparent'
-                                                        }`}>
-                                                            {isSelected && <Check size={10} strokeWidth={3} />}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        )}
                                     </div>
                                 </motion.div>
                             )}
