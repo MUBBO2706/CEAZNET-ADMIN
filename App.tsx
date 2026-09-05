@@ -337,13 +337,8 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
 
     if (isAuthLoading) {
         return (
-            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="flex items-center gap-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                        <Loader className="w-5 h-5 animate-spin text-indigo-500" />
-                        <span>Verifying admin session...</span>
-                    </div>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300">
+                <Loader className="w-6 h-6 animate-spin text-indigo-500" />
             </div>
         );
     }
