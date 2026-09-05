@@ -338,22 +338,9 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
     if (isAuthLoading) {
         return (
             <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300">
-                <div className="flex flex-col items-center gap-4">
-                    <img 
-                        src="/logo.png" 
-                        alt="Ceaznet Logo" 
-                        className="w-20 h-20 sm:w-24 sm:h-24 object-contain animate-pulse" 
-                        onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = 'none';
-                            if (target.nextElementSibling) {
-                                (target.nextElementSibling as HTMLElement).style.display = 'block';
-                            }
-                        }} 
-                    />
-                    <Zap className="h-16 w-16 hidden text-indigo-500 animate-pulse" />
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                        <Loader className="w-4 h-4 animate-spin text-indigo-500" />
+                <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        <Loader className="w-5 h-5 animate-spin text-indigo-500" />
                         <span>Verifying admin session...</span>
                     </div>
                 </div>

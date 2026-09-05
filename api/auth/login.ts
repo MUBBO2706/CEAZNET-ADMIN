@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAdminConfig, createAdminToken } from './jwt';
+import { getAdminConfig, createAdminToken } from './_jwt.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Allow OPTIONS for CORS preflight

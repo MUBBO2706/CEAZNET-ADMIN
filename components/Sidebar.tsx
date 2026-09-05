@@ -262,64 +262,54 @@ const Sidebar: React.FC<SidebarProps> = ({ closeSidebar, isCollapsed, className,
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -10 }}
                                         transition={{ duration: 0.15 }}
-                                        className="fixed left-16 bottom-14 z-50 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl p-1 overflow-hidden ring-1 ring-black/5 dark:ring-white/10"
+                                        className="fixed left-16 bottom-14 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 w-max whitespace-nowrap"
                                     >
-                                        <div className="px-3 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 rounded-t-lg">
-                                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                                {user?.username || 'Admin'}
-                                            </p>
-                                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                                                Session: {daysRemaining ?? 7}d left
-                                            </p>
+                                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                                            <span className="truncate">{user?.username || 'admin'}</span>
+                                            <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>
+                                            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Session: {daysRemaining ?? 7}d left</span>
                                         </div>
 
-                                        <div className="p-0.5">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsProfileOpen(false);
-                                                    closeSidebar();
-                                                    logout();
-                                                }}
-                                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors text-left cursor-pointer"
-                                            >
-                                                <LogOut size={14} className="shrink-0 text-red-500" />
-                                                <span>Logout</span>
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsProfileOpen(false);
+                                                closeSidebar();
+                                                logout();
+                                            }}
+                                            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-b-lg transition-colors text-left cursor-pointer"
+                                        >
+                                            <LogOut size={14} className="shrink-0 text-red-500" />
+                                            <span>Logout</span>
+                                        </button>
                                     </motion.div>
                                 ) : (
-                                    // Expanded/Mobile Mode: Inline accordion so it fits 100% within sidebar flow with zero horizontal scrolling
+                                    // Expanded/Mobile Mode: Floats as absolute popover above the link (tooltip-like) to avoid vertical/horizontal layout cracking
                                     <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                         transition={{ duration: 0.15 }}
-                                        className="overflow-hidden mt-1 mx-2 bg-slate-50 dark:bg-zinc-800/40 border border-slate-100 dark:border-zinc-800/60 rounded-xl p-1"
+                                        className="absolute bottom-full mb-1 left-3 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 w-max whitespace-nowrap"
                                     >
-                                        <div className="px-2.5 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/80">
-                                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                                {user?.username || 'Admin'}
-                                            </p>
-                                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                                                Session: {daysRemaining ?? 7}d left
-                                            </p>
+                                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                                            <span className="truncate">{user?.username || 'admin'}</span>
+                                            <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>
+                                            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Session: {daysRemaining ?? 7}d left</span>
                                         </div>
 
-                                        <div className="pt-1">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsProfileOpen(false);
-                                                    closeSidebar();
-                                                    logout();
-                                                }}
-                                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors text-left cursor-pointer"
-                                            >
-                                                <LogOut size={14} className="shrink-0 text-red-500" />
-                                                <span>Logout</span>
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsProfileOpen(false);
+                                                closeSidebar();
+                                                logout();
+                                            }}
+                                            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-b-lg transition-colors text-left cursor-pointer"
+                                        >
+                                            <LogOut size={14} className="shrink-0 text-red-500" />
+                                            <span>Logout</span>
+                                        </button>
                                     </motion.div>
                                 )
                             )}

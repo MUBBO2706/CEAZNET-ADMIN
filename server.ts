@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { getAdminConfig, createAdminToken, verifyAdminToken } from "./api/auth/jwt";
+import { getAdminConfig, createAdminToken, verifyAdminToken } from "./api/auth/_jwt.js";
 
 async function startServer() {
   const app = express();
