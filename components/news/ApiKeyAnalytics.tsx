@@ -155,7 +155,7 @@ export const ApiKeyAnalytics: React.FC = () => {
                         <InfoPopover info="Breakdown of API errors and failures by kind." />
                     </div>
                     <div className="relative p-1 flex-grow h-[200px] flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={errorData}
@@ -240,7 +240,7 @@ export const ApiKeyAnalytics: React.FC = () => {
                          <InfoPopover info="The operational categories that most often experienced failovers." />
                     </div>
                     <div className="p-1 flex-grow min-h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <BarChart data={categoryData} layout="vertical" margin={{ top: 5, right: 10, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#cbd5e1" opacity={0.15} />
                                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#94a3b8', fontWeight: 500 }} allowDecimals={false} />
@@ -263,7 +263,7 @@ export const ApiKeyAnalytics: React.FC = () => {
                         <InfoPopover info="Timeline graph highlighting key rotations and failures over time." />
                     </div>
                     <div className="p-1 flex-grow min-h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={timelineData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRotations" x1="0" y1="0" x2="0" y2="1">

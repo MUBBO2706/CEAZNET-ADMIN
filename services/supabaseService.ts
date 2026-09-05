@@ -45,7 +45,7 @@ export async function fetchMainDashboardData(): Promise<MainDashboardData> {
         safeQuery(() => dbMain.from('profiles').select('*', { count: 'exact', head: true })),
         safeQuery(() => dbMain.from('public_news_articles').select('*', { count: 'exact', head: true })),
         safeQuery(() => dbMain.rpc('get_function_stats')),
-        safeQuery(() => dbMain.from('public_content').select('*', { count: 'exact', head: true })),
+        Promise.resolve({ data: null, error: null, count: 0 }), // safeQuery(() => dbMain.from('public_content').select('*', { count: 'exact', head: true })),
         safeQuery(() => dbMain.from('activity_logs').select('*', { count: 'exact', head: true })),
         safeQuery(() => dbMain.from('public_news_articles').select('category')),
         safeQuery(() => dbMain.from('finance_transactions').select('*', { count: 'exact', head: true })),
@@ -185,9 +185,9 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
             const userMap = new Map<string, string>();
             try {
                 const [adminRes, profileRes, usersRes] = await Promise.all([
-                    dbMain.from('admin_users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null })),
-                    dbMain.from('profiles').select('id, full_name, username, email').then(r => r, () => ({ data: null })),
-                    dbMain.from('users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null }))
+                    Promise.resolve({ data: null }), // dbMain.from('admin_users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null })),
+                    dbMain.from('profiles').select('id, full_name').then(r => r, () => ({ data: null })),
+                    Promise.resolve({ data: null }) // dbMain.from('users').select('id, name, full_name, username, email').then(r => r, () => ({ data: null }))
                 ]);
                 if (adminRes.data) {
                     adminRes.data.forEach((u: any) => {
@@ -290,11 +290,10 @@ export async function fetchLiveActivityLogs(startTime?: string, endTime?: string
 
     try {
         // 2. Fallback: Dynamically fetch all tables
-        const tablesRes = await dbMain.rpc('get_database_analytics');
+        const tablesRes = await safeQuery(() => dbMain.rpc('get_database_analytics'));
         const tables = tablesRes.data ? tablesRes.data.map((t: any) => t.table_name) : [
             'update_news_logs', 'profiles', 
-            'public_news_articles', 'user_settings',
-            'public_article_cache', 'public_content'
+            'public_news_articles', 'user_settings'
         ];
 
         // Admin tables that are usually modified by the system or admin
