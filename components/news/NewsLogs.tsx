@@ -171,11 +171,12 @@ const NewsLogs: React.FC<{
             </div>
             <div className="flex flex-col">
                 {/* Header Row */}
-                <div 
-                    ref={headerRef}
-                    className={`bg-[var(--card-bg)] flex items-center py-2 sm:py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
-                >
-                    {isSelectionMode && (
+                <div className="relative">
+                    <div 
+                        ref={headerRef}
+                        className={`bg-[var(--card-bg)] flex items-center py-2 sm:py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
+                    >
+                        {isSelectionMode && (
                         <div className="shrink-0 flex justify-center mr-2 min-w-[20px]">
                             <input
                                 ref={selectAllCheckboxRef}
@@ -192,14 +193,24 @@ const NewsLogs: React.FC<{
                     <div className="w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Status</div>
                     <div className="w-16 sm:w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Duration</div>
                     <div className="w-24 sm:w-28 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Articles Updated</div>
-                    <div className="w-14 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Delete</div>
+                    <div className="hidden sm:block w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Type</div>
+                    <div className="hidden sm:block w-24 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Target</div>
+                    <div className="hidden sm:block w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Source</div>
+                    <div className="hidden sm:block w-24 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Environment</div>
+                    <div className="hidden sm:block w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Errors</div>
+                    <div className="hidden sm:block w-20 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center">Log ID</div>
+                    <div className="w-14 shrink-0 px-1 text-xs font-sans font-bold text-[var(--text-secondary)] whitespace-nowrap text-center sm:ml-auto">Delete</div>
+                    </div>
+                    <div className="absolute right-0 top-0 bottom-0 w-16 pr-3 pointer-events-none flex justify-end items-center bg-gradient-to-l from-[var(--card-bg)] from-40% to-transparent z-10">
+                        <span className="hidden sm:inline text-xs font-sans font-bold text-[var(--text-secondary)]">Action</span>
+                    </div>
                 </div>
                 
                 {/* Data Rows */}
                 <div className="flex flex-col">
                     {isLoading ? (
                         Array.from({ length: 5 }).map((_, idx) => (
-                            <div key={idx} className="flex items-center py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] animate-pulse">
+                            <div key={idx} className="flex items-center py-2.5 px-3 sm:px-4 pr-16 sm:pr-20 border-b border-[var(--border-color)] animate-pulse relative">
                                 {isSelectionMode && (
                                     <div className="shrink-0 flex justify-center mr-2 min-w-[20px]">
                                         <div className="h-3.5 w-3.5 bg-slate-200 dark:bg-zinc-800 rounded"></div>
@@ -220,8 +231,29 @@ const NewsLogs: React.FC<{
                                 <div className="w-24 sm:w-28 shrink-0 px-1 flex justify-center">
                                     <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-8"></div>
                                 </div>
-                                <div className="w-14 shrink-0 px-1 flex justify-center">
+                                <div className="hidden sm:flex w-20 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-10"></div>
+                                </div>
+                                <div className="hidden sm:flex w-24 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-14"></div>
+                                </div>
+                                <div className="hidden sm:flex w-20 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-12"></div>
+                                </div>
+                                <div className="hidden sm:flex w-24 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-16"></div>
+                                </div>
+                                <div className="hidden sm:flex w-20 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-6"></div>
+                                </div>
+                                <div className="hidden sm:flex w-20 shrink-0 px-1 justify-center">
+                                    <div className="h-3.5 bg-slate-200 dark:bg-zinc-800 rounded w-10"></div>
+                                </div>
+                                <div className="w-14 shrink-0 px-1 flex justify-center sm:ml-auto">
                                     <div className="h-5 bg-slate-200 dark:bg-zinc-800 rounded w-5"></div>
+                                </div>
+                                <div className="absolute right-0 w-16 pr-3 pointer-events-none flex justify-end items-center h-full bg-gradient-to-l from-[var(--card-bg)] from-40% to-transparent z-10">
+                                    <div className="w-3.5 h-3.5 bg-slate-200 dark:bg-zinc-800 rounded"></div>
                                 </div>
                             </div>
                         ))
@@ -300,8 +332,32 @@ const NewsLogs: React.FC<{
                                             <div className="w-24 sm:w-28 shrink-0 px-1 font-sans text-xs text-[var(--text-primary)] font-medium text-center truncate">
                                                 {log.summary?.find(s => s.includes('Total Articles Updated'))?.split(': ')[1] || '0'}
                                             </div>
+
+                                            <div className="hidden sm:block w-20 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] text-center truncate">
+                                                Batch Sync
+                                            </div>
+
+                                            <div className="hidden sm:block w-24 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] text-center truncate">
+                                                News DB
+                                            </div>
+
+                                            <div className="hidden sm:block w-20 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] text-center truncate">
+                                                {log.details?.includes('Manual') || log.summary?.some(s => s.includes('Manual')) ? 'Manual' : 'System'}
+                                            </div>
+
+                                            <div className="hidden sm:block w-24 shrink-0 px-1 font-sans text-xs text-[var(--text-secondary)] text-center truncate">
+                                                Production
+                                            </div>
+
+                                            <div className="hidden sm:block w-20 shrink-0 px-1 font-sans text-xs text-[var(--text-primary)] font-medium text-center truncate">
+                                                {log.summary?.find(s => s.includes('Errors'))?.split(': ')[1] || '0'}
+                                            </div>
+
+                                            <div className="hidden sm:block w-20 shrink-0 px-1 font-sans text-[10px] text-[var(--text-secondary)] text-center truncate">
+                                                #{log.id}
+                                            </div>
                                             
-                                            <div className="w-14 shrink-0 px-1 flex items-center justify-center">
+                                            <div className="w-14 shrink-0 px-1 flex items-center justify-center sm:ml-auto">
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();

@@ -324,6 +324,7 @@
 
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background-color: var(--body-bg); color: var(--text-secondary); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-size: 0.875rem; overflow-x: hidden; }
+    button { cursor: pointer; }
     .gradient-text { background: linear-gradient(45deg, var(--accent-color), #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-fill-color: transparent; }
     h2, h3 { color: var(--text-primary); }
     .font-cursive { font-family: 'Pacifico', cursive; }

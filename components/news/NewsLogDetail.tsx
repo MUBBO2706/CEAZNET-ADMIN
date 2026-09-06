@@ -6,6 +6,7 @@ import {
     List,
     Info,
     ArrowLeft,
+    ChevronLeft,
     CalendarDays,
     Clock,
     Hash,
@@ -91,26 +92,24 @@ const StructuredSummary: React.FC<{ summary: string[] }> = ({ summary }) => {
 
     return (
         <div className="space-y-6">
-            {/* Top Stats */}
-            <div className="grid grid-cols-2 gap-2">
-                <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 flex flex-col items-center justify-center text-center">
-                    <div className="text-[9px] text-blue-600 dark:text-blue-400 uppercase tracking-widest font-bold mb-0.5">Total Updated</div>
-                    <div className="text-2xl font-black text-blue-700 dark:text-blue-300 leading-none">{totalArticlesUpdated || '0'}</div>
-                </div>
-                <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-slate-100 dark:border-zinc-800 flex flex-col items-center justify-center text-center">
-                    <div className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-0.5">Duration</div>
-                    <div className="text-lg font-bold text-slate-700 dark:text-slate-300 leading-none">{generalInfo['Total Duration'] || 'N/A'}</div>
-                </div>
-            </div>
-
-            {/* General Info - Side by Side and Containerless */}
+            {/* General Stats - Containerless */}
             <div className="grid grid-cols-2 gap-4 text-xs">
-                {Object.entries(generalInfo).filter(([k]) => k !== 'Total Duration').map(([key, value]) => (
-                    <div key={key} className="flex flex-col gap-0.5">
-                        <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">{key}</span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{value}</span>
-                    </div>
-                ))}
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">Total Updated</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{totalArticlesUpdated || '0'}</span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">Duration</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{generalInfo['Total Duration'] || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">Start Time</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{generalInfo['Start Time'] || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">End Time</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{generalInfo['End Time'] || 'N/A'}</span>
+                </div>
             </div>
 
             {/* Category Breakdown - Containerless & Edge to Edge */}
@@ -354,59 +353,73 @@ const NewsLogDetail: React.FC<{ log: NewsLog; onBack: () => void; }> = ({ log, o
     return (
          <div className="w-auto mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] px-3 sm:px-4 lg:px-6 pb-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <button onClick={onBack} className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition-colors text-slate-600 dark:text-slate-400">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                                Log Details
-                            </h2>
-                            <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${isSuccess ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
-                                {isSuccess ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                                {log.status}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            <CalendarDays size={14} />
-                            <span>{dateString} at {fullTimestamp}</span>
-                            <span className="text-slate-300 dark:text-zinc-600">•</span>
-                            <span data-tooltip={fullTimestamp}>{timeAgo(logDate)}</span>
-                        </div>
+            <div className="flex flex-col md:flex-row justify-between gap-2 md:gap-4 items-start md:items-center">
+                
+                {/* Mobile Top Row Wrapper / Desktop Left Side Wrapper */}
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-x-2 gap-y-1 w-full md:w-auto">
+                    
+                    {/* Chevron & Heading */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={onBack} className="transition-colors text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 shrink-0 mr-0.5 flex items-center justify-center">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                            Log Details
+                        </h2>
+                    </div>
+
+                    {/* Badges - ONLY visible here on MOBILE */}
+                    <div className="flex md:hidden items-center gap-1.5 ml-auto shrink-0 min-w-0">
+                         <span className={`flex shrink-0 items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isSuccess ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
+                            {isSuccess ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
+                            {log.status}
+                        </span>
+                        <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate">- ID: {log.id}</span>
+                    </div>
+
+                    {/* Date & Time - Full width on mobile to force it to its own line, no left padding so it starts under back arrow */}
+                    <div className="flex items-center gap-1.5 text-xs md:text-sm text-slate-500 dark:text-slate-400 w-full md:w-auto md:pl-2 mt-1 md:mt-0">
+                        <CalendarDays size={14} className="shrink-0" />
+                        <span className="whitespace-nowrap">{dateString} at {fullTimestamp}</span>
+                        <span className="text-slate-300 dark:text-zinc-600 shrink-0">•</span>
+                        <span data-tooltip={fullTimestamp} className="shrink-0 whitespace-nowrap">{timeAgo(logDate)}</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-900 px-4 py-2 rounded-full border border-slate-200 dark:border-zinc-800 shadow-sm">
-                    <div className="flex items-center gap-1.5"><Timer size={14} className="text-slate-400" /> {(log.duration_ms / 1000).toFixed(2)}s</div>
-                    <div className="w-px h-4 bg-slate-200 dark:bg-zinc-700"></div>
-                    <div className="flex items-center gap-1.5"><Hash size={14} className="text-slate-400" /> {log.id}</div>
+
+                {/* Badges - ONLY visible here on DESKTOP */}
+                <div className="hidden md:flex items-center gap-2 shrink-0">
+                    <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${isSuccess ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50'}`}>
+                        {isSuccess ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                        {log.status}
+                    </span>
+                    <span className="text-slate-400 font-medium">-</span>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Log ID: {log.id}</span>
                 </div>
             </div>
 
             {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch pt-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch pt-2 lg:h-[calc(100vh-220px)] lg:min-h-[500px]">
                 {/* Left Column: Summary */}
-                <div className="lg:col-span-4 xl:col-span-3 flex flex-col">
-                    <div className="flex flex-col flex-grow h-full">
+                <div className="lg:col-span-4 xl:col-span-3 flex flex-col h-full min-h-0">
+                    <div className="flex flex-col flex-grow h-full min-h-0">
                         <div className="pb-2 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 shrink-0 mb-4">
                             <List size={14} className="text-slate-400" />
                             <h3 className="font-semibold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Execution Summary</h3>
                         </div>
-                        <div className="flex-grow">
+                        <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 min-h-0">
                             <StructuredSummary summary={log.summary} />
                         </div>
                     </div>
                 </div>
 
                 {/* Right Column: Terminal Details */}
-                <div className="lg:col-span-8 xl:col-span-9 flex flex-col mx-[-12px] sm:mx-[-16px] lg:mx-0">
-                    <div className="flex flex-col flex-grow h-full min-h-[500px]">
+                <div className="lg:col-span-8 xl:col-span-9 flex flex-col mx-[-12px] sm:mx-[-16px] lg:mx-0 h-full min-h-0">
+                    <div className="flex flex-col flex-grow h-full min-h-[400px] lg:min-h-0">
                         <div className="pb-2 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 shrink-0 mb-4 px-3 sm:px-4 lg:px-0">
                             <Terminal size={16} className="text-[#10b981]" />
                             <span className="font-semibold text-xs tracking-wider text-slate-700 dark:text-[#ededed] uppercase">Execution Details</span>
                         </div>
-                        <div className="overflow-y-auto flex-1 custom-scrollbar">
+                        <div className="overflow-y-auto flex-1 custom-scrollbar min-h-0">
                             <StructuredDetails details={log.details} />
                         </div>
                     </div>

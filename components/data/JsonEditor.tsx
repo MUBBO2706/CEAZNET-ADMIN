@@ -44,31 +44,40 @@ export type NodeProps = {
 };
 
 // Helper to determine input type
-const getFieldType = (value: any): 'string' | 'number' | 'boolean' => {
+const getFieldType = (value: any): 'string' | 'number' | 'boolean' | 'null' => {
+    if (value === null) return 'null';
     if (typeof value === 'boolean') return 'boolean';
     if (typeof value === 'number') return 'number';
     return 'string';
 };
 
 const getTypeIcon = (value: any) => {
+    if (value === null) return <span className="text-[10px] font-bold text-gray-400 dark:text-zinc-500">NULL</span>;
     if (typeof value === 'boolean') return <ToggleLeft size={12} className="text-purple-500" />;
     if (typeof value === 'number') return <Hash size={12} className="text-blue-500" />;
     if (Array.isArray(value)) return <Box size={12} className="text-orange-500" />;
-    if (typeof value === 'object' && value !== null) return <FolderOpen size={12} className="text-amber-500" />;
+    if (typeof value === 'object') return <FolderOpen size={12} className="text-amber-500" />;
     return <Type size={12} className="text-emerald-500" />;
 }
 
-// Primitive Field (String, Number, Boolean)
+// Primitive Field (String, Number, Boolean, Null)
 export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, value, path, onUpdate, onDelete }) => {
     const type = getFieldType(value);
-    const [localValue, setLocalValue] = useState(String(value));
+    const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
 
     // Sync local state when prop changes
-    useEffect(() => { setLocalValue(String(value)); }, [value]);
+    useEffect(() => { setLocalValue(value === null ? '' : String(value)); }, [value]);
 
     const handleBlur = () => {
         let finalVal: any = localValue;
-        if (type === 'number') finalVal = Number(localValue);
+        if (type === 'number') {
+            finalVal = localValue === '' ? null : Number(localValue);
+        } else if (localValue === '') {
+            finalVal = null;
+        } else if (localValue === 'null') {
+            finalVal = null;
+        }
+        
         if (finalVal !== value) onUpdate(path, finalVal);
     };
 
@@ -78,7 +87,7 @@ export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, val
 
     return (
         <div className="group flex items-center gap-2 py-1 hover:bg-[var(--sidebar-link-hover-bg)] rounded-md px-2 -ml-2 transition-colors">
-            <div className="w-4 shrink-0 flex justify-center">{getTypeIcon(value)}</div>
+            <div className="w-6 shrink-0 flex justify-center items-center">{getTypeIcon(value)}</div>
             <label className="text-xs font-mono font-semibold text-[var(--text-secondary)] min-w-[100px] max-w-[180px] truncate" title={String(nodeKey)}>
                 {nodeKey}
             </label>
@@ -97,7 +106,8 @@ export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, val
                         onChange={(e) => setLocalValue(e.target.value)}
                         onBlur={handleBlur}
                         onKeyDown={handleKeyDown}
-                        className="w-full bg-transparent border-b border-transparent focus:border-[var(--accent-color)] hover:border-[var(--border-color)] outline-none text-xs font-mono text-[var(--text-primary)] py-0.5 transition-colors"
+                        placeholder={type === 'null' ? 'null' : ''}
+                        className={`w-full bg-transparent border-b border-transparent focus:border-[var(--accent-color)] hover:border-[var(--border-color)] outline-none text-xs font-mono py-0.5 transition-colors ${value === null && localValue === '' ? 'text-gray-400 italic' : 'text-[var(--text-primary)]'}`}
                     />
                 )}
             </div>
@@ -118,6 +128,7 @@ const CustomTypeDropdown: React.FC<{ value: string, onChange: (val: any) => void
         { value: 'string', label: 'String' },
         { value: 'number', label: 'Number' },
         { value: 'boolean', label: 'Boolean' },
+        { value: 'null', label: 'Null' },
         { value: 'object', label: 'Object' },
         { value: 'array', label: 'Array' }
     ];
@@ -155,7 +166,7 @@ const CustomTypeDropdown: React.FC<{ value: string, onChange: (val: any) => void
 export const AddProperty: React.FC<{ onAdd: (key: string, value: any) => void, onCancel: () => void }> = ({ onAdd, onCancel }) => {
     const [key, setKey] = useState('');
     const [value, setValue] = useState('');
-    const [type, setType] = useState<'string' | 'number' | 'boolean' | 'object' | 'array'>('string');
+    const [type, setType] = useState<'string' | 'number' | 'boolean' | 'object' | 'array' | 'null'>('string');
 
     const handleConfirm = () => {
         if (!key.trim()) return;
@@ -164,6 +175,7 @@ export const AddProperty: React.FC<{ onAdd: (key: string, value: any) => void, o
         if (type === 'boolean') finalValue = value.toLowerCase() === 'true';
         if (type === 'object') finalValue = {};
         if (type === 'array') finalValue = [];
+        if (type === 'null') finalValue = null;
         onAdd(key, finalValue);
         setKey('');
         setValue('');
@@ -179,7 +191,7 @@ export const AddProperty: React.FC<{ onAdd: (key: string, value: any) => void, o
                 placeholder="Key" 
                 className="form-input !py-1 !px-1.5 !text-[11px] sm:!text-xs !h-7 w-14 sm:w-24 shrink-0" 
             />
-            {type !== 'object' && type !== 'array' && (
+            {type !== 'object' && type !== 'array' && type !== 'null' && (
                  <input 
                     type={type === 'number' ? 'number' : 'text'} 
                     value={value} 
@@ -202,7 +214,7 @@ export const AddProperty: React.FC<{ onAdd: (key: string, value: any) => void, o
 // Add New Item Input (For Arrays)
 export const AddArrayItem: React.FC<{ onAdd: (value: any) => void, onCancel: () => void }> = ({ onAdd, onCancel }) => {
     const [value, setValue] = useState('');
-    const [type, setType] = useState<'string' | 'number' | 'boolean' | 'object' | 'array'>('string');
+    const [type, setType] = useState<'string' | 'number' | 'boolean' | 'object' | 'array' | 'null'>('string');
 
     const handleConfirm = () => {
         let finalValue: any = value;
@@ -210,6 +222,7 @@ export const AddArrayItem: React.FC<{ onAdd: (value: any) => void, onCancel: () 
         if (type === 'boolean') finalValue = value.toLowerCase() === 'true';
         if (type === 'object') finalValue = {};
         if (type === 'array') finalValue = [];
+        if (type === 'null') finalValue = null;
         onAdd(finalValue);
         setValue('');
     };
@@ -217,7 +230,7 @@ export const AddArrayItem: React.FC<{ onAdd: (value: any) => void, onCancel: () 
     return (
         <div className="flex flex-nowrap items-center gap-1.5 p-1.5 bg-[var(--subtle-bg)] rounded-md border border-[var(--border-color)] my-1 ml-4 animate-fade-in-up shadow-sm">
             <span className="text-[11px] sm:text-xs font-semibold text-[var(--text-secondary)] whitespace-nowrap shrink-0 hidden sm:inline">New Item:</span>
-            {type !== 'object' && type !== 'array' && (
+            {type !== 'object' && type !== 'array' && type !== 'null' && (
                  <input 
                     type={type === 'number' ? 'number' : 'text'} 
                     value={value} 

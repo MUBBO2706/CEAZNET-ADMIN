@@ -1211,7 +1211,7 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
           {loading ? (
             <div className="w-full py-16 flex flex-col items-center justify-center gap-2.5 text-[var(--text-secondary)]">
               <Loader size={24} className="animate-spin text-indigo-500" />
-              <p className="font-medium text-xs">Loading sessions registry...</p>
+              <p className="font-medium text-xs">{userId ? 'Loading User sessions....' : 'Loading Sessions....'}</p>
             </div>
           ) : paginatedSessions.length === 0 ? (
             <div className="w-full py-16 flex flex-col items-center justify-center gap-2 text-[var(--text-secondary)]">

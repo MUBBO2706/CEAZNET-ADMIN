@@ -236,7 +236,7 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
 
             {isOpen && (
                 <div 
-                    className="fixed left-[6px] right-[6px] top-[56px] h-[calc(100vh-62px)] max-h-[calc(100vh-62px)] md:left-auto md:right-2 md:top-[58px] md:w-[420px] md:h-[calc(100vh-66px)] md:max-h-[calc(100vh-66px)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10"
+                    className="fixed left-[6px] right-[6px] top-[56px] h-[calc(100vh-62px)] max-h-[calc(100vh-62px)] md:left-auto md:right-2 md:top-[58px] md:w-[50vw] md:h-[calc(100vh-66px)] md:max-h-[calc(100vh-66px)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col origin-top-right ring-1 ring-black/5 dark:ring-white/10"
                 >
                         {/* Header Title & Actions */}
                         <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 flex items-center justify-between z-10 shrink-0">
