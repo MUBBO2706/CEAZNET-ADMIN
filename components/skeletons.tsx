@@ -1,9 +1,9 @@
 import React from 'react';
 
 export const LoadingSpinner: React.FC<{ message?: string }> = ({ message = "Loading data..." }) => (
-    <div className="flex flex-col items-center justify-center w-full flex-1 gap-4">
+    <div className="flex flex-col items-center justify-center w-full flex-1 gap-4 min-h-[50vh]">
         <span className="loader"></span>
-        <p className="text-sm font-medium text-slate-500 animate-pulse">{message}</p>
+        <p className="text-sm font-medium animate-pulse" style={{ color: 'var(--text-secondary)' }}>{message}</p>
     </div>
 );
 

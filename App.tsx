@@ -337,8 +337,8 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
 
     if (isAuthLoading) {
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-50 dark:bg-black p-6 transition-colors duration-300">
-                <Loader className="w-6 h-6 animate-spin text-indigo-500" />
+            <div className="fixed inset-0 z-50 flex items-center justify-center transition-colors duration-300" style={{ backgroundColor: 'var(--body-bg)' }}>
+                <LoadingSpinner message="Authenticating Session..." />
             </div>
         );
     }

@@ -535,55 +535,129 @@
         bottom: 100%;
     }
 
-    /* --- Custom Scrollbar (Global) --- */
+    /* ==========================================================================
+       Ultra-Sleek Responsive Scrollbars (2px Mobile, 3px Desktop)
+       ========================================================================== */
+
+    /* 1. Base WebKit Rules (Mobile Defaults) */
     ::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
+      width: 2px !important;
+      height: 0px !important; /* Horizontal hidden by default on mobile */
     }
     ::-webkit-scrollbar-track {
-        background: transparent;
+      background: transparent !important;
     }
+    /* Light Mode Thumb - Matches Page Heading Text Color */
     ::-webkit-scrollbar-thumb {
-        background-color: #a5b4fc; /* A muted accent color */
-        border-radius: 4px;
+      background-color: #1f2937 !important;
+      border-radius: 9999px !important;
+      border: none !important;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background-color: #818cf8; /* A bit darker on hover */
+      background-color: #111827 !important;
     }
 
-    /* Hide horizontal scrollbars globally on mobile and tablet devices, but keep them on desktop */
-    @media (max-width: 1023px) {
-        ::-webkit-scrollbar:horizontal,
-        *::-webkit-scrollbar:horizontal {
-            display: none !important;
-            height: 0 !important;
-            width: 0 !important;
+    /* Dark Mode WebKit Overrides */
+    html.dark ::-webkit-scrollbar-thumb,
+    html.dark *::-webkit-scrollbar-thumb {
+      background-color: #f4f4f5 !important;
+    }
+    html.dark ::-webkit-scrollbar-thumb:hover,
+    html.dark *::-webkit-scrollbar-thumb:hover {
+      background-color: #ffffff !important;
+    }
+
+    /* 2. Enforce WebKit Vertical Scrollbars (Mobile Defaults) */
+    *::-webkit-scrollbar:vertical,
+    ::-webkit-scrollbar:vertical {
+      display: block !important;
+      width: 2px !important;
+    }
+    *::-webkit-scrollbar-track:vertical,
+    ::-webkit-scrollbar-track:vertical {
+      background: transparent !important;
+    }
+    *::-webkit-scrollbar-thumb:vertical,
+    ::-webkit-scrollbar-thumb:vertical {
+      background-color: #1f2937 !important;
+      border-radius: 9999px !important;
+      border: none !important;
+    }
+    *::-webkit-scrollbar-thumb:vertical:hover,
+    ::-webkit-scrollbar-thumb:vertical:hover {
+      background-color: #111827 !important;
+    }
+
+    /* Firefox standards fallback */
+    @supports (-moz-appearance: none) {
+      * {
+        scrollbar-width: thin !important;
+        scrollbar-color: #1f2937 transparent !important;
+      }
+      html.dark * {
+        scrollbar-color: #f4f4f5 transparent !important;
+      }
+    }
+
+    /* 3. Mobile Specific Overrides (Hide Horizontal) */
+    @media (max-width: 767.98px) {
+      *::-webkit-scrollbar:horizontal,
+      ::-webkit-scrollbar:horizontal {
+        display: none !important;
+        width: 0px !important;
+        height: 0px !important;
+        background: transparent !important;
+      }
+      @supports (-moz-appearance: none) {
+        .overflow-x-auto,
+        .overflow-x-scroll {
+          scrollbar-width: none !important;
         }
+      }
+      .overflow-x-auto,
+      .overflow-x-scroll {
+        -ms-overflow-style: none !important;
+      }
     }
 
-    /* --- Utility: Hide Scrollbar --- */
-    .hide-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-    }
-    .hide-scrollbar::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Opera */
+    /* 4. Desktop Specific Overrides (3px Vertical & Horizontal) */
+    @media (min-width: 768px) {
+      /* Vertical Desktop */
+      ::-webkit-scrollbar,
+      *::-webkit-scrollbar:vertical,
+      ::-webkit-scrollbar:vertical {
+        width: 3px !important;
+      }
+      
+      /* Horizontal Desktop */
+      *::-webkit-scrollbar:horizontal,
+      ::-webkit-scrollbar:horizontal {
+        display: block !important;
+        height: 3px !important;
+      }
+      *::-webkit-scrollbar-track:horizontal,
+      ::-webkit-scrollbar-track:horizontal {
+        background: transparent !important;
+      }
+      *::-webkit-scrollbar-thumb:horizontal,
+      ::-webkit-scrollbar-thumb:horizontal {
+        background-color: #1f2937 !important;
+        border-radius: 9999px !important;
+        border: none !important;
+      }
+      *::-webkit-scrollbar-thumb:horizontal:hover,
+      ::-webkit-scrollbar-thumb:horizontal:hover {
+        background-color: #111827 !important;
+      }
     }
     
-    /* --- Sleek Scrollbar --- */
-    .sleek-scrollbar::-webkit-scrollbar {
-        width: 3px;
-        height: 3px;
+    /* --- Utility: Hide Scrollbar --- */
+    .hide-scrollbar {
+        -ms-overflow-style: none !important;  /* IE and Edge */
+        scrollbar-width: none !important;  /* Firefox */
     }
-    .sleek-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .sleek-scrollbar::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 3px;
-    }
-    .sleek-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: var(--text-secondary);
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none !important; /* Chrome, Safari, Opera */
     }
     
     /* --- Popover Item Styles (NEW) --- */
