@@ -64,9 +64,24 @@ const getTypeIcon = (value: any) => {
 export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, value, path, onUpdate, onDelete }) => {
     const type = getFieldType(value);
     const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // Sync local state when prop changes
     useEffect(() => { setLocalValue(value === null ? '' : String(value)); }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setLocalValue(val);
+        let finalVal: any = val;
+        if (type === 'number') {
+            finalVal = val === '' ? null : Number(val);
+        } else if (val === '') {
+            finalVal = null;
+        } else if (val === 'null') {
+            finalVal = null;
+        }
+        onUpdate(path, finalVal);
+    };
 
     const handleBlur = () => {
         let finalVal: any = localValue;
@@ -103,7 +118,7 @@ export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, val
                     <input
                         type={type === 'number' ? 'number' : 'text'}
                         value={localValue}
-                        onChange={(e) => setLocalValue(e.target.value)}
+                        onChange={handleChange}
                         onBlur={handleBlur}
                         onKeyDown={handleKeyDown}
                         placeholder={type === 'null' ? 'null' : ''}
@@ -111,12 +126,34 @@ export const PrimitiveNode: React.FC<Omit<NodeProps, 'onAdd'>> = ({ nodeKey, val
                     />
                 )}
             </div>
-            <button 
-                onClick={() => onDelete(path)} 
-                className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all shrink-0 ml-auto"
-            >
-                <Trash2 size={12} />
-            </button>
+            {showDeleteConfirm ? (
+                <div className="flex items-center gap-1.5 text-xs animate-fade-in-up shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-red-600 dark:text-red-400 font-semibold text-[10px]">Delete?</span>
+                    <button 
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }} 
+                        className="px-1.5 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[10px] font-medium transition-colors cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); onDelete(path); }} 
+                        className="px-1.5 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[10px] transition-colors cursor-pointer"
+                    >
+                        Confirm
+                    </button>
+                </div>
+            ) : (
+                <button 
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} 
+                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all shrink-0 ml-auto cursor-pointer"
+                    title="Delete field"
+                >
+                    <Trash2 size={12} />
+                </button>
+            )}
         </div>
     );
 };
@@ -145,11 +182,14 @@ const CustomTypeDropdown: React.FC<{ value: string, onChange: (val: any) => void
             {isOpen && (
                 <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                <div className="absolute bottom-full left-0 mb-1 w-full bg-white dark:bg-zinc-800 border border-[var(--border-color)] rounded-md shadow-none dark:shadow-xl z-20 py-1">
-                    {options.map(opt => (
+                <div className="absolute bottom-full left-0 mb-1 w-full bg-white dark:bg-zinc-800 border border-[var(--border-color)] rounded-md shadow-none dark:shadow-xl z-20 py-0 overflow-hidden flex flex-col">
+                    <div className="px-2 py-1 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[9px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none">
+                        Data Type
+                    </div>
+                    {options.map((opt, idx) => (
                         <div 
                             key={opt.value}
-                            className={`px-2 py-1.5 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-zinc-700 ${value === opt.value ? 'text-[var(--accent-color)] font-semibold' : 'text-[var(--text-primary)]'}`}
+                            className={`px-2 py-1.5 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-zinc-700 ${value === opt.value ? 'text-[var(--accent-color)] font-semibold bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'} ${idx === options.length - 1 ? 'rounded-b-md' : ''}`}
                             onClick={() => { onChange(opt.value); setIsOpen(false); }}
                         >
                             {opt.label}
@@ -254,6 +294,7 @@ export const AddArrayItem: React.FC<{ onAdd: (value: any) => void, onCancel: () 
 export const ContainerNode: React.FC<NodeProps> = ({ nodeKey, value, path, onUpdate, onDelete, onAdd, isRoot }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
     const isArray = Array.isArray(value);
     const Icon = isArray ? Brackets : Braces;
@@ -281,7 +322,7 @@ export const ContainerNode: React.FC<NodeProps> = ({ nodeKey, value, path, onUpd
                     <span className="text-xs font-bold text-[var(--text-primary)] font-mono" title={String(nodeKey)}>{nodeKey}</span>
                     <span className="text-[10px] text-[var(--text-secondary)] bg-[var(--subtle-bg)] px-1.5 rounded-full">{isArray ? `Array[${itemCount}]` : `Object{${itemCount}}`}</span>
                     <div className="flex-grow"></div>
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                    <div className="flex items-center gap-1 transition-opacity">
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsAdding(true); setIsCollapsed(false); }} 
                             className="p-1 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded" 
@@ -289,12 +330,34 @@ export const ContainerNode: React.FC<NodeProps> = ({ nodeKey, value, path, onUpd
                         >
                             <Plus size={12} />
                         </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(path); }} 
-                            className="p-1 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                        >
-                            <Trash2 size={12} />
-                        </button>
+                        {showDeleteConfirm ? (
+                            <div className="flex items-center gap-1.5 text-xs animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                                <span className="text-red-600 dark:text-red-400 font-semibold text-[10px]">Delete?</span>
+                                <button 
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }} 
+                                    className="px-1.5 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[10px] font-medium transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); onDelete(path); }} 
+                                    className="px-1.5 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[10px] transition-colors cursor-pointer"
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        ) : (
+                            <button 
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} 
+                                className="p-1 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded cursor-pointer"
+                                title="Delete field"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

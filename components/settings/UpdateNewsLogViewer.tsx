@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PanelCard, CopyButton } from '../ui';
-import { ArrowLeft, List, Info, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, List, Info, CheckCircle2, AlertCircle } from 'lucide-react';
 
 // --- Type Guard ---
 export const isUpdateNewsLog = (row: any): boolean => {
@@ -320,12 +320,18 @@ const JsonToggleCard: React.FC<{
 const UpdateNewsLogViewer: React.FC<{ row: any; onBack: () => void }> = ({ row, onBack }) => {
     return (
         <div className="animate-fade-in-up space-y-4">
-            <div className="flex items-center gap-3">
-                <button onClick={onBack} className="btn btn-secondary px-2 py-1 flex items-center gap-1 text-xs">
-                    <ArrowLeft size={14} />
-                    <span>Back</span>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <button 
+                    onClick={onBack} 
+                    className="p-1 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer bg-transparent border-0 outline-none shadow-none focus:outline-none"
+                    title="Back"
+                    aria-label="Back"
+                >
+                    <ChevronLeft size={18} />
                 </button>
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Log Details: <span className="font-mono text-xs">update_news_logs</span></h3>
+                <h3 className="text-sm sm:text-base font-semibold font-mono text-[var(--text-primary)] truncate min-w-0">
+                    update_news_logs
+                </h3>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">

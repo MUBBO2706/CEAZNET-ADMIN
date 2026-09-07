@@ -571,12 +571,14 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                             <div className="flex items-center gap-1 shrink-0">
                                 <Cpu size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <CustomDropdown
-                                    options={['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
+                                    options={['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']}
                                     value={aiModel}
                                     onChange={(v) => setAiModel(v as string)}
+                                    heading="AI Model"
                                     triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
                                     className="w-auto [&_.custom-dropdown-panel]:w-48"
                                     displayLabels={{
+                                        'gemini-3.8-flash': 'Gemini 3.8 Flash',
                                         'gemini-3.7-flash': 'Gemini 3.7 Flash',
                                         'gemini-3.6-flash': 'Gemini 3.6 Flash',
                                         'gemini-3.5-flash': 'Gemini 3.5 Flash',
@@ -598,6 +600,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                 options={['popup', 'system_banner']}
                                 value={broadcastType}
                                 onChange={(v) => setBroadcastType(v as 'popup' | 'system_banner')}
+                                heading="Broadcast Type"
                                 triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
                                 className="w-auto [&_.custom-dropdown-panel]:w-40"
                                 displayLabels={{
@@ -614,6 +617,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                     options={['0', '1', '6', '24', '72', '168']}
                                     value={expireDuration.toString()}
                                     onChange={(v) => setExpireDuration(Number(v))}
+                                    heading="Expire Duration"
                                     triggerClassName="!bg-transparent !border-none !p-0 !text-[10px] !font-medium !text-slate-600 dark:!text-zinc-400 hover:!text-slate-800 dark:hover:!text-zinc-200 !shadow-none !gap-1"
                                     className="w-auto [&_.custom-dropdown-panel]:w-32"
                                     displayLabels={{
@@ -813,6 +817,7 @@ export const BroadcastTab: React.FC<BroadcastTabProps> = ({
                                     options={['maintenance', 'development', 'testing', 'alert']}
                                     value={bannerType}
                                     onChange={(v) => setBannerType(v as any)}
+                                    heading="Banner Variant"
                                     triggerClassName="!text-[13px] !bg-slate-100 dark:!bg-zinc-800/50 !text-slate-800 dark:!text-zinc-200 !border-slate-200 dark:!border-zinc-700/50 !rounded-lg !px-3 !py-[7px] !outline-none focus:!ring-2 focus:!ring-indigo-500/20 w-full"
                                     displayLabels={{
                                         maintenance: 'Maintenance',

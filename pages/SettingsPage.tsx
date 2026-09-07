@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { PanelCard, ConfirmationModal, ActionPopover } from '../components/ui';
-import { resetTableSequence, resetTableData, fetchTableDetails, fetchAllTables, updateTableRow, dropTable } from '../services/dataManagementService';
+import { resetTableSequence, resetTableData, fetchTableDetails, fetchAllTables, updateTableRow, deleteTableRow, dropTable } from '../services/dataManagementService';
 import { fetchDatabaseAnalytics } from '../services/supabaseService';
 import type { TableDetails, DatabaseAnalyticsStats } from '../types';
 import TableDetailsView from '../components/settings/TableDetailsView';
@@ -229,16 +229,37 @@ const SettingsPage: React.FC = () => {
             console.error("Failed to update row:", error);
             throw error;
         }
-        // Update local state
+        // Update local state and cache
         setTableDetails(prev => {
             if (!prev) return prev;
-            return {
+            const updated = {
                 ...prev,
                 recentRows: prev.recentRows.map(row => {
                     const rowId = row[idColumn];
                     return rowId === id ? { ...row, ...updatedData } : row;
                 })
             };
+            tableDetailsCache.set(selectedTableInfo.name, updated);
+            return updated;
+        });
+    };
+
+    const handleDeleteRow = async (id: any, idColumn: string = 'id') => {
+        if (!selectedTable) return;
+        const { error } = await deleteTableRow(selectedTable, id, idColumn);
+        if (error) {
+            console.error('Error deleting row:', error);
+            throw error;
+        }
+        setTableDetails(prev => {
+            if (!prev) return prev;
+            const updated = {
+                ...prev,
+                rowCount: Math.max(0, (prev.rowCount ?? 1) - 1),
+                recentRows: prev.recentRows.filter(row => row[idColumn] !== id)
+            };
+            tableDetailsCache.set(selectedTable, updated);
+            return updated;
         });
     };
     
@@ -296,6 +317,10 @@ const SettingsPage: React.FC = () => {
 
             if (error) throw error;
             
+            if (modal.tableName) {
+                tableDetailsCache.delete(modal.tableName);
+            }
+            
             if (modal.type === 'sequence') {
                 alert(`Success! The ID sequence for '${modal.tableName}' has been reset. The next entry will start from 1.`);
             } else if (modal.type === 'data') {
@@ -347,9 +372,9 @@ const SettingsPage: React.FC = () => {
     const renderDbManagementView = () => (
         <>
             <div className="flex flex-col md:flex-row gap-4">
-                {/* --- Left Sidebar: Database Navigator --- */}
-                <aside className="w-full md:w-1/3 lg:w-1/4 xl:w-1/5 shrink-0">
-                    <div ref={tableListContainerRef} className="p-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] sticky top-20">
+                {/* --- Left Sidebar: Database Navigator (35% on desktop, edge-to-edge on mobile) --- */}
+                <aside className="w-full md:w-[35%] shrink-0">
+                    <div ref={tableListContainerRef} className="p-3 mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg bg-[var(--card-bg)] border-y md:border border-[var(--border-color)] sticky top-20">
                         {isLoadingTables ? (
                             <div className="flex flex-col items-center justify-center py-10">
                                 <span className="loader"></span>
@@ -445,10 +470,10 @@ END; $$;`}
                     </div>
                 </aside>
 
-                {/* --- Right Panel: Management Area --- */}
-                <main className="flex-1 min-w-0">
+                {/* --- Right Panel: Management Area (65% on desktop, edge-to-edge on mobile) --- */}
+                <main className="w-full md:w-[65%] min-w-0">
                     {isFetchingDetails ? (
-                        <PanelCard ref={detailsContainerRef}>
+                        <PanelCard ref={detailsContainerRef} className="mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg border-x-0 md:border-x">
                             <div className="flex flex-col items-center justify-center h-96">
                                 <span className="loader"></span>
                                 <p className="mt-4 text-slate-500 font-medium">Fetching details for <span className="font-mono">{selectedTable}</span>...</p>
@@ -461,9 +486,11 @@ END; $$;`}
                             description={selectedTableInfo?.description || ''} 
                             onLoadMore={handleLoadMore}
                             onUpdateRow={handleUpdateRow}
+                            onDeleteRow={handleDeleteRow}
+                            onOpenOptions={(tableName, anchorEl) => setActivePopover({ tableName, anchorEl })}
                         />
                     ) : selectedTableInfo ? (
-                        <PanelCard ref={detailsContainerRef}>
+                        <PanelCard ref={detailsContainerRef} className="mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg border-x-0 md:border-x">
                             <div className="text-center py-10">
                                 <AlertTriangle className="mx-auto h-12 w-12 text-red-400" />
                                 <h3 className="mt-2 text-lg font-medium text-slate-800">Failed to Load Details</h3>
@@ -473,7 +500,7 @@ END; $$;`}
                             </div>
                         </PanelCard>
                     ) : (
-                        <PanelCard ref={detailsContainerRef}>
+                        <PanelCard ref={detailsContainerRef} className="mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg border-x-0 md:border-x">
                             <p className="text-slate-500 text-center py-10">Select a table from the left to manage it.</p>
                         </PanelCard>
                     )}
@@ -502,33 +529,40 @@ END; $$;`}
                 onClose={() => setActivePopover(null)}
             >
                 {activePopover && (
-                    <div className="space-y-1">
+                    <div className="flex flex-col">
                         {(() => {
                             const table = allTables.find(t => t.name === activePopover.tableName);
                             const showResetSequence = table?.has_sequence !== undefined 
                                 ? table.has_sequence 
                                 : !table?.disableSequenceReset;
 
-                            return showResetSequence && (
-                                <button 
-                                    onClick={() => { handleResetSequenceClick(activePopover.tableName); setActivePopover(null); }}
-                                    className="popover-item warning"
-                                >
-                                    <RotateCw size={14} /> Reset ID Sequence
-                                </button>
-                            );
+                            return showResetSequence ? (
+                                <>
+                                    <button 
+                                        onClick={() => { handleResetSequenceClick(activePopover.tableName); setActivePopover(null); }}
+                                        className="popover-item warning"
+                                    >
+                                        <RotateCw size={13} className="shrink-0" /> 
+                                        <span>Reset ID Sequence</span>
+                                    </button>
+                                    <div className="h-px bg-[var(--border-color)] my-0.5" />
+                                </>
+                            ) : null;
                         })()}
                         <button 
                             onClick={() => { handleResetDataClick(activePopover.tableName); setActivePopover(null); }}
                             className="popover-item danger"
                         >
-                            <Trash2 size={14} /> Delete All Data...
+                            <Trash2 size={13} className="shrink-0" /> 
+                            <span>Delete All Data</span>
                         </button>
+                        <div className="h-px bg-[var(--border-color)] my-0.5" />
                         <button 
                             onClick={() => { handleDropTableClick(activePopover.tableName); setActivePopover(null); }}
                             className="popover-item danger"
                         >
-                            <AlertTriangle size={14} /> Drop Table...
+                            <AlertTriangle size={13} className="shrink-0" /> 
+                            <span>Drop Table</span>
                         </button>
                     </div>
                 )}

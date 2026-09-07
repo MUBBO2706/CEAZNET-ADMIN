@@ -20,3 +20,5 @@ Whenever the user requests changes related to the database, edge functions, or b
    - Before any code or database modification, you MUST refer to the **Ceznet Client App repository** (`https://github.com/mubasshir12/Ceaznet`) to ensure that your changes keep both the Frontend and Admin Panel fully compatible and compiled.
 7. **SCHEMA VERIFICATION**:
    - Always fetch the latest schema of the project named **"Ceaznet database schema"** via the Vercel API before performing any logic or database modifications to maintain a single source of truth.
+8. **UI LOADING STATE ICON RULE**:
+   - Always use the `Loader` icon from `lucide-react` (NOT `Loader2`) for any loading states in the UI.

@@ -3,26 +3,12 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { PanelCard, timeAgo, InfoPopover } from '../ui';
+import { PanelCard, timeAgo, InfoPopover, StatCard } from '../ui';
 import { fetchDatabaseAnalytics, fetchEdgeFunctionStats } from '../../services/supabaseService';
 import type { DatabaseAnalyticsStats, EdgeFunctionStats } from '../../types';
-import { Database, Activity, ArrowUp, ArrowDown, RotateCw, Loader, Server, Zap, CheckCircle, AlertTriangle, Clock, Layers } from 'lucide-react';
+import { Database, ArrowUp, ArrowDown, RotateCw, Loader, Server, Zap, CheckCircle, AlertTriangle, Clock, Layers } from 'lucide-react';
 import { LoadingSpinner } from '../skeletons';
 import { useAutoRefresh } from '../AutoRefreshContext';
-
-const StatItem = ({ label, value, icon, colorClass, bgClass }: { label: string, value: number, icon: React.ReactNode, colorClass: string, bgClass: string }) => (
-    <div className={`flex flex-col p-3 rounded-xl border border-[var(--border-color)] shadow-sm relative overflow-hidden group transition-all duration-300 hover:shadow-md ${bgClass}`}>
-        <div className="absolute -right-3 -top-3 opacity-10 group-hover:scale-110 transition-transform duration-500">
-            {React.cloneElement(icon as React.ReactElement<any>, { size: 52 })}
-        </div>
-        <div className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 ${colorClass}`}>
-            {icon} {label}
-        </div>
-        <span className="text-lg sm:text-xl font-black font-mono text-[var(--text-primary)] tracking-tight relative z-10">
-            {value.toLocaleString()}
-        </span>
-    </div>
-);
 
 const CompactTableActivity: React.FC<{ dbData: DatabaseAnalyticsStats[] }> = ({ dbData }) => {
     const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -170,7 +156,7 @@ const DatabaseAnalyticsCard: React.FC = () => {
     const { refreshTrigger } = useAutoRefresh();
 
     const loadData = useCallback(async (isAutoRefresh = false) => {
-        if (!isAutoRefresh && !cachedDbData) setIsLoading(true);
+        if (!isAutoRefresh) setIsLoading(true);
         try {
             const [dbStats, fnStats] = await Promise.all([
                 fetchDatabaseAnalytics(),
@@ -208,24 +194,56 @@ const DatabaseAnalyticsCard: React.FC = () => {
                     {/* Container-less Database Overview Section */}
                     <div>
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--border-color)]">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 rounded-lg flex items-center justify-center shrink-0">
-                                    <Activity size={15} />
-                                </div>
-                                <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">Database Overview</h3>
-                            </div>
+                            <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">Database Overview</h3>
                             <div className="flex items-center gap-1.5">
                                 <InfoPopover info="Aggregate metrics of database operation volume and health." />
-                                <button onClick={() => loadData()} className="p-1.5 rounded-md hover:bg-[var(--subtle-bg)] text-[var(--text-secondary)] transition-colors" title="Refresh Data">
-                                    {isLoading ? <Loader size={14} className="animate-spin text-indigo-500" /> : <RotateCw size={14} />}
+                                <button 
+                                    onClick={() => loadData(false)} 
+                                    disabled={isLoading}
+                                    className="p-1.5 rounded-md hover:bg-[var(--subtle-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 cursor-pointer" 
+                                    title="Refresh Data"
+                                >
+                                    {isLoading ? (
+                                        <Loader size={14} className="animate-spin text-indigo-500" />
+                                    ) : (
+                                        <RotateCw size={14} />
+                                    )}
                                 </button>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                            <StatItem label="Total Rows" value={totalRows} icon={<Database size={15} />} colorClass="text-indigo-500" bgClass="bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/30" />
-                            <StatItem label="Total Inserts" value={totalInserts} icon={<ArrowUp size={15} />} colorClass="text-emerald-500" bgClass="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30" />
-                            <StatItem label="Total Updates" value={totalUpdates} icon={<RotateCw size={15} />} colorClass="text-amber-500" bgClass="bg-amber-50/50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30" />
-                            <StatItem label="Total Deletes" value={totalDeletes} icon={<ArrowDown size={15} />} colorClass="text-red-500" bgClass="bg-red-50/50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30" />
+                            <StatCard 
+                                title="Total Rows" 
+                                value={totalRows.toLocaleString()} 
+                                description="Live database records" 
+                                icon={<Database size={16} />} 
+                                borderColor="border-indigo-500" 
+                                info="Total count of active live rows across all database tables." 
+                            />
+                            <StatCard 
+                                title="Total Inserts" 
+                                value={totalInserts.toLocaleString()} 
+                                description="Cumulative additions" 
+                                icon={<ArrowUp size={16} />} 
+                                borderColor="border-emerald-500" 
+                                info="Total number of insert operations executed." 
+                            />
+                            <StatCard 
+                                title="Total Updates" 
+                                value={totalUpdates.toLocaleString()} 
+                                description="Cumulative updates" 
+                                icon={<RotateCw size={16} />} 
+                                borderColor="border-amber-500" 
+                                info="Total number of update operations executed." 
+                            />
+                            <StatCard 
+                                title="Total Deletes" 
+                                value={totalDeletes.toLocaleString()} 
+                                description="Cumulative removals" 
+                                icon={<ArrowDown size={16} />} 
+                                borderColor="border-rose-500" 
+                                info="Total number of delete operations executed." 
+                            />
                         </div>
                     </div>
 
@@ -233,12 +251,7 @@ const DatabaseAnalyticsCard: React.FC = () => {
                     {fnData.length > 0 && (
                         <div>
                             <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--border-color)]">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg flex items-center justify-center shrink-0">
-                                        <Zap size={15} />
-                                    </div>
-                                    <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">Edge Functions</h3>
-                                </div>
+                                <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">Edge Functions</h3>
                                 <InfoPopover info="Performance and usage metrics of serverless edge functions." />
                             </div>
                             <div className="space-y-2.5">
@@ -254,14 +267,11 @@ const DatabaseAnalyticsCard: React.FC = () => {
                 <div className="lg:col-span-8">
                     <div className="mx-[-12px] sm:mx-[-16px] lg:mx-[-24px] bg-[var(--card-bg)] border-t-[3px] border-t-blue-500 border-b border-[var(--border-color)] border-x-0 rounded-none h-full flex flex-col overflow-hidden">
                         <div className="p-4 sm:p-5 lg:p-6 lg:px-8 border-b border-[var(--border-color)] bg-[var(--card-bg)] flex justify-between items-center">
-                            <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)] flex items-center gap-2">
-                                <Server size={16} className="text-blue-500" /> Table Activity
+                            <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
+                                Table Activity
                             </h3>
                             <div className="flex items-center gap-2.5">
                                 <InfoPopover info="Breakdown of read and write activities across different database tables." />
-                                <div className="text-[10px] font-bold text-[var(--text-secondary)] flex items-center gap-1.5 uppercase tracking-wider bg-[var(--subtle-bg)] px-2 py-0.5 rounded-full border border-[var(--border-color)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Live
-                                </div>
                             </div>
                         </div>
                         

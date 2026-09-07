@@ -172,8 +172,13 @@ const NewsAdminPage: React.FC<{ isScrolled?: boolean }> = ({ isScrolled = false 
         }
     };
     
-    const handleDeleteRequest = (id: number) => {
-        setDeleteConfirmation({ ids: [id], isBatch: false });
+    const handleDeleteRequest = async (id: number) => {
+        const { error } = await deleteNewsLog(id);
+        if (error) {
+            alert(`Failed to delete log: ${error.message}`);
+        } else {
+            setLogs(prevLogs => prevLogs.filter(log => log.id !== id));
+        }
     };
 
     const handleBatchDeleteRequest = () => {

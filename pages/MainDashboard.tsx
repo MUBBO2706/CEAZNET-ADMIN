@@ -819,7 +819,7 @@ export const ExpandedLogDetail: React.FC<{ log: RecentActivityLog; isEmbedded?: 
                             {isTimeDropdownOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setIsTimeDropdownOpen(false)} />
-                                    <div className="absolute left-0 mt-1 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg z-20 overflow-hidden">
+                                    <div className="absolute left-0 mt-1 w-max min-w-[150px] max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none z-20 overflow-hidden whitespace-nowrap">
                                         {[
                                             { label: 'Last 1 Hour', value: '1h' },
                                             { label: 'Last 12 Hours', value: '12h' },

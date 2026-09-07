@@ -374,6 +374,7 @@ function htmlToMarkdown(html: string): string {
 }
 
 const KNOWN_MODELS = [
+    'gemini-3.8-flash',
     'gemini-3.7-flash',
     'gemini-3.6-flash',
     'gemini-3.5-flash',
@@ -1942,8 +1943,10 @@ const SupportInboxPage: React.FC = () => {
                                                         options={KNOWN_MODELS}
                                                         value={selectedAiModel}
                                                         onChange={setSelectedAiModel}
+                                                        heading="AI Model"
                                                         triggerClassName="!h-[24px] !p-1 !px-1.5 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md !text-[10px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-shadow shadow-sm truncate"
                                                         displayLabels={{
+                                                            'gemini-3.8-flash': 'Gemini 3.8 Flash',
                                                             'gemini-3.7-flash': 'Gemini 3.7 Flash',
                                                             'gemini-3.6-flash': 'Gemini 3.6 Flash',
                                                             'gemini-3.5-flash': 'Gemini 3.5 Flash',
@@ -2125,6 +2128,7 @@ const SupportInboxPage: React.FC = () => {
                                                         options={['ai', 'direct']}
                                                         value={sendMode}
                                                         onChange={(val) => setSendMode(val as 'ai' | 'direct')}
+                                                        heading="Send Mode"
                                                         displayLabels={{'ai': 'With AI', 'direct': 'Direct'}}
                                                         triggerClassName="!h-[24px] !p-1 !px-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg !text-[10px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm min-w-[70px] flex items-center justify-between gap-1"
                                                     />
@@ -2134,8 +2138,10 @@ const SupportInboxPage: React.FC = () => {
                                                         options={KNOWN_MODELS}
                                                         value={selectedAiModel}
                                                         onChange={setSelectedAiModel}
+                                                        heading="AI Model"
                                                         triggerClassName="!h-[24px] !p-1 !px-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg !text-[9px] font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow shadow-sm w-full flex items-center justify-between gap-1 truncate"
                                                         displayLabels={{
+                                                            'gemini-3.8-flash': 'Gemini 3.8 Flash',
                                                             'gemini-3.7-flash': 'Gemini 3.7 Flash',
                                                             'gemini-3.6-flash': 'Gemini 3.6 Flash',
                                                             'gemini-3.5-flash': 'Gemini 3.5 Flash',

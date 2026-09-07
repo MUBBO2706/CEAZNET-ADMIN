@@ -114,3 +114,19 @@ export async function updateTableRow(tableName: string, id: string | number, upd
         return { error };
     }
 }
+
+/**
+ * Deletes a specific row from a given table.
+ * @param tableName The name of the table.
+ * @param id The ID of the row to delete.
+ * @param idColumn The name of the ID column (defaults to 'id').
+ */
+export async function deleteTableRow(tableName: string, id: string | number, idColumn: string = 'id'): Promise<{ error: any }> {
+    try {
+        const { error } = await dbMain.from(tableName).delete().eq(idColumn, id);
+        return { error };
+    } catch (error) {
+        console.error(`Error deleting row ${id} from table ${tableName}:`, error);
+        return { error };
+    }
+}

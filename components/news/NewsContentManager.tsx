@@ -71,23 +71,23 @@ const ArticleModal: React.FC<{
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center modal-bg backdrop-blur-sm" onClick={onClose}>
-            <div className="modal-content w-full max-w-lg m-4 !rounded-2xl shadow-2xl border border-[var(--border-color)] overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center p-5 border-b border-[var(--border-color)] bg-[var(--subtle-bg)]">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" onClick={onClose}>
+            <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[var(--accent-color)]/10 text-[var(--accent-color)] rounded-lg">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-200 dark:border-indigo-900/50">
                             {initialData ? <Edit size={18} /> : <Plus size={18} />}
                         </div>
-                        <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-zinc-100">
                             {initialData ? 'Edit Article' : 'Add New Article'}
                         </h3>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors">
+                    <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4 bg-[var(--card-bg)]">
+                <form onSubmit={handleSubmit} className="p-5 space-y-4 bg-white dark:bg-zinc-900">
                     <div>
                         <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">Title</label>
                         <input 
@@ -106,6 +106,7 @@ const ArticleModal: React.FC<{
                                 options={['Technology', 'Business', 'Science', 'Health', 'Sports', 'Entertainment']}
                                 value={category}
                                 onChange={setCategory}
+                                heading="Category"
                                 className="w-full"
                                 triggerClassName="py-2 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg text-sm"
                             />

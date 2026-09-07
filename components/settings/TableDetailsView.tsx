@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PanelCard, CopyButton } from '../ui';
 import type { TableDetails } from '../../types';
 import { 
-    Database, Hash, ListChecks, ChevronRight, ArrowLeft, ChevronDown
+    Database, Hash, ListChecks, ChevronRight, ChevronLeft, ChevronDown, MoreVertical, Trash2
 } from 'lucide-react';
 // New: Import the ArticleLogViewer and its type guard
 import ArticleLogViewer, { isArticleData } from './ArticleLogViewer';
@@ -87,19 +87,41 @@ const ExpandableJSON: React.FC<{ jsonString: string }> = ({ jsonString }) => {
     );
 };
 
-const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void; onUpdateRow?: (id: any, data: any, idColumn?: string) => Promise<void> }> = ({ row, tableName, onBack, onUpdateRow }) => {
+const RowDetailView: React.FC<{ 
+    row: any; 
+    tableName: string; 
+    onBack: () => void; 
+    onUpdateRow?: (id: any, data: any, idColumn?: string) => Promise<void>;
+    onDeleteRow?: (id: any, idColumn?: string) => Promise<void>;
+}> = ({ row, tableName, onBack, onUpdateRow, onDeleteRow }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [rawMode, setRawMode] = useState(false);
     const [jsonContent, setJsonContent] = useState<any>(row);
     const [rawString, setRawString] = useState(JSON.stringify(row, null, 2));
     const [isSaving, setIsSaving] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingRow, setIsDeletingRow] = useState(false);
 
     // Reset state when row changes
     React.useEffect(() => {
         setJsonContent(row);
         setRawString(JSON.stringify(row, null, 2));
         setIsEditing(false);
+        setShowDeleteConfirm(false);
     }, [row]);
+
+    // Validation: Check if edits differ from existing state
+    const hasChanges = React.useMemo(() => {
+        if (rawMode) {
+            try {
+                const parsed = JSON.parse(rawString);
+                return JSON.stringify(parsed) !== JSON.stringify(row);
+            } catch {
+                return true; // If JSON string is invalid, keep allowed so parser error can show on save
+            }
+        }
+        return JSON.stringify(jsonContent) !== JSON.stringify(row);
+    }, [rawMode, rawString, jsonContent, row]);
 
     const handleUpdate = (path: (string | number)[], value: any) => {
         setJsonContent((prev: any) => updateNestedValue(prev, path, value));
@@ -121,7 +143,7 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
     };
 
     const handleSave = async () => {
-        if (!onUpdateRow) return;
+        if (!onUpdateRow || !hasChanges) return;
         setIsSaving(true);
         try {
             const contentToSave = rawMode ? JSON.parse(rawString) : jsonContent;
@@ -153,6 +175,34 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
         }
     };
 
+    const handleConfirmDeleteRow = async () => {
+        if (!onDeleteRow) return;
+        setIsDeletingRow(true);
+        try {
+            let idColumn = 'id';
+            let id = row.id;
+            if (!id) {
+                if (row.uuid) { idColumn = 'uuid'; id = row.uuid; }
+                else if (row.key) { idColumn = 'key'; id = row.key; }
+            }
+
+            if (!id) {
+                alert("Cannot delete row: No 'id', 'uuid', or 'key' column found.");
+                setIsDeletingRow(false);
+                setShowDeleteConfirm(false);
+                return;
+            }
+
+            await onDeleteRow(id, idColumn);
+            onBack();
+        } catch (e) {
+            alert('Failed to delete row.');
+        } finally {
+            setIsDeletingRow(false);
+            setShowDeleteConfirm(false);
+        }
+    };
+
     const handleCancel = () => {
         setJsonContent(row);
         setRawString(JSON.stringify(row, null, 2));
@@ -164,11 +214,46 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
         if (tableName === 'update_news_logs' && isUpdateNewsLog(row)) {
             return (
                 <div className="relative">
-                    {onUpdateRow && (
-                        <div className="absolute top-0 right-0 z-10">
-                            <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors" title="Edit Row"><Edit2 size={18} /></button>
-                        </div>
-                    )}
+                    <div className="absolute top-0 right-0 z-10 flex items-center gap-1.5">
+                        {showDeleteConfirm ? (
+                            <div className="flex items-center gap-1.5 text-xs animate-fade-in-up">
+                                {!isDeletingRow && (
+                                    <>
+                                        <span className="text-red-600 dark:text-red-400 font-semibold text-[11px]">Delete row?</span>
+                                        <button 
+                                            onClick={() => setShowDeleteConfirm(false)} 
+                                            className="px-2 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                )}
+                                <button 
+                                    onClick={handleConfirmDeleteRow} 
+                                    disabled={isDeletingRow} 
+                                    className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[11px] transition-colors cursor-pointer inline-flex items-center gap-1"
+                                >
+                                    {isDeletingRow ? (
+                                        <>
+                                            <Loader size={12} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        'Confirm'
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                {onDeleteRow && (
+                                    <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer" title="Delete Row"><Trash2 size={18} /></button>
+                                )}
+                                {onUpdateRow && (
+                                    <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors cursor-pointer" title="Edit Row"><Edit2 size={18} /></button>
+                                )}
+                            </>
+                        )}
+                    </div>
                     <UpdateNewsLogViewer row={row} onBack={onBack} />
                 </div>
             );
@@ -178,11 +263,46 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
         if (tableName === 'public_news_articles' && isArticleData(row)) {
             return (
                 <div className="relative">
-                    {onUpdateRow && (
-                        <div className="absolute top-0 right-0 z-10">
-                            <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors" title="Edit Row"><Edit2 size={18} /></button>
-                        </div>
-                    )}
+                    <div className="absolute top-0 right-0 z-10 flex items-center gap-1.5">
+                        {showDeleteConfirm ? (
+                            <div className="flex items-center gap-1.5 text-xs animate-fade-in-up">
+                                {!isDeletingRow && (
+                                    <>
+                                        <span className="text-red-600 dark:text-red-400 font-semibold text-[11px]">Delete row?</span>
+                                        <button 
+                                            onClick={() => setShowDeleteConfirm(false)} 
+                                            className="px-2 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                )}
+                                <button 
+                                    onClick={handleConfirmDeleteRow} 
+                                    disabled={isDeletingRow} 
+                                    className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[11px] transition-colors cursor-pointer inline-flex items-center gap-1"
+                                >
+                                    {isDeletingRow ? (
+                                        <>
+                                            <Loader size={12} className="animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        'Confirm'
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                {onDeleteRow && (
+                                    <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer" title="Delete Row"><Trash2 size={18} /></button>
+                                )}
+                                {onUpdateRow && (
+                                    <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors cursor-pointer" title="Edit Row"><Edit2 size={18} /></button>
+                                )}
+                            </>
+                        )}
+                    </div>
                     <ArticleLogViewer row={row} onBack={onBack} />
                 </div>
             );
@@ -191,13 +311,81 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
         // New: If the table is 'activity_logs', render the specialized viewer.
         if (tableName === 'activity_logs') {
             return (
-                <div className="relative">
-                    {onUpdateRow && (
-                        <div className="absolute top-0 right-0 z-10">
-                            <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors" title="Edit Row"><Edit2 size={18} /></button>
+                <div>
+                    <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 w-full">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <button 
+                                onClick={onBack} 
+                                className="p-1 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer bg-transparent border-0 outline-none shadow-none focus:outline-none"
+                                title="Back"
+                                aria-label="Back"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <h3 id="row-detail-header" className="text-sm sm:text-base font-semibold font-mono text-[var(--text-primary)] truncate min-w-0">
+                                {tableName}
+                            </h3>
                         </div>
-                    )}
-                    <ActivityLogViewer row={row} onBack={onBack} />
+                        <div className="shrink-0 flex items-center gap-1.5">
+                            {!isEditing && (
+                                <div className="flex items-center gap-1.5">
+                                    {showDeleteConfirm ? (
+                                        <div className="flex items-center gap-1.5 text-xs animate-fade-in-up">
+                                            {!isDeletingRow && (
+                                                <>
+                                                    <span className="text-red-600 dark:text-red-400 font-semibold text-[11px] sm:text-xs">Delete row?</span>
+                                                    <button 
+                                                        onClick={() => setShowDeleteConfirm(false)} 
+                                                        className="px-2.5 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            )}
+                                            <button 
+                                                onClick={handleConfirmDeleteRow} 
+                                                disabled={isDeletingRow} 
+                                                className="px-2.5 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[11px] transition-colors cursor-pointer inline-flex items-center gap-1"
+                                            >
+                                                {isDeletingRow ? (
+                                                    <>
+                                                        <Loader size={12} className="animate-spin" />
+                                                        <span>Deleting...</span>
+                                                    </>
+                                                ) : (
+                                                    'Confirm'
+                                                )}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {onDeleteRow && (
+                                                <button 
+                                                    onClick={() => setShowDeleteConfirm(true)} 
+                                                    className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer" 
+                                                    title="Delete Row"
+                                                    aria-label="Delete Row"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
+                                            {onUpdateRow && (
+                                                <button 
+                                                    onClick={() => setIsEditing(true)} 
+                                                    className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors cursor-pointer" 
+                                                    title="Edit Row"
+                                                    aria-label="Edit Row"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <ActivityLogViewer row={row} onBack={onBack} hideHeader={true} />
                 </div>
             );
         }
@@ -223,31 +411,99 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
 
     return (
         <div>
-            <div className="mb-4 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
-                <div className="flex items-center gap-3 md:gap-4 min-w-0 w-full sm:w-auto">
-                    <button onClick={onBack} className="btn btn-secondary px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm shrink-0">
-                        <ArrowLeft size={16} />
-                        <span className="hidden sm:inline">Back</span>
+            <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 w-full">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <button 
+                        onClick={onBack} 
+                        className="p-1 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer bg-transparent border-0 outline-none shadow-none focus:outline-none"
+                        title="Back"
+                        aria-label="Back"
+                    >
+                        <ChevronLeft size={18} />
                     </button>
-                    <h3 id="row-detail-header" className="text-base md:text-lg font-bold text-[var(--text-primary)] truncate">
-                        Row Details <span className="hidden sm:inline">from</span> <span className="font-mono text-sm md:text-base">{tableName}</span>
+                    <h3 id="row-detail-header" className="text-sm sm:text-base font-semibold font-mono text-[var(--text-primary)] truncate min-w-0">
+                        {tableName}
                     </h3>
                 </div>
-                <div className="shrink-0 max-w-full overflow-x-auto self-end sm:self-auto ml-auto sm:ml-0">
-                    {!isEditing && onUpdateRow && (
-                        <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors" title="Edit Row">
-                            <Edit2 size={18} />
-                        </button>
+                <div className="shrink-0 flex items-center gap-1.5">
+                    {!isEditing && (
+                        <div className="flex items-center gap-1.5">
+                            {showDeleteConfirm ? (
+                                <div className="flex items-center gap-1.5 text-xs animate-fade-in-up">
+                                    {!isDeletingRow && (
+                                        <>
+                                            <span className="text-red-600 dark:text-red-400 font-semibold text-[11px] sm:text-xs">Delete row?</span>
+                                            <button 
+                                                onClick={() => setShowDeleteConfirm(false)} 
+                                                className="px-2.5 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </>
+                                    )}
+                                    <button 
+                                        onClick={handleConfirmDeleteRow} 
+                                        disabled={isDeletingRow} 
+                                        className={`px-2.5 py-0.5 rounded font-semibold text-[11px] transition-colors inline-flex items-center gap-1 ${
+                                            isDeletingRow 
+                                                ? 'bg-red-400 dark:bg-red-800/60 text-white/80 cursor-not-allowed' 
+                                                : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                                        }`}
+                                    >
+                                        {isDeletingRow ? (
+                                            <>
+                                                <Loader size={12} className="animate-spin" />
+                                                <span>Deleting...</span>
+                                            </>
+                                        ) : (
+                                            'Confirm'
+                                        )}
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    {onDeleteRow && (
+                                        <button 
+                                            onClick={() => setShowDeleteConfirm(true)} 
+                                            className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer" 
+                                            title="Delete Row"
+                                            aria-label="Delete Row"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    {onUpdateRow && (
+                                        <button 
+                                            onClick={() => setIsEditing(true)} 
+                                            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors cursor-pointer" 
+                                            title="Edit Row"
+                                            aria-label="Edit Row"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     )}
                     {isEditing && (
-                        <div className="flex items-center gap-2 justify-end">
-                            <button onClick={handleCancel} className="btn btn-secondary px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm" disabled={isSaving}>
-                                <RotateCcw size={16} />
+                        <div className="flex items-center gap-1.5">
+                            <button onClick={handleCancel} className="btn btn-secondary px-2 py-1 text-xs" disabled={isSaving}>
+                                <RotateCcw size={14} />
                                 <span className="hidden sm:inline">Cancel</span>
                             </button>
-                            <button onClick={handleSave} className="btn btn-primary px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm" disabled={isSaving}>
-                                {isSaving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
-                                <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save'}</span>
+                            <button 
+                                onClick={handleSave} 
+                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all duration-200 inline-flex items-center gap-1.5 ${
+                                    hasChanges && !isSaving
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-md shadow-emerald-500/20 cursor-pointer font-bold'
+                                        : 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border border-slate-300 dark:border-zinc-700/80 opacity-60 cursor-not-allowed'
+                                }`} 
+                                disabled={!hasChanges || isSaving}
+                                title={!hasChanges ? "No changes to save" : "Save changes"}
+                            >
+                                {isSaving ? <Loader size={14} className="animate-spin" /> : <Save size={14} />}
+                                <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                         </div>
                     )}
@@ -302,12 +558,12 @@ const RowDetailView: React.FC<{ row: any; tableName: string; onBack: () => void;
                     </div>
                 </div>
             ) : (
-                <div className="space-y-2 md:space-y-4">
+                <div className="space-y-1 sm:space-y-1.5">
                     {Object.entries(row).map(([key, value]) => {
                         return (
-                            <div key={key} className="flex flex-col md:grid md:grid-cols-3 gap-1 md:gap-2 py-2 md:py-3 border-b border-[var(--border-color)] last:border-b-0">
-                                <div className="font-mono text-xs md:text-sm font-semibold text-[var(--text-secondary)] break-all">{key}</div>
-                                <div className="md:col-span-2 text-xs md:text-sm text-[var(--text-primary)] break-words">
+                            <div key={key} className="flex flex-col md:grid md:grid-cols-3 gap-1 md:gap-2 py-1.5 sm:py-2 border-b border-[var(--border-color)] last:border-b-0">
+                                <div className="font-mono text-xs font-semibold text-[var(--text-secondary)] break-all">{key}</div>
+                                <div className="md:col-span-2 text-xs sm:text-sm text-[var(--text-primary)] break-words">
                                    {renderValue(value)}
                                 </div>
                             </div>
@@ -340,13 +596,32 @@ const formatTimeAgo = (dateString: string | null | undefined): string => {
     return `${years}y ago`;
 };
 
-const TableDetailsView = React.forwardRef<HTMLDivElement, { details: TableDetails; description: string; onLoadMore?: () => void; onUpdateRow?: (id: any, data: any, idColumn?: string) => Promise<void> }>(
-    ({ details, description, onLoadMore, onUpdateRow }, ref) => {
+const TableDetailsView = React.forwardRef<HTMLDivElement, { 
+    details: TableDetails; 
+    description: string; 
+    onLoadMore?: () => void; 
+    onUpdateRow?: (id: any, data: any, idColumn?: string) => Promise<void>;
+    onDeleteRow?: (id: any, idColumn?: string) => Promise<void>;
+    onOpenOptions?: (tableName: string, anchorEl: HTMLElement) => void;
+}>(
+    ({ details, description, onLoadMore, onUpdateRow, onDeleteRow, onOpenOptions }, ref) => {
         const [selectedRow, setSelectedRow] = useState<any | null>(null);
         const [lastClickedRowIndex, setLastClickedRowIndex] = useState<number | null>(null);
         const [focusedColumn, setFocusedColumn] = useState<string | null>(null);
         const headerRef = React.useRef<HTMLDivElement>(null);
         const scrollPosRef = React.useRef<number>(0);
+
+        // Derive live updated row from details.recentRows to ensure real-time UI updates
+        const activeRow = React.useMemo(() => {
+            if (!selectedRow) return null;
+            let idCol = 'id';
+            if (!selectedRow.id) {
+                if (selectedRow.uuid) idCol = 'uuid';
+                else if (selectedRow.key) idCol = 'key';
+            }
+            const currentInDetails = details.recentRows.find(r => r[idCol] === selectedRow[idCol]);
+            return currentInDetails || selectedRow;
+        }, [selectedRow, details.recentRows]);
 
         const handleRowClick = (row: any, index: number) => {
             const mainEl = document.querySelector('main');
@@ -405,66 +680,79 @@ const TableDetailsView = React.forwardRef<HTMLDivElement, { details: TableDetail
 
         return (
             <div ref={ref}>
-                {selectedRow && (
-                    <PanelCard>
+                {activeRow && (
+                    <PanelCard className="mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg border-x-0 md:border-x">
                         <RowDetailView 
-                            row={selectedRow} 
+                            row={activeRow} 
                             tableName={details.tableName} 
                             onBack={handleBack} 
                             onUpdateRow={onUpdateRow}
+                            onDeleteRow={onDeleteRow}
                         />
                     </PanelCard>
                 )}
 
                 {/* Default view with table stats and preview */}
-                <PanelCard className={`overflow-clip ${selectedRow ? 'hidden' : ''}`}>
-                    <div className="flex flex-col gap-4 mb-6 border-b border-[var(--border-color)] pb-4">
-                        <div>
-                            <h2 id="table-details-header" className="text-2xl font-bold text-[var(--text-primary)] font-mono flex items-center gap-2">
-                                <Database size={24} className="text-[var(--accent-color)]" />
-                                {details.tableName}
+                <PanelCard className={`overflow-clip mx-[-12px] sm:mx-[-16px] md:mx-0 rounded-none md:rounded-lg border-x-0 md:border-x ${activeRow ? 'hidden' : ''}`}>
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="min-w-0 flex-1">
+                            <h2 id="table-details-header" className="text-sm sm:text-base font-bold text-[var(--text-primary)] font-mono flex items-center gap-2 truncate">
+                                <Database size={16} className="text-[var(--accent-color)] shrink-0" />
+                                <span className="truncate">{details.tableName}</span>
                             </h2>
-                            <p className="text-sm text-[var(--text-secondary)] mt-1">{description}</p>
+                            {description && <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">{description}</p>}
                         </div>
-                        <div className="flex gap-4">
-                            <div className="text-center">
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Rows</p>
-                                <p className="text-xl font-bold text-[var(--stat-icon-1-fg)]">{(details.rowCount ?? 0).toLocaleString()}</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Columns</p>
-                                <p className="text-xl font-bold text-[var(--stat-icon-2-fg)]">{details.columns.length}</p>
-                            </div>
-                            <div className="text-center group relative cursor-help" title={details.lastUsed ? new Date(details.lastUsed).toLocaleString() : 'Never'}>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Last Used</p>
-                                <p className="font-bold text-indigo-500 text-sm mt-1">{formatTimeAgo(details.lastUsed)}</p>
-                            </div>
+                        {onOpenOptions && (
+                            <button
+                                onClick={(e) => onOpenOptions(details.tableName, e.currentTarget)}
+                                className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--subtle-bg)] rounded-md transition-colors cursor-pointer shrink-0 ml-2"
+                                title={`Options for ${details.tableName}`}
+                                aria-label={`Options for ${details.tableName}`}
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Containerless stats equally distributed across full row */}
+                    <div className="grid grid-cols-3 w-full py-2.5 mb-3 border-y border-[var(--border-color)]">
+                        <div className="flex flex-col items-center justify-center text-center px-2">
+                            <span className="text-[10px] sm:text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Rows</span>
+                            <span className="text-sm sm:text-base font-bold text-[var(--stat-icon-1-fg)] font-mono mt-0.5">{(details.rowCount ?? 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center text-center px-2 border-x border-[var(--border-color)]">
+                            <span className="text-[10px] sm:text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Cols</span>
+                            <span className="text-sm sm:text-base font-bold text-[var(--stat-icon-2-fg)] font-mono mt-0.5">{details.columns.length}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center text-center px-2 cursor-help" title={details.lastUsed ? new Date(details.lastUsed).toLocaleString() : 'Never'}>
+                            <span className="text-[10px] sm:text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Last Used</span>
+                            <span className="text-xs sm:text-sm font-semibold text-indigo-500 font-mono mt-0.5">{formatTimeAgo(details.lastUsed)}</span>
                         </div>
                     </div>
 
-                    <div className="mb-6">
-                        <h3 className="font-semibold text-lg text-[var(--text-primary)] mb-3">Columns</h3>
+                    <div className="mb-3">
+                        <h3 className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] mb-1.5">Columns ({details.columns.length})</h3>
                         {details.columns.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1.5">
                                 {details.columns.map(col => (
-                                    <span key={col} className="font-mono text-xs bg-[var(--subtle-bg)] text-[var(--text-primary)] px-2.5 py-1 rounded-full border border-[var(--border-color)]">
+                                    <span key={col} className="font-mono text-[11px] bg-[var(--subtle-bg)] text-[var(--text-primary)] px-2 py-0.5 rounded border border-[var(--border-color)]">
                                         {col}
                                     </span>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-[var(--text-secondary)]">No columns found. The table might be empty.</p>
+                            <p className="text-xs text-[var(--text-secondary)]">No columns found. The table might be empty.</p>
                         )}
                     </div>
 
                     <div className="-mx-3 -mb-3">
-                        <h3 className="font-semibold text-lg text-[var(--text-primary)] mb-3 px-3">Recent Rows Preview</h3>
+                        <h3 className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] mb-2 px-3">Recent Rows Preview</h3>
                              {details.recentRows.length > 0 ? (
                                 <div className="flex flex-col overflow-clip table-details-manager-wrapper">
                                     {/* Header Row */}
                                     <div 
                                         ref={headerRef}
-                                        className="flex items-center py-3 px-3 bg-[var(--card-bg)] border-y border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                        className="flex items-center py-2 px-3 bg-[var(--card-bg)] border-y border-[var(--border-color)] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                                     >
                                         {details.columns.map((col) => {
                                             const isFocused = focusedColumn === col;
@@ -512,7 +800,7 @@ const TableDetailsView = React.forwardRef<HTMLDivElement, { details: TableDetail
                                                 onClick={() => handleRowClick(row, rowIndex)}
                                             >
                                                 <div 
-                                                    className="table-details-row-scroll-container flex items-center py-3 px-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-12"
+                                                    className="table-details-row-scroll-container flex items-center py-2 px-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-12"
                                                     onScroll={handleRowScroll}
                                                 >
                                                     {details.columns.map(col => {
@@ -535,12 +823,12 @@ const TableDetailsView = React.forwardRef<HTMLDivElement, { details: TableDetail
                                     </div>
                                     
                                     {/* Footer / Load More */}
-                                    <div className="p-3 px-3 border-t border-[var(--border-color)] flex items-center justify-between">
+                                    <div className="p-2.5 px-3 border-t border-[var(--border-color)] flex items-center justify-between">
                                         <div>
                                             {onLoadMore && details.recentRows.length < details.rowCount && (
                                                 <button 
                                                     onClick={onLoadMore}
-                                                    className="btn btn-secondary px-3 py-1.5 text-xs"
+                                                    className="btn btn-secondary px-2.5 py-1 text-xs"
                                                 >
                                                     Load Older
                                                 </button>

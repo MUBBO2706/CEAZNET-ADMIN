@@ -279,13 +279,14 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
     }
     if (btnElement) {
       const rect = btnElement.getBoundingClientRect();
+      const approxWidth = type === 'user' ? 288 : type === 'actions' ? 240 : 180;
       let left = rect.left;
-      if (left > window.innerWidth - 220) {
-        left = Math.max(8, window.innerWidth - 220);
+      if (left + approxWidth > window.innerWidth - 12) {
+        left = Math.max(12, window.innerWidth - approxWidth - 12);
       }
       setDropdownPos({
         top: rect.bottom + 6,
-        left: Math.max(8, left)
+        left: Math.max(12, left)
       });
       setActiveDropdown(type);
     }
@@ -931,10 +932,15 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
             <div className="fixed inset-0 z-[9998]" onClick={() => setActiveDropdown(null)} />
             <div
               style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-              className="fixed z-[9999] w-72 max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-xl py-0 max-h-72 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
+              className="fixed z-[9999] w-72 max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none py-0 max-h-72 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
             >
+              {/* Dropdown Feature Heading */}
+              <div className="px-3 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none shrink-0">
+                Filter Users
+              </div>
+
               {/* Search Header - Edge to Edge without nested border box */}
-              <div className="relative border-b border-[var(--border-color)] bg-[var(--card-bg)] sticky top-0 z-10">
+              <div className="relative border-b border-[var(--border-color)] bg-[var(--card-bg)] sticky top-0 z-10 shrink-0">
                 <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
@@ -959,7 +965,7 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
               </div>
 
               {/* Users List */}
-              <div className="overflow-y-auto custom-scrollbar flex-1 py-1">
+              <div className="overflow-y-auto custom-scrollbar flex-1 py-0 flex flex-col">
                 {(!userSearchQuery || 'all users'.includes(userSearchQuery.toLowerCase())) && (
                   <button
                     onClick={() => {
@@ -1003,21 +1009,26 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
             <div className="fixed inset-0 z-[9998]" onClick={() => setActiveDropdown(null)} />
             <div
               style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-xl py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
+              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none py-0 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs flex flex-col"
             >
-              {(['all', 'active', 'logged_out', 'terminated', 'expired'] as StatusFilter[]).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => {
-                    setStatusFilter(opt);
-                    setActiveDropdown(null);
-                  }}
-                  className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${statusFilter === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
-                >
-                  <span className="truncate whitespace-nowrap">{statusLabels[opt]}</span>
-                  {statusFilter === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
-                </button>
-              ))}
+              <div className="px-3 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none shrink-0">
+                Session Status
+              </div>
+              <div className="flex flex-col">
+                {(['all', 'active', 'logged_out', 'terminated', 'expired'] as StatusFilter[]).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setStatusFilter(opt);
+                      setActiveDropdown(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${statusFilter === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
+                  >
+                    <span className="truncate whitespace-nowrap">{statusLabels[opt]}</span>
+                    {statusFilter === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </>,
           document.body
@@ -1028,21 +1039,26 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
             <div className="fixed inset-0 z-[9998]" onClick={() => setActiveDropdown(null)} />
             <div
               style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-xl py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
+              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none py-0 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs flex flex-col"
             >
-              {(['newest', 'oldest', 'browser_asc', 'os_asc'] as SortOption[]).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => {
-                    setSortOption(opt);
-                    setActiveDropdown(null);
-                  }}
-                  className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${sortOption === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
-                >
-                  <span className="truncate whitespace-nowrap">{sortLabels[opt]}</span>
-                  {sortOption === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
-                </button>
-              ))}
+              <div className="px-3 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none shrink-0">
+                Sort Order
+              </div>
+              <div className="flex flex-col">
+                {(['newest', 'oldest', 'browser_asc', 'os_asc'] as SortOption[]).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setSortOption(opt);
+                      setActiveDropdown(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${sortOption === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
+                  >
+                    <span className="truncate whitespace-nowrap">{sortLabels[opt]}</span>
+                    {sortOption === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </>,
           document.body
@@ -1053,21 +1069,26 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
             <div className="fixed inset-0 z-[9998]" onClick={() => setActiveDropdown(null)} />
             <div
               style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-xl py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
+              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none py-0 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs flex flex-col"
             >
-              {(['all', '24h', '7d', '30d', 'custom'] as TimeRangeFilter[]).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => {
-                    setTimeRangeFilter(opt);
-                    setActiveDropdown(null);
-                  }}
-                  className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${timeRangeFilter === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
-                >
-                  <span className="truncate whitespace-nowrap">{timeLabels[opt]}</span>
-                  {timeRangeFilter === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
-                </button>
-              ))}
+              <div className="px-3 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none shrink-0">
+                Time Range
+              </div>
+              <div className="flex flex-col">
+                {(['all', '24h', '7d', '30d', 'custom'] as TimeRangeFilter[]).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setTimeRangeFilter(opt);
+                      setActiveDropdown(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[var(--subtle-bg)] flex items-center justify-between gap-3 transition-colors whitespace-nowrap ${timeRangeFilter === opt ? 'text-indigo-600 font-semibold bg-indigo-50/50 dark:bg-indigo-950/30' : 'text-[var(--text-primary)]'}`}
+                  >
+                    <span className="truncate whitespace-nowrap">{timeLabels[opt]}</span>
+                    {timeRangeFilter === opt && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0 ml-2" />}
+                  </button>
+                ))}
+              </div>
             </div>
           </>,
           document.body
@@ -1079,11 +1100,11 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
             <div className="fixed inset-0 z-[9998]" onClick={() => setActiveDropdown(null)} />
             <div
               style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-xl py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs"
+              className="fixed z-[9999] w-max max-w-[calc(100vw-24px)] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none py-0 overflow-hidden animate-in fade-in slide-in-from-top-1 text-xs flex flex-col"
             >
               {selectedSessionIds.size > 0 && (
                 <>
-                  <div className="px-3.5 py-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider whitespace-nowrap">
+                  <div className="px-3.5 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider whitespace-nowrap shrink-0">
                     Selected Items ({selectedSessionIds.size})
                   </div>
                   <button
@@ -1096,11 +1117,11 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
                     <Trash2 size={14} className="shrink-0" />
                     <span>Delete Selected ({selectedSessionIds.size})</span>
                   </button>
-                  <div className="my-1 border-t border-[var(--border-color)]" />
+                  <div className="border-t border-[var(--border-color)]" />
                 </>
               )}
 
-              <div className="px-3.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              <div className="px-3.5 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider whitespace-nowrap shrink-0">
                 Global Actions
               </div>
               <button
@@ -1129,8 +1150,8 @@ export const UserSessionsViewer: React.FC<UserSessionsViewerProps> = ({
                 <span>Clear All Inactive Records</span>
               </button>
 
-              <div className="my-1 border-t border-[var(--border-color)]" />
-              <div className="px-3.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              <div className="border-t border-[var(--border-color)]" />
+              <div className="px-3.5 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider whitespace-nowrap shrink-0">
                 Export Options
               </div>
               <button

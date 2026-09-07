@@ -164,8 +164,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
 
             <div>
                 {/* Database Section */}
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-8 mb-4 flex items-center gap-2">
-                    <Database className="text-indigo-500" size={20} />
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-8 mb-4">
                     Recent Database Activity (24h)
                 </h3>
 
@@ -213,8 +212,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                 {/* DB Row 2: Chart */}
                 <PanelCard className="rounded-xl p-5 shadow-sm mb-6" borderColor="border-indigo-500">
                     <div className="flex justify-between items-center mb-6 w-full">
-                        <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-                            <Database size={18} className="text-indigo-500" />
+                        <h3 className="font-bold text-[var(--text-primary)]">
                             Top Tables by Activity
                         </h3>
                         <InfoPopover info="Bar chart showing the tables with the highest number of operations." />
@@ -301,8 +299,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                     {/* Left: Operations by Source */}
                     <PanelCard className="rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-emerald-500">
                         <div className="flex justify-between items-center mb-6 w-full">
-                            <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <Activity size={18} className="text-emerald-500" />
+                            <h3 className="font-bold text-[var(--text-primary)]">
                                 Operations by Source
                             </h3>
                             <InfoPopover info="Pie chart of database operations broken down by the source." />
@@ -341,8 +338,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
 
                     {/* Right: System API Cards */}
                     <div className="flex flex-col h-full">
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-                            <Server className="text-violet-500" size={20} />
+                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
                             System & API Activity
                         </h3>
                         <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1 content-start">
@@ -392,8 +388,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <PanelCard className="lg:col-span-1 rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-violet-500">
                         <div className="flex justify-between items-center mb-6 w-full">
-                            <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <Cpu size={18} className="text-violet-500" />
+                            <h3 className="font-bold text-[var(--text-primary)]">
                                 Operation Chart
                             </h3>
                             <InfoPopover info="Pie chart of recent activities by operation method." />
@@ -432,8 +427,7 @@ const AdvancedAnalyticsPage: React.FC = () => {
 
                     <PanelCard className="lg:col-span-2 rounded-xl p-5 shadow-sm h-full flex flex-col" borderColor="border-sky-500">
                         <div className="flex justify-between items-center mb-6 w-full">
-                            <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <Activity size={18} className="text-sky-500" />
+                            <h3 className="font-bold text-[var(--text-primary)]">
                                 System Activity Timeline
                             </h3>
                             <InfoPopover info="Line chart of the overall system events over the past 7 days." />

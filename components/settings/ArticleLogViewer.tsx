@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PanelCard, CopyButton } from '../ui';
 import { 
-    ArrowLeft, Link as LinkIcon, FileText, Image as ImageIcon, Calendar, Globe,
+    ChevronLeft, Link as LinkIcon, FileText, Image as ImageIcon, Calendar, Globe,
     Eye, Heart, Bookmark, Hash
 } from 'lucide-react';
 
@@ -120,12 +120,18 @@ const ArticleLogViewer: React.FC<{ row: any; onBack: () => void }> = ({ row, onB
 
     return (
         <div className="animate-fade-in-up space-y-6 pt-1">
-            <div className="flex items-center gap-3">
-                <button onClick={onBack} className="btn btn-secondary px-2 py-1 flex items-center gap-1 text-xs">
-                    <ArrowLeft size={14} />
-                    <span>Back</span>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <button 
+                    onClick={onBack} 
+                    className="p-1 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer bg-transparent border-0 outline-none shadow-none focus:outline-none"
+                    title="Back"
+                    aria-label="Back"
+                >
+                    <ChevronLeft size={18} />
                 </button>
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Article Details</h3>
+                <h3 className="text-sm sm:text-base font-semibold font-mono text-[var(--text-primary)] truncate min-w-0">
+                    formatted_news_articles
+                </h3>
             </div>
             
             <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pb-4 border-b border-[var(--border-color)]">

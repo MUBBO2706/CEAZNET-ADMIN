@@ -215,22 +215,29 @@ const ApiKeyRow: React.FC<{
                                 <MoreVertical size={13} />
                             </button>
                             {isMenuOpen && (
-                                <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-48 z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg overflow-hidden`}>
-                                <div className="flex flex-col py-1">
-                                    <button onClick={() => handleMenuAction(() => { setIsExpanded(true); setIsEditing(true); })} className={`${optionBaseClass} ${optionHoverClass}`}>
-                                        <Edit2 size={14} /> Edit Key
-                                    </button>
-                                    {isExhausted && onResetStatus && (
-                                        <button onClick={() => handleMenuAction(onResetStatus)} className={`${optionBaseClass} ${optionHoverClass}`}>
-                                            <RotateCcw size={14} /> Reset Status
+                                <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-max min-w-max max-w-[calc(100vw-24px)] z-50 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none p-0.5 whitespace-nowrap overflow-hidden`}>
+                                    <div className="flex flex-col">
+                                        <button onClick={() => handleMenuAction(() => { setIsExpanded(true); setIsEditing(true); })} className="popover-item text-slate-700 dark:text-slate-200">
+                                            <Edit2 size={13} className="shrink-0" /> 
+                                            <span>Edit Key</span>
                                         </button>
-                                    )}
-                                    <button onClick={() => handleMenuAction(onDelete)} className={`${optionBaseClass} text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/50`}>
-                                        <Trash2 size={14} /> Delete...
-                                    </button>
+                                        {isExhausted && onResetStatus && (
+                                            <>
+                                                <div className="h-px bg-[var(--border-color)] my-0.5" />
+                                                <button onClick={() => handleMenuAction(onResetStatus)} className="popover-item warning">
+                                                    <RotateCcw size={13} className="shrink-0" /> 
+                                                    <span>Reset Status</span>
+                                                </button>
+                                            </>
+                                        )}
+                                        <div className="h-px bg-[var(--border-color)] my-0.5" />
+                                        <button onClick={() => handleMenuAction(onDelete)} className="popover-item danger">
+                                            <Trash2 size={13} className="shrink-0" /> 
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
                         </div>
                     </div>
                 </div>
@@ -282,6 +289,7 @@ const ApiKeyRow: React.FC<{
                                             onChange={(val) => setRawString(val || '')}
                                             language="json"
                                             height="auto"
+                                            wordWrap={true}
                                         />
                                     </div>
                                 ) : (
@@ -380,7 +388,8 @@ const ApiKeyManager: React.FC<{
     const [keyToDelete, setKeyToDelete] = useState<NewsApiKey | null>(null);
     const [isResetting, setIsResetting] = useState(false);
     const [isResettingAll, setIsResettingAll] = useState(false);
-    const [isResetAllModalOpen, setIsResetAllModalOpen] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [deletingKeyIndex, setDeletingKeyIndex] = useState<number | null>(null);
     
     // Bulk Add / Raw Mode
     const [isBulkMode, setIsBulkMode] = useState(false);
@@ -469,7 +478,7 @@ const ApiKeyManager: React.FC<{
             const { error } = await resetAllNewsApiKeysData(provider);
             if (error) throw error;
             onRefresh();
-            setIsResetAllModalOpen(false);
+            setShowResetConfirm(false);
         } catch (error) {
             console.error("Failed to reset all keys:", error);
             alert("Failed to reset all keys.");
@@ -483,6 +492,7 @@ const ApiKeyManager: React.FC<{
             setBulkInput(JSON.stringify(keys.map(k => k.api_key), null, 2));
             setIsStructuredBulkMode(true);
         }
+        setDeletingKeyIndex(null);
         setIsBulkMode(!isBulkMode);
     };
 
@@ -513,6 +523,21 @@ const ApiKeyManager: React.FC<{
         arr.push("");
         setBulkInput(JSON.stringify(arr, null, 2));
     };
+
+    const isBulkValid = useMemo(() => {
+        if (!bulkInput.trim()) return false;
+        if (isStructuredBulkMode) {
+            const arr = getStructuredKeys();
+            return arr.length > 0 && arr.some(k => k.trim().length > 0);
+        }
+        try {
+            const parsed = JSON.parse(bulkInput);
+            if (Array.isArray(parsed)) return parsed.some(k => String(k).trim().length > 0);
+            return typeof parsed === 'object' && parsed !== null;
+        } catch {
+            return bulkInput.trim().length > 0;
+        }
+    }, [bulkInput, isStructuredBulkMode]);
     
     const handleBulkImport = async () => {
         if (!bulkInput.trim()) return;
@@ -630,9 +655,33 @@ const ApiKeyManager: React.FC<{
                                                 className="form-input w-full text-xs font-mono"
                                                 placeholder="sk-..."
                                             />
-                                            <button onClick={() => removeStructuredKey(index)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors shrink-0">
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {deletingKeyIndex === index ? (
+                                                <div className="flex items-center gap-1.5 shrink-0 animate-fade-in-up">
+                                                    <button 
+                                                        onClick={() => setDeletingKeyIndex(null)}
+                                                        className="px-2 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            removeStructuredKey(index);
+                                                            setDeletingKeyIndex(null);
+                                                        }}
+                                                        className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-[11px] transition-colors cursor-pointer"
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setDeletingKeyIndex(index)} 
+                                                    className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors shrink-0 cursor-pointer"
+                                                    title="Delete key"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                     {getStructuredKeys().length === 0 && (
@@ -653,12 +702,33 @@ const ApiKeyManager: React.FC<{
                                 placeholder={`[\n  "sk-key1",\n  "sk-key2"\n]`}
                                 height="auto"
                                 maxHeight="300px"
+                                wordWrap={true}
                             />
                         )}
-                        <div className="flex justify-end items-center gap-3 pt-4">
-                            <button onClick={() => setIsBulkMode(false)} className="btn btn-secondary">Cancel</button>
-                            <button onClick={handleBulkImport} className="btn btn-primary" disabled={isImporting || !bulkInput.trim()}>
-                                {isImporting ? 'Syncing...' : 'Sync Keys'}
+                        <div className="flex justify-end items-center gap-2 pt-3">
+                            <button 
+                                onClick={() => {
+                                    setIsBulkMode(false);
+                                    setDeletingKeyIndex(null);
+                                }} 
+                                disabled={isImporting}
+                                className="btn btn-secondary text-xs py-1 px-2.5"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleBulkImport} 
+                                className={`btn btn-primary text-xs py-1 px-3 inline-flex items-center gap-1.5 ${isImporting ? 'opacity-80 cursor-not-allowed' : ''}`} 
+                                disabled={isImporting || !isBulkValid}
+                            >
+                                {isImporting ? (
+                                    <>
+                                        <Loader size={12} className="animate-spin" />
+                                        <span>Syncing...</span>
+                                    </>
+                                ) : (
+                                    'Sync Keys'
+                                )}
                             </button>
                         </div>
                     </div>
@@ -685,14 +755,48 @@ const ApiKeyManager: React.FC<{
                                     </>
                                 )}
                             </div>
-                            <button
-                                onClick={() => setIsResetAllModalOpen(true)}
-                                disabled={isResettingAll || keys.length === 0}
-                                className="text-indigo-500 hover:text-indigo-600 font-medium transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1 text-[11px] sm:text-xs"
-                            >
-                                <RotateCcw size={12} className={isResettingAll ? 'animate-spin' : ''} />
-                                <span>{isResettingAll ? 'Resetting...' : 'Reset'}</span>
-                            </button>
+                            {showResetConfirm ? (
+                                <div className="flex items-center gap-1.5 text-xs animate-fade-in-up">
+                                    {!isResettingAll && (
+                                        <>
+                                            <span className="text-red-600 dark:text-red-400 font-semibold text-[11px]">Reset all?</span>
+                                            <button
+                                                onClick={() => setShowResetConfirm(false)}
+                                                className="px-2 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </>
+                                    )}
+                                    <button
+                                        onClick={handleResetAllKeys}
+                                        disabled={isResettingAll}
+                                        className={`px-2 py-0.5 rounded font-semibold text-[11px] transition-colors inline-flex items-center gap-1 ${
+                                            isResettingAll 
+                                                ? 'bg-red-400 dark:bg-red-800/60 text-white/80 cursor-not-allowed' 
+                                                : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                                        }`}
+                                    >
+                                        {isResettingAll ? (
+                                            <>
+                                                <Loader size={11} className="animate-spin" />
+                                                <span>Resetting...</span>
+                                            </>
+                                        ) : (
+                                            'Confirm'
+                                        )}
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setShowResetConfirm(true)}
+                                    disabled={isResettingAll || keys.length === 0}
+                                    className="text-indigo-500 hover:text-indigo-600 font-medium transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1 text-[11px] sm:text-xs cursor-pointer"
+                                >
+                                    <RotateCcw size={12} />
+                                    <span>Reset</span>
+                                </button>
+                            )}
                         </div>
 
                         <div className="w-full overflow-hidden flex-1 flex flex-col">
@@ -847,21 +951,12 @@ const ApiKeyManager: React.FC<{
                 confirmText="Remove Key"
                 confirmButtonClass="btn-danger"
             />
-
-            <ConfirmationModal
-                isOpen={isResetAllModalOpen}
-                onClose={() => setIsResetAllModalOpen(false)}
-                onConfirm={handleResetAllKeys}
-                title="Confirm Reset All Keys"
-                message={<>Are you sure you want to reset all API keys? This will reset call counts, status, and failure counts. This action cannot be undone.</>}
-                confirmText="Reset All Keys"
-                confirmButtonClass="btn-danger"
-            />
         </div>
     );
 };
 
 const KNOWN_MODELS = [
+    'gemini-3.8-flash',
     'gemini-3.7-flash',
     'gemini-3.6-flash',
     'gemini-3.5-flash',
@@ -923,6 +1018,7 @@ const AiModelConfigManager: React.FC<{
 
     const dropdownOptions = [...KNOWN_MODELS, 'custom'];
     const dropdownLabels = {
+        'gemini-3.8-flash': 'Gemini 3.8 Flash',
         'gemini-3.7-flash': 'Gemini 3.7 Flash',
         'gemini-3.6-flash': 'Gemini 3.6 Flash',
         'gemini-3.5-flash': 'Gemini 3.5 Flash',
@@ -989,6 +1085,7 @@ const AiModelConfigManager: React.FC<{
                                                             options={dropdownOptions}
                                                             value={isCustomEditValue ? 'custom' : editValue}
                                                             displayLabels={dropdownLabels}
+                                                            heading="AI Model"
                                                             onChange={(val) => {
                                                                 if (val === 'custom') {
                                                                     setIsCustomEditValue(true);
@@ -1264,7 +1361,7 @@ const AudioDropdown: React.FC<AudioDropdownProps> = ({
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative border border-[var(--border-color)] rounded-lg shadow-none dark:shadow-lg max-h-60 overflow-y-auto`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative border border-[var(--border-color)] rounded-lg shadow-none max-h-60 overflow-y-auto`}
             role="listbox"
             style={{
                 position: 'fixed',

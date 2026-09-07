@@ -135,7 +135,7 @@ export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ in
             {isOpen && ReactDOM.createPortal(
                 <div 
                     ref={popoverRef}
-                    className="fixed z-[9999] w-max max-w-[240px] sm:max-w-[280px] p-2 text-[11px] font-medium bg-slate-800 text-slate-100 rounded-md shadow-2xl border border-slate-700/50 break-words leading-tight shadow-black/20 transition-opacity duration-150"
+                    className="fixed z-[9999] w-max max-w-[240px] sm:max-w-[280px] p-2 text-[11px] font-medium bg-slate-800 text-slate-100 rounded-md shadow-none border border-slate-700/50 break-words leading-tight transition-opacity duration-150"
                     style={popoverStyle}
                 >
                     <div 
@@ -280,7 +280,8 @@ export const CustomDropdown: React.FC<{
     className?: string;
     displayLabels?: Record<string, string>;
     triggerClassName?: string;
-}> = ({ options, value, onChange, className = '', displayLabels, triggerClassName = 'px-4 py-2.5 text-[13px]' }) => {
+    heading?: string;
+}> = ({ options, value, onChange, className = '', displayLabels, triggerClassName = 'px-4 py-2.5 text-[13px]', heading }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -306,7 +307,7 @@ export const CustomDropdown: React.FC<{
         const rect = triggerEl.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const panelHeight = Math.min(options.length * 36 + 12, 240);
+        const panelHeight = Math.min(options.length * 36 + (heading ? 30 : 0) + 4, 260);
         
         let direction: 'up' | 'down' = 'down';
         let top = rect.bottom;
@@ -319,8 +320,8 @@ export const CustomDropdown: React.FC<{
         let panelWidth = lockedWidth || 0;
 
         if (!panelWidth) {
-            // Find longest label string among options
-            let maxCharLength = 0;
+            // Find longest label string among options and heading
+            let maxCharLength = heading ? heading.length + 2 : 0;
             options.forEach((opt) => {
                 const label = displayLabels?.[opt] || opt;
                 if (label && label.length > maxCharLength) {
@@ -328,16 +329,16 @@ export const CustomDropdown: React.FC<{
                 }
             });
 
-            // Account for font size ~11px (~6.6px per char), padding (18px), scrollbar space if > 6 items (8px)
+            // Account for font size ~12px (~7.5px per char), padding (24px), scrollbar space if > 6 items (10px)
             const hasScrollbar = options.length > 6;
-            const contentNeededWidth = Math.ceil(maxCharLength * 6.6 + 18 + (hasScrollbar ? 8 : 0));
+            const contentNeededWidth = Math.ceil(maxCharLength * 7.5 + 24 + (hasScrollbar ? 10 : 0));
             const triggerWidth = rect.width;
             
             // Maximum allowed width ensures dropdown never overflows screen boundaries (12px margin on left & right)
             const maxAllowedScreenWidth = Math.max(80, window.innerWidth - 24);
             
-            // Width dynamically fits content without excess spacing
-            panelWidth = Math.min(Math.max(contentNeededWidth, triggerWidth ? Math.min(triggerWidth, 180) : 0, 60), maxAllowedScreenWidth);
+            // Width dynamically fits content without excess spacing and prevents text wrapping
+            panelWidth = Math.min(Math.max(contentNeededWidth, triggerWidth ? Math.min(triggerWidth, 220) : 0, 70), maxAllowedScreenWidth);
         }
 
         let left = rect.left;
@@ -426,7 +427,7 @@ export const CustomDropdown: React.FC<{
     const panelContent = (
         <div
             ref={panelRef}
-            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-1 relative`}
+            className={`custom-dropdown-panel ${isOpen ? 'open' : ''} bg-[var(--card-bg)] py-0 relative`}
             role="listbox"
             style={{
                 position: 'fixed',
@@ -438,25 +439,38 @@ export const CustomDropdown: React.FC<{
                 zIndex: 999999
             }}
         >
-            {options.map((option) => {
-                const label = displayLabels?.[option] || option;
-                return (
-                    <button
-                        key={option}
-                        type="button"
-                        role="option"
-                        aria-selected={value === option}
-                        className={`custom-dropdown-option ${value === option ? 'active text-[var(--accent-color)] bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelect(option);
-                        }}
-                        title={label}
-                    >
-                        <span className="truncate block w-full text-left">{label}</span>
-                    </button>
-                );
-            })}
+            {heading && (
+                <div className="px-3 py-1.5 border-b border-slate-200 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider select-none shrink-0 sticky top-0 z-10">
+                    {heading}
+                </div>
+            )}
+            <div className="flex flex-col">
+                {options.map((option, idx) => {
+                    const label = displayLabels?.[option] || option;
+                    const isFirst = !heading && idx === 0;
+                    const isLast = idx === options.length - 1;
+                    const isSelected = value === option;
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            className={`custom-dropdown-option flex items-center justify-between gap-2 ${isSelected ? 'active text-[var(--accent-color)] bg-[var(--subtle-bg)]' : 'text-[var(--text-primary)]'} ${isFirst ? 'rounded-t-[inherit]' : ''} ${isLast ? 'rounded-b-[inherit]' : ''}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelect(option);
+                            }}
+                            title={label}
+                        >
+                            <span className="truncate block text-left flex-1">{label}</span>
+                            {isSelected && (
+                                <Check size={13} className="text-[var(--accent-color)] shrink-0 ml-2" />
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 
@@ -502,10 +516,11 @@ export const CustomDropdown: React.FC<{
                 .custom-dropdown-panel {
                     border: 1px solid var(--border-color);
                     border-radius: 0.5rem;
-                    box-shadow: none;
+                    box-shadow: none !important;
                     overflow-y: auto;
-                    overflow-x: auto;
-                    max-height: 240px;
+                    overflow-x: hidden;
+                    max-height: 250px;
+                    padding: 0;
                     transition: opacity 0.15s ease-out, transform 0.15s ease-out, visibility 0.15s;
                     transform-origin: top;
                     opacity: 0;
@@ -515,13 +530,17 @@ export const CustomDropdown: React.FC<{
                     background-color: var(--card-bg);
                 }
                 html.dark .custom-dropdown-panel {
-                    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+                    box-shadow: none !important;
                 }
                 .custom-dropdown-panel.open {
                     opacity: 1;
                     transform: scale(1);
                     pointer-events: auto;
                     visibility: visible;
+                }
+                .custom-dropdown-panel > div:first-child {
+                    border-top-left-radius: inherit;
+                    border-top-right-radius: inherit;
                 }
                 .custom-dropdown-option {
                     display: block;
@@ -708,7 +727,7 @@ export const DateRangeFilter: React.FC<{
     };
 
     const PopoverInnerContent = (
-        <div className="panel-card !p-4 shadow-xl border border-slate-200/80">
+        <div className="panel-card !p-4 shadow-none border border-slate-200/80">
             <h4 className="font-semibold text-sm mb-3 text-slate-800">Select Custom Date Range</h4>
             <div className="flex flex-col sm:flex-row gap-3 items-end">
                 <CustomDateInput 
@@ -859,26 +878,55 @@ export const ConfirmationModal: React.FC<{
         }
     };
 
+    const isDanger = confirmButtonClass.includes('danger') || 
+                     confirmButtonClass.includes('red') || 
+                     title.toLowerCase().includes('delete') || 
+                     title.toLowerCase().includes('drop') || 
+                     title.toLowerCase().includes('terminate') ||
+                     title.toLowerCase().includes('remove');
+
     return ReactDOM.createPortal(
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center modal-bg"
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
             aria-labelledby="modal-title"
             role="dialog"
             aria-modal="true"
+            onClick={() => { if (!isLoading) onClose(); }}
         >
-            <div className="modal-content w-full max-w-lg m-4 !rounded-2xl">
-                <div className="p-4">
-                    <h3 id="modal-title" className="text-base font-bold text-slate-800">{title}</h3>
-                    <div className="text-xs text-slate-600 mt-1.5">
+            <div 
+                className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header & Body */}
+                <div className="p-5 sm:p-6">
+                    <h3 id="modal-title" className="text-base font-bold text-slate-900 dark:text-zinc-100 tracking-tight leading-snug">
+                        {title}
+                    </h3>
+                    <div className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 mt-2 leading-relaxed">
                         {message}
                     </div>
                 </div>
-                <div className="bg-slate-50 px-4 py-3 flex justify-end gap-2 rounded-b-2xl">
-                    <button type="button" onClick={onClose} className="btn btn-secondary text-sm" disabled={isLoading}>{cancelText}</button>
+
+                {/* Footer Controls */}
+                <div className="bg-slate-50 dark:bg-zinc-950 border-t border-slate-200/80 dark:border-zinc-800/80 px-5 py-3.5 flex items-center justify-end gap-2.5">
+                    <button 
+                        type="button" 
+                        onClick={onClose} 
+                        className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-zinc-700/90 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700/80 transition-all cursor-pointer disabled:opacity-50 active:scale-95" 
+                        disabled={isLoading}
+                    >
+                        {cancelText}
+                    </button>
                     <button 
                         type="button"
                         onClick={handleConfirm} 
-                        className={`btn ${confirmButtonClass} text-sm flex items-center justify-center gap-1.5 min-w-[80px]`} 
+                        className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-white transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                            confirmButtonClass.includes('btn-danger-secondary')
+                                ? '!bg-transparent !text-red-600 dark:!text-red-400 !border !border-red-600 dark:!border-red-500 hover:!bg-red-50 dark:hover:!bg-red-950/30'
+                                : isDanger
+                                    ? 'bg-red-600 hover:bg-red-500 shadow-red-600/20'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'
+                        }`} 
                         disabled={isConfirmDisabled || isLoading}
                     >
                         {isLoading && <Loader className="animate-spin" size={14} />}
@@ -902,22 +950,32 @@ export const AlertModal: React.FC<{
 
     return ReactDOM.createPortal(
         <div 
-            className="fixed inset-0 z-[9999] flex items-center justify-center modal-bg"
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
             aria-labelledby="alert-modal-title"
             role="dialog"
             aria-modal="true"
+            onClick={onClose}
         >
-            <div className="modal-content w-full max-w-sm m-4 !rounded-2xl shadow-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                <div className="p-4">
-                    <h3 id="alert-modal-title" className="text-base font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
+            <div 
+                className="w-full max-w-sm bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="p-5 sm:p-6">
+                    <h3 id="alert-modal-title" className="text-base font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
                         {title}
                     </h3>
-                    <div className="text-sm text-slate-600 dark:text-zinc-400 mt-2 whitespace-pre-wrap">
+                    <div className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 mt-2 whitespace-pre-wrap leading-relaxed">
                         {message}
                     </div>
                 </div>
-                <div className="bg-slate-50 dark:bg-zinc-800/50 px-4 py-3 flex justify-end gap-2 rounded-b-2xl border-t border-slate-100 dark:border-zinc-800">
-                    <button type="button" onClick={onClose} className="btn btn-primary text-sm dark:bg-indigo-600 dark:hover:bg-indigo-700">{buttonText}</button>
+                <div className="bg-slate-50 dark:bg-zinc-950 border-t border-slate-200/80 dark:border-zinc-800/80 px-5 py-3 flex justify-end">
+                    <button 
+                        type="button" 
+                        onClick={onClose} 
+                        className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 transition-all cursor-pointer active:scale-95"
+                    >
+                        {buttonText}
+                    </button>
                 </div>
             </div>
         </div>,
@@ -1081,17 +1139,21 @@ export const ActionPopover: React.FC<{
             if (!anchorEl || !popoverEl) return;
 
             const rect = anchorEl.getBoundingClientRect();
-            const popoverWidth = popoverEl.offsetWidth || 150; // Dynamic width based on content
-            const popoverHeight = popoverEl.offsetHeight || 150; // estimate if not rendered yet
+            popoverEl.style.width = 'max-content';
+            popoverEl.style.minWidth = 'max-content';
+            popoverEl.style.maxWidth = 'none';
+
+            const popoverWidth = Math.max(popoverEl.scrollWidth, popoverEl.offsetWidth || 150);
+            const popoverHeight = Math.max(popoverEl.scrollHeight, popoverEl.offsetHeight || 150);
             
             // Check if it overflows bottom
             const spaceBelow = window.innerHeight - rect.bottom;
             const placeTop = spaceBelow < popoverHeight + 10 && rect.top > popoverHeight + 10;
 
-            // Use fixed positioning to avoid layout thrashing and ensure perfectly synced scrolling
             let top = placeTop ? rect.top - popoverHeight - 8 : rect.bottom + 8; // 8px gap for the tail
-            let left = rect.right - popoverWidth + 12; // Adjust to align the tail with the 3 dots
+            let left = rect.right - popoverWidth;
 
+            // Ensure padding from viewport edge
             left = Math.max(10, Math.min(left, window.innerWidth - popoverWidth - 10));
 
             popoverEl.style.position = 'fixed';
@@ -1099,9 +1161,14 @@ export const ActionPopover: React.FC<{
             popoverEl.style.left = `${left}px`;
             
             if (tailEl) {
+                const anchorCenterX = rect.left + (rect.width / 2);
+                let tailLeft = anchorCenterX - left - 5;
+                tailLeft = Math.max(12, Math.min(tailLeft, popoverWidth - 20));
+
+                tailEl.style.left = `${tailLeft}px`;
                 tailEl.className = placeTop 
-                    ? "absolute -bottom-1.5 right-4 w-3 h-3 bg-[var(--card-bg)] border-b border-r border-[var(--border-color)] rotate-45 z-0"
-                    : "absolute -top-1.5 right-4 w-3 h-3 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-0";
+                    ? "absolute -bottom-1.5 w-2.5 h-2.5 bg-[var(--card-bg)] border-b border-r border-[var(--border-color)] rotate-45 z-20 pointer-events-none"
+                    : "absolute -top-1.5 w-2.5 h-2.5 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-20 pointer-events-none";
             }
         };
 
@@ -1134,14 +1201,12 @@ export const ActionPopover: React.FC<{
     }
 
     return ReactDOM.createPortal(
-        <div ref={popoverRef} className={`z-50 w-max min-w-[120px] max-w-[280px] ${className}`} style={{ position: 'fixed', top: '-9999px', left: '-9999px' }}>
-            {/* The Tail */}
-            <div ref={tailRef} className="absolute -top-1.5 right-4 w-3 h-3 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-0"></div>
-            {/* The Content */}
-            <div className="relative bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none dark:shadow-lg overflow-hidden z-10">
-                <div className="p-1">
-                    {children}
-                </div>
+        <div ref={popoverRef} className={`z-50 ${className || ''}`} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 'max-content', minWidth: 'max-content', maxWidth: 'none', whiteSpace: 'nowrap' }}>
+            {/* The Content & Integrated Tail */}
+            <div className="relative bg-[var(--card-bg)] border border-[var(--border-color)] rounded-md shadow-none z-10 p-0.5 w-max min-w-max max-w-none whitespace-nowrap">
+                {/* The Tail */}
+                <div ref={tailRef} className="absolute -top-1.5 w-2.5 h-2.5 bg-[var(--card-bg)] border-t border-l border-[var(--border-color)] rotate-45 z-20 pointer-events-none"></div>
+                {children}
             </div>
         </div>,
         document.body

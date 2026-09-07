@@ -11,6 +11,7 @@ interface CodeEditorProps {
     placeholder?: string;
     height?: string;
     maxHeight?: string;
+    wordWrap?: boolean;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ 
@@ -18,7 +19,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     onChange, 
     language = 'json', 
     height = '300px',
-    maxHeight
+    maxHeight,
+    wordWrap = true
 }) => {
     const [copied, setCopied] = useState(false);
 
@@ -76,7 +78,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                     ))}
                 </div>
 
-                <div className="flex-grow">
+                <div className="flex-grow min-w-0">
                     <Editor
                         value={value}
                         onValueChange={onChange}
@@ -89,10 +91,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                             backgroundColor: 'var(--prism-bg)',
                             color: 'var(--prism-text)',
                             minWidth: '100%',
-                            width: 'max-content',
+                            width: wordWrap ? '100%' : 'max-content',
                         }}
-                        textareaClassName="focus:outline-none !whitespace-pre"
-                        preClassName="!whitespace-pre"
+                        textareaClassName={`focus:outline-none ${wordWrap ? '!whitespace-pre-wrap !break-all' : '!whitespace-pre'}`}
+                        preClassName={`${wordWrap ? '!whitespace-pre-wrap !break-all' : '!whitespace-pre'}`}
                     />
                 </div>
             </div>

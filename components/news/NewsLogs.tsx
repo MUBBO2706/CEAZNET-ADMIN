@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { PanelCard, timeAgo, CustomDropdown } from '../ui';
 import type { NewsLog } from '../../types';
-import { ChevronRight, Trash2, CheckSquare, Square, Terminal } from 'lucide-react';
+import { ChevronRight, Trash2, CheckSquare, Square, Terminal, Loader } from 'lucide-react';
 
 const ExpandedSummary: React.FC<{ log: NewsLog, onShowDetails: (id: number) => void }> = ({ log, onShowDetails }) => {
     const articlesUpdated = log.summary?.find(s => s.includes('Total Articles Updated'))?.split(': ')[1] || '0';
@@ -72,6 +72,8 @@ const NewsLogs: React.FC<{
     const [expandedLog, setExpandedLog] = useState<number | null>(null);
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+    const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
 
     const filteredAndSortedLogs = React.useMemo(() => {
         let result = [...logs];
@@ -157,6 +159,7 @@ const NewsLogs: React.FC<{
                     <CustomDropdown 
                         value={statusFilter}
                         onChange={setStatusFilter}
+                        heading="Log Status"
                         options={['ALL', 'SUCCESS', 'FAILURE', 'ERROR', 'WARNING']}
                         displayLabels={{
                             'ALL': 'All Statuses',
@@ -357,19 +360,70 @@ const NewsLogs: React.FC<{
                                                 #{log.id}
                                             </div>
                                             
-                                            <div className="w-14 shrink-0 px-1 flex items-center justify-center sm:ml-auto">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        onDelete(log.id);
-                                                    }}
-                                                    className="text-red-500 hover:text-red-700 transition-all p-1 rounded-[3px] hover:bg-red-100 dark:hover:bg-red-900/30"
-                                                    data-tooltip="Delete Log"
-                                                    aria-label="Delete log"
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
+                                            <div className="w-auto min-w-[56px] shrink-0 px-1 flex items-center justify-center sm:ml-auto">
+                                                {confirmDeleteId === log.id ? (
+                                                    <div 
+                                                        className="flex items-center gap-1 shrink-0 animate-fade-in-up"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                        }}
+                                                    >
+                                                        {isDeletingId !== log.id && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setConfirmDeleteId(null);
+                                                                }}
+                                                                className="px-1.5 py-0.5 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 rounded text-[10px] font-medium transition-colors cursor-pointer"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                setIsDeletingId(log.id);
+                                                                try {
+                                                                    await onDelete(log.id);
+                                                                } finally {
+                                                                    setIsDeletingId(null);
+                                                                    setConfirmDeleteId(null);
+                                                                }
+                                                            }}
+                                                            disabled={isDeletingId === log.id}
+                                                            className={`px-1.5 py-0.5 rounded font-semibold text-[10px] transition-colors inline-flex items-center gap-1 ${
+                                                                isDeletingId === log.id
+                                                                    ? 'bg-red-400 dark:bg-red-800/60 text-white/80 cursor-not-allowed'
+                                                                    : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                                                            }`}
+                                                        >
+                                                            {isDeletingId === log.id ? (
+                                                                <>
+                                                                    <Loader size={10} className="animate-spin" />
+                                                                    <span>Deleting...</span>
+                                                                </>
+                                                            ) : (
+                                                                'Confirm'
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setConfirmDeleteId(log.id);
+                                                        }}
+                                                        className="text-red-500 hover:text-red-700 transition-all p-1 rounded-[3px] hover:bg-red-100 dark:hover:bg-red-900/30"
+                                                        data-tooltip="Delete Log"
+                                                        aria-label="Delete log"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                         

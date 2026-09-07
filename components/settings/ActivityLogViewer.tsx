@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PanelCard, CopyButton } from '../ui';
-import { ArrowLeft, CheckCircle, Copy, FileCode, Database, Diff } from 'lucide-react';
+import { ChevronLeft, CheckCircle, Copy, FileCode, Database, Diff } from 'lucide-react';
 
 const JsonToggleCard: React.FC<{
     title: string;
@@ -163,7 +163,7 @@ const renderDiffData = (oldData: any, newData: any, method?: string) => {
     );
 };
 
-const ActivityLogViewer: React.FC<{ row: any; onBack: () => void }> = ({ row, onBack }) => {
+const ActivityLogViewer: React.FC<{ row: any; onBack?: () => void; hideHeader?: boolean }> = ({ row, onBack, hideHeader = false }) => {
     const action = row.operation || row.action_type || 'UNKNOWN';
     const eventDetails = {
         ...(row.old_data ? { old_data: row.old_data } : {}),
@@ -172,47 +172,48 @@ const ActivityLogViewer: React.FC<{ row: any; onBack: () => void }> = ({ row, on
     };
 
     return (
-        <div className="animate-fade-in-up space-y-4">
-            <div className="flex items-center gap-3">
-                <button onClick={onBack} className="btn btn-secondary px-2 py-1 flex items-center gap-1 text-xs">
-                    <ArrowLeft size={14} />
-                    <span>Back</span>
-                </button>
-                <h3 className="text-base font-bold text-[var(--text-primary)] truncate">
-                    Log Details: <span className="font-mono text-xs">activity_logs</span>
-                </h3>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 items-start pt-2">
-                <div>
-                    <h3 className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-bold mb-3 flex items-center gap-2 opacity-70">
-                        <Database size={12} /> Metadata
+        <div className="animate-fade-in-up space-y-3">
+            {!hideHeader && onBack && (
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 mb-2">
+                    <button 
+                        onClick={onBack} 
+                        className="p-1 -ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer bg-transparent border-0 outline-none shadow-none focus:outline-none"
+                        title="Back"
+                        aria-label="Back"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+                    <h3 className="text-sm sm:text-base font-semibold font-mono text-[var(--text-primary)] truncate min-w-0">
+                        activity_logs
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="col-span-2 sm:col-span-1">
-                            <p className="text-[10px] text-[var(--text-secondary)] uppercase mb-0.5">ID</p>
-                            <p className="text-[11px] sm:text-xs font-mono truncate text-[var(--text-primary)]" title={row.id}>{row.id}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-[var(--text-secondary)] uppercase mb-0.5">Table</p>
-                            <p className="text-[11px] sm:text-xs font-mono text-emerald-500 truncate">{row.table_name}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-[var(--text-secondary)] uppercase mb-0.5">Action</p>
-                            <p className="text-[11px] sm:text-xs font-mono text-blue-500">{action}</p>
-                        </div>
-                        <div className="hidden sm:block">
-                            <p className="text-[10px] text-[var(--text-secondary)] uppercase mb-0.5">Source</p>
-                            <p className="text-[11px] sm:text-xs font-mono text-purple-500 truncate">{row.source || row.new_data?.source || 'Database Trigger'}</p>
-                        </div>
-                        <div className="col-span-2 sm:col-span-4 mt-1">
-                            <p className="text-[10px] text-[var(--text-secondary)] uppercase mb-0.5">Description</p>
-                            <p className="text-[11px] sm:text-xs text-[var(--text-primary)]">{row.description || row.new_data?.description || `${action} operation on ${row.table_name}`}</p>
-                        </div>
+                </div>
+            )}
+
+            <div className="space-y-3 pt-1">
+                <div className="space-y-0.5">
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 py-1.5 border-b border-[var(--border-color)]">
+                        <div className="font-mono text-xs font-semibold text-[var(--text-secondary)]">id</div>
+                        <div className="sm:col-span-2 text-xs font-mono text-[var(--text-primary)] truncate" title={String(row.id)}>{row.id}</div>
+                    </div>
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 py-1.5 border-b border-[var(--border-color)]">
+                        <div className="font-mono text-xs font-semibold text-[var(--text-secondary)]">table_name</div>
+                        <div className="sm:col-span-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 font-medium">{row.table_name || 'N/A'}</div>
+                    </div>
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 py-1.5 border-b border-[var(--border-color)]">
+                        <div className="font-mono text-xs font-semibold text-[var(--text-secondary)]">action</div>
+                        <div className="sm:col-span-2 text-xs font-mono text-blue-600 dark:text-blue-400 font-medium">{action}</div>
+                    </div>
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 py-1.5 border-b border-[var(--border-color)]">
+                        <div className="font-mono text-xs font-semibold text-[var(--text-secondary)]">source</div>
+                        <div className="sm:col-span-2 text-xs font-mono text-purple-600 dark:text-purple-400">{row.source || row.new_data?.source || 'Database Trigger'}</div>
+                    </div>
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 py-1.5 border-b border-[var(--border-color)]">
+                        <div className="font-mono text-xs font-semibold text-[var(--text-secondary)]">description</div>
+                        <div className="sm:col-span-2 text-xs text-[var(--text-primary)]">{row.description || row.new_data?.description || `${action} operation on ${row.table_name}`}</div>
                     </div>
                 </div>
 
-                <div className="border-t border-[var(--border-color)] pt-3">
+                <div className="pt-2 border-t border-[var(--border-color)]">
                     <JsonToggleCard
                         title="Event Details (Diff)"
                         data={eventDetails}

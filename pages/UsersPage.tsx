@@ -1254,18 +1254,19 @@ const UsersPage: React.FC = () => {
                     anchorEl={actionPopoverData.anchorEl}
                     onClose={() => setActionPopoverData(null)}
                 >
-                    <div className="flex flex-col py-1 min-w-[120px]">
+                    <div className="flex flex-col">
                         <button
                             onClick={() => {
                                 const user = processedUsers.find(u => u.user.id === actionPopoverData.id);
                                 if (user) setEditingUser(user);
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer whitespace-nowrap"
+                            className="popover-item text-slate-700 dark:text-slate-200"
                         >
-                            <Edit size={14} />
-                            Edit Settings
+                            <Edit size={13} className="shrink-0" />
+                            <span>Edit Settings</span>
                         </button>
+                        <div className="h-px bg-[var(--border-color)] my-0.5" />
                         <button
                             onClick={() => {
                                 const user = processedUsers.find(u => u.user.id === actionPopoverData.id);
@@ -1277,23 +1278,30 @@ const UsersPage: React.FC = () => {
                                 }
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors cursor-pointer whitespace-nowrap"
+                            className="popover-item warning"
                         >
                             {processedUsers.find(u => u.user.id === actionPopoverData.id)?.user.is_suspended ? (
-                                <span className="flex items-center gap-2"><UserCheck size={14} /> Normalize User</span>
+                                <>
+                                    <UserCheck size={13} className="shrink-0" />
+                                    <span>Normalize User</span>
+                                </>
                             ) : (
-                                <span className="flex items-center gap-2"><UserX size={14} /> Suspend User</span>
+                                <>
+                                    <UserX size={13} className="shrink-0" />
+                                    <span>Suspend User</span>
+                                </>
                             )}
                         </button>
+                        <div className="h-px bg-[var(--border-color)] my-0.5" />
                         <button
                             onClick={() => {
                                 handleDeleteRequest(actionPopoverData.id);
                                 setActionPopoverData(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer whitespace-nowrap"
+                            className="popover-item danger"
                         >
-                            <Trash2 size={14} />
-                            Delete User
+                            <Trash2 size={13} className="shrink-0" />
+                            <span>Delete User</span>
                         </button>
                     </div>
                 </ActionPopover>

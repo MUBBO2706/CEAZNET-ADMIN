@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode, Suspense, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Zap, X, AlertTriangle, ChevronRight, ChevronDown, Loader, Sun, Moon } from 'lucide-react';
+import { RotateCw, Zap, AlertTriangle, ChevronRight, ChevronDown, Loader, Sun, Moon } from 'lucide-react';
 
 import MainDashboard from './pages/MainDashboard';
 import NewsAdminPage from './pages/NewsAdminPage';
@@ -33,13 +33,15 @@ interface ErrorBoundaryState {
     hasError: boolean;
     errors: AppError[];
     expanded: Record<string, boolean>;
+    isReloading?: boolean;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     state: ErrorBoundaryState = {
         hasError: false,
         errors: [],
-        expanded: {}
+        expanded: {},
+        isReloading: false
     };
 
     private handleGlobalError = (event: ErrorEvent) => {
@@ -166,6 +168,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             };
 
             return {
+                ...prevState,
                 hasError: true,
                 errors: [...prevState.errors, newError],
                 expanded: { ...prevState.expanded, [newError.id]: false }
@@ -179,6 +182,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         }));
     };
 
+    handleReload = () => {
+        this.setState({ isReloading: true });
+        setTimeout(() => {
+            window.location.reload();
+        }, 150);
+    };
+
     render(): ReactNode {
         if (this.state.hasError) {
             return (
@@ -189,66 +199,57 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', maxHeight: '85vh' }}
                     >
                         {/* Header: Icon and Heading on top row, Description starts from left edge beneath icon, No background/fill on icon */}
-                        <div className="p-4 border-b flex flex-col shrink-0" style={{ borderColor: 'var(--border-color)' }}>
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                    <AlertTriangle className="h-5 w-5 shrink-0" style={{ color: 'var(--danger)' }} />
-                                    <h1 className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                                        Application Error
-                                    </h1>
-                                </div>
-                                <button 
-                                    onClick={() => this.setState({ hasError: false, errors: [] })}
-                                    className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--subtle-bg)] transition-colors"
-                                    title="Dismiss"
-                                    aria-label="Dismiss"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
+                        <div className="px-4 pt-3.5 pb-2.5 border-b flex flex-col shrink-0" style={{ borderColor: 'var(--border-color)' }}>
+                            <div className="flex items-center gap-2 w-full">
+                                <AlertTriangle className="h-5 w-5 shrink-0" style={{ color: 'var(--danger)' }} />
+                                <h1 className="text-base font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                                    Application Error
+                                </h1>
                             </div>
-                            <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                                 We encountered unexpected issues while rendering this page.
                             </p>
                         </div>
                         
-                        {/* Errors List: Time is inline with the message so wrapped content starts from left edge without leaving blank space under time */}
-                        <div className="flex-1 overflow-auto bg-[#0d1117] text-xs font-mono scrollbar-hide text-[#e6edf3]">
-                            <div className="p-2 sm:p-3">
+                        {/* Errors List: Chevron is inline with content, content wraps all the way to the left edge with zero gap/space */}
+                        <div 
+                            className="flex-1 overflow-auto text-xs font-mono scrollbar-hide"
+                            style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}
+                        >
+                            <div className="px-4 py-2">
                                 {this.state.errors.map((err) => {
                                     const isExpanded = this.state.expanded[err.id];
                                     return (
-                                        <div key={err.id} className="border-b border-[#30363d]/50 last:border-0 py-1.5">
+                                        <div key={err.id} className="border-b last:border-0 py-1.5" style={{ borderColor: 'var(--border-color)' }}>
                                             <div 
-                                                className="flex items-start gap-1.5 py-1 px-1.5 hover:bg-white/5 cursor-pointer transition-colors rounded select-text"
+                                                className="py-1 cursor-pointer transition-colors rounded select-text leading-snug"
                                                 onClick={() => this.toggleExpand(err.id)}
                                             >
-                                                <div className="mt-0.5 text-gray-500 shrink-0">
+                                                <span className="inline-flex items-center align-middle mr-1 text-zinc-500 select-none">
                                                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                                                </div>
-                                                <div className="flex-1 min-w-0 leading-snug">
-                                                    <span className="text-gray-400 mr-1.5 select-none font-mono">
-                                                        [{err.timestamp.toLocaleTimeString()}]
-                                                    </span>
-                                                    <span className="text-red-400 font-bold mr-1">
-                                                        Uncaught Error:
-                                                    </span>
-                                                    <span className="text-red-300 font-medium break-all">
-                                                        {err.message}
-                                                    </span>
-                                                </div>
+                                                </span>
+                                                <span className="text-zinc-400 dark:text-zinc-500 mr-1.5 select-none font-mono">
+                                                    {err.timestamp.toLocaleTimeString()}
+                                                </span>
+                                                <span className="text-red-500 font-bold mr-1">
+                                                    Uncaught Error:
+                                                </span>
+                                                <span className="text-red-500 dark:text-red-400 font-medium break-all">
+                                                    {err.message}
+                                                </span>
                                             </div>
                                             {isExpanded && (
-                                                <div className="px-2 pb-2 pt-1 text-gray-400 text-[11px] leading-relaxed overflow-x-auto scrollbar-hide border-t border-[#30363d]/30 mt-1">
+                                                <div className="pb-2 pt-1.5 text-zinc-400 dark:text-zinc-400 text-[11px] leading-relaxed overflow-x-auto scrollbar-hide border-t mt-1" style={{ borderColor: 'var(--border-color)' }}>
                                                     {err.componentStack && (
                                                         <div className="mb-2">
-                                                            <div className="text-gray-300 font-semibold mb-0.5">Component Stack:</div>
-                                                            <div className="whitespace-pre-wrap opacity-80">{err.componentStack}</div>
+                                                            <div className="text-zinc-300 dark:text-zinc-300 font-semibold mb-0.5">Component Stack:</div>
+                                                            <div className="whitespace-pre-wrap opacity-80">{err.componentStack.trim()}</div>
                                                         </div>
                                                     )}
                                                     {err.stack && (
                                                         <div>
-                                                            <div className="text-gray-300 font-semibold mb-0.5">Call Stack:</div>
-                                                            <div className="whitespace-pre-wrap opacity-80">{err.stack}</div>
+                                                            <div className="text-zinc-300 dark:text-zinc-300 font-semibold mb-0.5">Call Stack:</div>
+                                                            <div className="whitespace-pre-wrap opacity-80">{err.stack.trim()}</div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -259,21 +260,35 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                             </div>
                         </div>
 
-                        {/* Footer: Compact, button sized to content */}
-                        <div className="px-4 py-3 border-t flex items-center justify-between gap-3 shrink-0" style={{ backgroundColor: 'var(--subtle-bg)', borderColor: 'var(--border-color)' }}>
+                        {/* Footer: Compact, dark black background matching header in dark mode, RotateCw icon & Reload text */}
+                        <div className="px-4 py-2.5 border-t flex items-center justify-between gap-3 shrink-0" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
                             <p className="text-[11px] truncate" style={{ color: 'var(--text-secondary)' }}>
                                 If this persists, please contact support.
                             </p>
                             <button
                                 id="error-boundary-reload-btn"
-                                onClick={() => window.location.reload()}
-                                className="w-fit px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                                disabled={this.state.isReloading}
+                                onClick={this.handleReload}
+                                className={`w-fit px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 ${this.state.isReloading ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer'}`}
                                 style={{ backgroundColor: 'var(--accent-color)' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color-dark)'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color)'}
+                                onMouseOver={(e) => {
+                                    if (!this.state.isReloading) e.currentTarget.style.backgroundColor = 'var(--accent-color-dark)';
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!this.state.isReloading) e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+                                }}
                             >
-                                <Zap className="w-3.5 h-3.5" />
-                                <span>Reload Application</span>
+                                {this.state.isReloading ? (
+                                    <>
+                                        <Loader className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Reload</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCw className="w-3.5 h-3.5" />
+                                        <span>Reload</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -520,11 +535,6 @@ const AdminAuthGuard: React.FC<{ children: ReactNode; theme: string; toggleTheme
     );
 };
 
-// ⚠️ TEMPORARY TEST COMPONENT: Throws a test error as requested by the user to verify the ErrorBoundary modal
-const TestErrorTrigger: React.FC = () => {
-    throw new Error("Simulated Test Error: Checking Error Boundary modal appearance, text wrapping, and compact button.");
-};
-
 const App: React.FC = () => {
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem('ceaznet-theme');
@@ -566,7 +576,6 @@ const App: React.FC = () => {
     return (
         <BrowserRouter>
             <ErrorBoundary>
-                <TestErrorTrigger />
                 <AuthProvider>
                     <AdminAuthGuard theme={theme} toggleTheme={toggleTheme}>
                         <AutoRefreshProvider>
