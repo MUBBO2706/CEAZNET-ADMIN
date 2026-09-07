@@ -886,7 +886,8 @@ const SupportInboxPage: React.FC = () => {
 
     useEffect(() => {
         const handleSelectionChange = () => {
-            if (document.activeElement === richEditorRef.current || richEditorRef.current?.contains(document.activeElement)) {
+            const activeEl = document.activeElement;
+            if (activeEl === richEditorRef.current || (activeEl instanceof Node && richEditorRef.current?.contains(activeEl))) {
                 checkActiveFormats();
             } else {
                 setActiveFormats({});
@@ -1902,7 +1903,8 @@ const SupportInboxPage: React.FC = () => {
                                                     onBlur={() => {
                                                         handleTyping(false);
                                                         setTimeout(() => {
-                                                            if (!richEditorRef.current?.contains(document.activeElement)) {
+                                                            const activeEl = document.activeElement;
+                                                            if (!activeEl || !(activeEl instanceof Node) || !richEditorRef.current?.contains(activeEl)) {
                                                                 setActiveFormats({});
                                                             }
                                                         }, 150);

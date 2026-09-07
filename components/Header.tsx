@@ -140,11 +140,13 @@ const NotificationBell: React.FC<{activeHeaderIcon: string | null, setActiveHead
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-            const target = event.target as Element;
-            if (target?.closest?.('.modal-bg') || target?.closest?.('[role="dialog"]') || target?.closest?.('.custom-dropdown-panel')) {
+            const target = event.target;
+            if (!(target instanceof Node)) return;
+            const elementTarget = target as Element;
+            if (elementTarget?.closest?.('.modal-bg') || elementTarget?.closest?.('[role="dialog"]') || elementTarget?.closest?.('.custom-dropdown-panel')) {
                 return;
             }
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (dropdownRef.current && !dropdownRef.current.contains(target)) {
                 setIsOpen(false);
                 setExpandedLog(null);
             }
@@ -491,7 +493,8 @@ const GlobalRefreshButton: React.FC<{activeHeaderIcon: string | null, setActiveH
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target;
+            if (target instanceof Node && dropdownRef.current && !dropdownRef.current.contains(target)) {
                 setIsDropdownOpen(false);
             }
         };
@@ -602,7 +605,8 @@ const ProfileDropdown: React.FC = () => {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target;
+            if (target instanceof Node && dropdownRef.current && !dropdownRef.current.contains(target)) {
                 setIsOpen(false);
             }
         };

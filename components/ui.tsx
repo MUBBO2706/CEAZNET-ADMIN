@@ -97,12 +97,14 @@ export const InfoPopover: React.FC<{ info: string; className?: string }> = ({ in
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Node)) return;
             if (
                 isOpen &&
                 popoverRef.current &&
-                !popoverRef.current.contains(event.target as Node) &&
+                !popoverRef.current.contains(target) &&
                 triggerRef.current &&
-                !triggerRef.current.contains(event.target as Node)
+                !triggerRef.current.contains(target)
             ) {
                 setIsOpen(false);
             }
@@ -369,7 +371,8 @@ export const CustomDropdown: React.FC<{
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
+            const target = event.target;
+            if (!(target instanceof Node)) return;
             const isClickInsideTrigger = dropdownRef.current?.contains(target);
             const isClickInsidePanel = panelRef.current?.contains(target);
             
@@ -380,7 +383,8 @@ export const CustomDropdown: React.FC<{
         
         const handleScrollOrResize = (event: Event) => {
             // Ignore scroll events originating inside the dropdown panel itself to prevent width flickering/shrinking
-            if (panelRef.current && (event.target === panelRef.current || panelRef.current.contains(event.target as Node))) {
+            const target = event.target;
+            if (panelRef.current && target instanceof Node && (target === panelRef.current || panelRef.current.contains(target))) {
                 return;
             }
             if (isOpen && triggerRef.current) {
@@ -391,9 +395,9 @@ export const CustomDropdown: React.FC<{
 
         const preventScroll = (e: Event) => {
             if (isOpen) {
-                const target = e.target as Node;
+                const target = e.target;
                 // Allow scrolling inside the panel itself
-                if (!panelRef.current?.contains(target)) {
+                if (target instanceof Node && !panelRef.current?.contains(target)) {
                     e.preventDefault();
                 }
             }
@@ -666,11 +670,13 @@ export const DateRangeFilter: React.FC<{
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Node)) return;
             if (
                 popoverRef.current &&
-                !popoverRef.current.contains(event.target as Node) &&
+                !popoverRef.current.contains(target) &&
                 customButtonRef.current &&
-                !customButtonRef.current.contains(event.target as Node)
+                !customButtonRef.current.contains(target)
             ) {
                 setIsPopoverOpen(false);
             }
@@ -1031,12 +1037,14 @@ export const ActionPopover: React.FC<{
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Node)) return;
             if (
                 isOpen &&
                 popoverRef.current && 
-                !popoverRef.current.contains(event.target as Node) &&
+                !popoverRef.current.contains(target) &&
                 anchorEl &&
-                !anchorEl.contains(event.target as Node)
+                !anchorEl.contains(target)
             ) {
                 onClose();
             }
